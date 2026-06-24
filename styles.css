@@ -423,6 +423,7 @@ select:focus {
 }
 
 .cell-copy-button,
+.cell-edit-button,
 .cell-delete-button {
   position: absolute;
   top: 2px;
@@ -449,6 +450,24 @@ select:focus {
 .cell-copy-button:hover {
   background: #0bb3e8;
   color: #ffffff;
+}
+
+.cell-edit-button {
+  left: 50%;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 202, 47, 0.62);
+  background: #fff9dd;
+  color: #6e4a00;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0;
+  box-shadow: 0 2px 6px rgba(255, 202, 47, 0.18);
+}
+
+.cell-edit-button:hover {
+  background: var(--sun);
+  color: #3b2500;
 }
 
 .cell-delete-button {
@@ -1844,6 +1863,15 @@ select:focus {
 
   .field-cell.planted .cell-code {
     font-size: 17px;
+  }
+
+  .cell-copy-button,
+  .cell-edit-button,
+  .cell-delete-button {
+    top: 3px;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
   }
 
   .plant-name {

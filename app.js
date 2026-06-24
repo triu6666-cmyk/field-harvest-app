@@ -728,6 +728,17 @@ function createFieldCell(cell) {
     });
     tile.append(copyButton);
 
+    const editButton = document.createElement("button");
+    editButton.className = "cell-edit-button";
+    editButton.type = "button";
+    editButton.textContent = "編";
+    editButton.setAttribute("aria-label", `${seedlingLabel(seedling)}を編集`);
+    editButton.title = "この苗の情報を編集";
+    editButton.addEventListener("click", () => {
+      openSeedlingModal({ seedling });
+    });
+    tile.append(editButton);
+
     const deleteButton = document.createElement("button");
     deleteButton.className = "cell-delete-button";
     deleteButton.type = "button";
