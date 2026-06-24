@@ -317,8 +317,9 @@
             <input id="syncUrlInput" type="url" placeholder="https://xxxx.supabase.co">
           </label>
           <label>
-            anon public key
-            <input id="syncAnonKeyInput" type="password" placeholder="Supabaseのanon key">
+            publishable key / anon public key
+            <input id="syncAnonKeyInput" type="password" placeholder="sb_publishable_... または anon key">
+            <span class="field-hint">secret key / service_role key は入れないでください。</span>
           </label>
           <label>
             共有データID
@@ -338,7 +339,7 @@
           <div id="syncLinkBox" class="sync-link-box hidden">
             <strong>スマホ設定リンク</strong>
             <textarea id="syncLinkOutput" readonly rows="3" aria-label="スマホ設定リンク"></textarea>
-            <span>このリンクにはanon keyと共有データIDが含まれます。自分の端末や信頼できる相手だけに送ってください。</span>
+            <span>このリンクにはpublishable/anon keyと共有データIDが含まれます。自分の端末や信頼できる相手だけに送ってください。</span>
           </div>
         </div>
       </section>

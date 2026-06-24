@@ -48,10 +48,16 @@ Supabase側には以下のSQLを実行してください。
 supabase-schema.sql
 ```
 
+詳しい手順:
+
+```text
+Supabase 接続手順.md
+```
+
 その後、アプリの`☁`ボタンから以下を設定します。
 
 - Supabase URL
-- anon public key
+- publishable key、またはanon public key
 - 共有データID
 
 ## ローカルでスマホ確認

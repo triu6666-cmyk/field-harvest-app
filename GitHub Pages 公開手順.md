@@ -116,12 +116,18 @@ GitHub Pagesで公開されるのはアプリ本体です。
 
 PCとスマホで同じ収穫データを使うには、Supabase同期も必要です。
 
+詳しいSupabase接続手順は以下を見てください。
+
+```text
+Supabase 接続手順.md
+```
+
 流れ:
 
 1. Supabaseでプロジェクトを作る
 2. `supabase-schema.sql`をSQL Editorで実行
 3. アプリ右上の`☁`を開く
-4. Supabase URL、anon key、共有データIDを設定
+4. Supabase URL、publishable keyまたはanon key、共有データIDを設定
 5. PC側で`クラウドへ保存`
 6. `設定リンクをコピー`
 7. スマホでそのリンクを開く
@@ -138,5 +144,5 @@ server-error.log
 秘密のAPIキー
 ```
 
-Supabaseの`anon public key`は公開前提のキーですが、このアプリでは同期設定リンク内に含まれます。
+Supabaseの`publishable key`や`anon public key`は公開前提のキーですが、このアプリでは同期設定リンク内に含まれます。
 設定リンクは、自分のスマホや信頼できる相手だけに送ってください。
