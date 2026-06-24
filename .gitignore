@@ -1,0 +1,6 @@
+server.log
+server-error.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db

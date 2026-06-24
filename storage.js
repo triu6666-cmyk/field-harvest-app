@@ -19,12 +19,20 @@ window.fieldHarvestStorage = {
 
   save(value) {
     this.saveLocal(value);
-    this.pushCloud(value).catch(() => {});
+    if (!this.isCloudConfigured()) {
+      return Promise.resolve({ skipped: true });
+    }
+
+    return this.pushCloud(value);
   },
 
   saveLocal(value) {
     localStorage.setItem(FIELD_APP_STORAGE_KEY, JSON.stringify(value));
     localStorage.setItem(FIELD_APP_UPDATED_KEY, new Date().toISOString());
+  },
+
+  localUpdatedAt() {
+    return localStorage.getItem(FIELD_APP_UPDATED_KEY) || "";
   },
 
   loadSettings() {
@@ -92,7 +100,7 @@ window.fieldHarvestStorage = {
       });
 
     if (error) throw error;
-    return { saved: true };
+    return { saved: true, updatedAt: new Date().toISOString() };
   },
 
   async testCloudConnection() {

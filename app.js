@@ -89,6 +89,7 @@ const elements = {
   closeSeedlingModalButton: document.querySelector("#closeSeedlingModalButton"),
   cancelModalSeedlingButton: document.querySelector("#cancelModalSeedlingButton"),
   syncSettingsButton: document.querySelector("#syncSettingsButton"),
+  syncMiniStatus: document.querySelector("#syncMiniStatus"),
   syncModal: document.querySelector("#syncModal"),
   closeSyncModalButton: document.querySelector("#closeSyncModalButton"),
   syncStatusText: document.querySelector("#syncStatusText"),
@@ -267,6 +268,7 @@ elements.saveSyncSettingsButton.addEventListener("click", () => {
     recordId: elements.syncRecordIdInput.value
   });
   renderSyncSettings();
+  renderSyncMiniStatus("同期設定済み", "ok");
   renderSyncStatus("同期設定を保存しました。次の保存からクラウドにも送ります。");
 });
 
@@ -279,6 +281,7 @@ elements.clearSyncSettingsButton.addEventListener("click", () => {
   storage.clearSettings();
   renderSyncSettings();
   renderSyncLink("");
+  renderSyncMiniStatus("ローカル", "idle");
   renderSyncStatus("同期設定を削除しました。この端末内だけに保存します。");
 });
 
@@ -333,6 +336,7 @@ elements.pullCloudButton.addEventListener("click", async () => {
 
     state = normalizeState(remote.state);
     render();
+    renderSyncMiniStatus("取得済み", "ok");
     renderSyncStatus(`クラウドから取得しました。更新: ${formatSyncDate(remote.updatedAt)}`);
   });
 });
@@ -1645,7 +1649,7 @@ function applySyncSettingsFromUrl() {
     cleanUrl.searchParams.delete("sync");
     window.history.replaceState({}, "", cleanUrl.toString());
     openSyncModal();
-    renderSyncStatus("同期設定を取り込みました。必要なら「クラウドから取得」を押してください。");
+    renderSyncStatus("同期設定を取り込みました。自動取得を試します。反映されない場合は「クラウドから取得」を押してください。");
   } catch {
     openSyncModal();
     renderSyncStatus("同期設定リンクを読み込めませんでした。");
@@ -2042,13 +2046,52 @@ function appendEmpty(target) {
 }
 
 function saveAndRender() {
-  storage.save(state);
+  const saveResult = storage.save(state);
   render();
+  renderSyncMiniStatus(storage.isCloudConfigured() ? "保存中" : "ローカル", storage.isCloudConfigured() ? "syncing" : "idle");
+  saveResult
+    .then((result) => {
+      if (result?.skipped) {
+        renderSyncMiniStatus("ローカル", "idle");
+        return;
+      }
+      renderSyncMiniStatus("保存済み", "ok");
+    })
+    .catch(() => {
+      renderSyncMiniStatus("保存失敗", "error");
+    });
 }
 
 function loadState() {
   const stored = storage.load();
   return stored ? normalizeState(stored) : structuredClone(defaultState);
+}
+
+async function autoPullCloudOnStartup() {
+  if (!storage.isCloudConfigured()) {
+    renderSyncMiniStatus("ローカル", "idle");
+    return;
+  }
+
+  renderSyncMiniStatus("取得中", "syncing");
+  try {
+    const remote = await storage.pullCloud();
+    if (!remote) {
+      renderSyncMiniStatus("クラウド空", "idle");
+      return;
+    }
+
+    state = normalizeState(remote.state);
+    render();
+    renderSyncMiniStatus("取得済み", "ok");
+  } catch {
+    renderSyncMiniStatus("取得失敗", "error");
+  }
+}
+
+function renderSyncMiniStatus(message, status = "idle") {
+  elements.syncMiniStatus.textContent = message;
+  elements.syncMiniStatus.dataset.status = status;
 }
 
 function normalizeState(value) {
@@ -2131,3 +2174,4 @@ function registerServiceWorker() {
 registerServiceWorker();
 render();
 applySyncSettingsFromUrl();
+autoPullCloudOnStartup();
