@@ -1043,8 +1043,11 @@ function renderHarvestList() {
     .forEach((harvest) => {
       const seedling = findSeedling(harvest.seedlingId);
       const item = createRecordItem({
+        variant: "harvest",
+        icon: "収",
+        badge: harvest.date,
         title: seedling ? seedlingLabel(seedling) : "削除済みの苗",
-        meta: [harvest.date, harvest.memo].filter(Boolean).join(" / "),
+        meta: [seedling ? "畑マップから記録" : "", harvest.memo].filter(Boolean).join(" / "),
         total: `${formatNumber(harvest.amount)} ${harvest.unit}`,
         onDelete: () => deleteRecord("harvests", harvest.id)
       });
@@ -1066,7 +1069,10 @@ function renderExpenseList() {
       const seedling = findSeedling(expense.seedlingId);
       const related = seedling ? seedlingLabel(seedling) : "畑全体";
       const item = createRecordItem({
-        title: `${expense.name} (${expense.category})`,
+        variant: "expense",
+        icon: "費",
+        badge: expense.category || "その他",
+        title: expense.name,
         meta: [expense.date, related, expense.receiptImage ? "レシートあり" : "", expense.memo].filter(Boolean).join(" / "),
         total: `${formatNumber(expense.amount)}円`,
         onDelete: () => deleteRecord("expenses", expense.id)
@@ -1452,12 +1458,26 @@ function resizeReceiptImage(file) {
   });
 }
 
-function createRecordItem({ title, meta, total, onEdit, onDelete }) {
+function createRecordItem({ title, meta, total, onEdit, onDelete, variant = "", icon = "", badge = "" }) {
   const article = document.createElement("article");
-  article.className = "record-item";
+  article.className = ["record-item", variant ? `record-item-${variant}` : ""].filter(Boolean).join(" ");
+
+  if (icon) {
+    const iconElement = document.createElement("div");
+    iconElement.className = "record-icon";
+    iconElement.textContent = icon;
+    article.append(iconElement);
+  }
 
   const main = document.createElement("div");
   main.className = "record-main";
+
+  if (badge) {
+    const badgeElement = document.createElement("span");
+    badgeElement.className = "record-badge";
+    badgeElement.textContent = badge;
+    main.append(badgeElement);
+  }
 
   const titleElement = document.createElement("p");
   titleElement.className = "record-title";
