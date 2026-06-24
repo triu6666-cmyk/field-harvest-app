@@ -1408,6 +1408,10 @@ select:focus {
 }
 
 @media (max-width: 640px) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   .app-header,
   .grid-controls,
   .map-tools {
@@ -1416,37 +1420,126 @@ select:focus {
 
   .app-header {
     flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 8px 22px rgba(8, 73, 74, 0.18);
+  }
+
+  .app-header h1 {
+    font-size: 22px;
+    line-height: 1.15;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+  }
+
+  .app-shell {
+    gap: 12px;
+    padding: 12px 10px 28px;
   }
 
   .header-actions {
-    align-self: flex-end;
+    align-self: stretch;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .icon-button {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+  }
+
+  .sync-mini-status {
+    min-height: 26px;
+    max-width: 76px;
+    padding: 3px 7px;
+    font-size: 10px;
+  }
+
+  .section-heading {
+    gap: 7px;
+    margin-bottom: 10px;
+  }
+
+  .section-heading h2 {
+    font-size: 19px;
+  }
+
+  .muted {
+    font-size: 12px;
+    line-height: 1.45;
   }
 
   .map-tools {
     width: auto;
     grid-template-columns: 1fr;
     justify-items: stretch;
+    gap: 8px;
+  }
+
+  .filter-control {
+    min-width: 0;
+  }
+
+  .map-pages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .page-button {
+    min-height: 42px;
   }
 
   .grid-controls {
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 6px;
   }
 
   .grid-controls input {
     width: 100%;
   }
 
+  input,
+  select {
+    min-height: 42px;
+    padding: 9px 10px;
+    font-size: 16px;
+  }
+
+  label {
+    gap: 5px;
+    font-size: 12px;
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .crop-picker {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
   }
 
   .tabs {
     grid-template-columns: repeat(2, 1fr);
+    position: sticky;
+    top: 82px;
+    z-index: 8;
+    padding: 6px;
+    box-shadow: 0 8px 18px rgba(8, 73, 74, 0.08);
+  }
+
+  .tab-button {
+    min-height: 38px;
+    padding: 6px 4px;
+    font-size: 12px;
+  }
+
+  .tab-panel {
+    padding: 12px;
   }
 
   .harvest-summary {
@@ -1472,19 +1565,103 @@ select:focus {
 
   .field-grid {
     gap: 8px;
-    padding: 10px;
+    padding: 8px;
+    min-height: 380px;
+    max-height: 62vh;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding: 8px;
   }
 
   .field-row {
-    grid-template-columns: 42px 1fr;
+    grid-template-columns: 36px 1fr;
     min-width: 720px;
+    gap: 4px;
   }
 
   .compact-cells {
     grid-template-columns: repeat(var(--segments), minmax(30px, 1fr));
   }
 
+  .row-label {
+    font-size: 12px;
+    border-radius: 7px;
+  }
+
   .field-cell {
     min-height: 54px;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .field-cell.planted .cell-code {
+    font-size: 17px;
+  }
+
+  .field-cell.planted .quick-button {
+    min-height: 21px;
+    font-size: 12px;
+  }
+
+  .field-cell:not(.planted) .quick-button {
+    min-height: 26px;
+    font-size: 15px;
+  }
+
+  .copy-mode-banner {
+    top: 86px;
+    left: 8px;
+    width: calc(100vw - 16px);
+    padding: 8px 8px 8px 10px;
+  }
+
+  .copy-mode-text {
+    font-size: 12px;
+  }
+
+  .modal-backdrop {
+    padding: 8px;
+  }
+
+  .modal-panel {
+    width: min(100%, 560px);
+    max-height: calc(100vh - 16px);
+    border-radius: 10px;
+  }
+
+  .modal-header {
+    padding: 12px;
+  }
+
+  .modal-body {
+    padding: 12px;
+  }
+
+  .crop-card {
+    grid-template-columns: 26px 1fr;
+    min-height: 44px;
+    padding: 6px;
+  }
+
+  .crop-card-label {
+    font-size: 12px;
+  }
+
+  .form-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .record-section-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .aggregate-tabs {
+    width: 100%;
+  }
+
+  .summary-card,
+  .daily-history {
+    padding: 9px;
   }
 }
