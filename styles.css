@@ -271,6 +271,38 @@ select:focus {
   font-weight: 900;
 }
 
+.field-column-guide {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 5px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.column-guide-label,
+.column-number {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(8, 118, 66, 0.2);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #075638;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.column-guide-cells {
+  --segments: 20;
+  display: grid;
+  grid-template-columns: repeat(var(--segments), minmax(30px, 1fr));
+  gap: 3px;
+}
+
+.column-number {
+  min-height: 24px;
+}
+
 .copy-mode-banner {
   display: flex;
   align-items: center;
@@ -1593,7 +1625,30 @@ select:focus {
     gap: 4px;
   }
 
+  .field-column-guide {
+    grid-template-columns: 36px 1fr;
+    min-width: 1940px;
+    gap: 4px;
+    position: sticky;
+    top: 0;
+    z-index: 4;
+  }
+
+  .column-guide-label,
+  .column-number {
+    min-height: 28px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.86);
+    font-size: 13px;
+    box-shadow: 0 4px 10px rgba(112, 88, 34, 0.12);
+  }
+
   .compact-cells {
+    grid-template-columns: repeat(var(--segments), minmax(90px, 1fr));
+    gap: 5px;
+  }
+
+  .column-guide-cells {
     grid-template-columns: repeat(var(--segments), minmax(90px, 1fr));
     gap: 5px;
   }

@@ -550,6 +550,8 @@ function renderField() {
     elements.fieldGrid.append(createCopyModeBanner());
   }
 
+  elements.fieldGrid.append(createColumnGuide());
+
   for (let row = 1; row <= state.grid.rows; row += 1) {
     const fieldRow = document.createElement("div");
     fieldRow.className = "field-row";
@@ -569,6 +571,29 @@ function renderField() {
     fieldRow.append(rowLabel, cells);
     elements.fieldGrid.append(fieldRow);
   }
+}
+
+function createColumnGuide() {
+  const guide = document.createElement("div");
+  guide.className = "field-column-guide";
+
+  const label = document.createElement("div");
+  label.className = "column-guide-label";
+  label.textContent = "列";
+
+  const numbers = document.createElement("div");
+  numbers.className = "column-guide-cells";
+  numbers.style.setProperty("--segments", state.grid.columns);
+
+  for (let segment = 1; segment <= state.grid.columns; segment += 1) {
+    const number = document.createElement("div");
+    number.className = "column-number";
+    number.textContent = displaySegmentNumber(segment);
+    numbers.append(number);
+  }
+
+  guide.append(label, numbers);
+  return guide;
 }
 
 function createCopyModeBanner() {
