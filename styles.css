@@ -1589,12 +1589,13 @@ select:focus {
 
   .field-row {
     grid-template-columns: 36px 1fr;
-    min-width: 720px;
+    min-width: 1740px;
     gap: 4px;
   }
 
   .compact-cells {
-    grid-template-columns: repeat(var(--segments), minmax(30px, 1fr));
+    grid-template-columns: repeat(var(--segments), minmax(80px, 1fr));
+    gap: 5px;
   }
 
   .row-label {
@@ -1603,8 +1604,13 @@ select:focus {
   }
 
   .field-cell {
-    min-height: 54px;
-    padding: 3px;
+    min-height: 76px;
+    padding: 5px;
+    gap: 3px;
+    border-radius: 7px;
+  }
+
+  .cell-planted-content {
     gap: 2px;
   }
 
@@ -1612,14 +1618,38 @@ select:focus {
     font-size: 17px;
   }
 
+  .plant-name {
+    margin-inline: 9px;
+    padding: 2px 6px;
+    font-size: 11px;
+  }
+
+  .harvest-count-value {
+    font-size: 24px;
+  }
+
+  .harvest-count-unit {
+    font-size: 10px;
+  }
+
+  .plant-variety {
+    font-size: 9px;
+  }
+
+  .harvest-actions {
+    gap: 4px;
+  }
+
   .field-cell.planted .quick-button {
-    min-height: 21px;
-    font-size: 12px;
+    min-height: 30px;
+    border-radius: 6px;
+    font-size: 14px;
   }
 
   .field-cell:not(.planted) .quick-button {
-    min-height: 26px;
-    font-size: 15px;
+    min-height: 38px;
+    border-radius: 6px;
+    font-size: 20px;
   }
 
   .copy-mode-banner {
