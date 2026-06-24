@@ -853,39 +853,22 @@ function renderHarvestSummary() {
   const currentMonth = today.slice(0, 7);
   const todayTotals = harvestTotalsForPeriod((harvest) => harvest.date === today);
   const monthTotals = harvestTotalsForPeriod((harvest) => harvest.date?.startsWith(currentMonth));
-  const dayGroups = harvestTotalsByDate();
+  const allTotals = harvestTotalsForPeriod(() => true);
 
   elements.harvestSummary.append(
     createSummaryCard("今日", todayTotals || "収穫なし"),
-    createSummaryCard("今月", monthTotals || "収穫なし")
+    createSummaryCard("今月", monthTotals || "収穫なし"),
+    createSummaryCard("累計", allTotals || "収穫なし"),
+    createHarvestChartPanel(
+      "今月の野菜別ランキング",
+      harvestCropChartRows((harvest) => harvest.date?.startsWith(currentMonth))
+    ),
+    createHarvestChartPanel(
+      "直近7日の推移",
+      harvestDailyChartRows(7),
+      "日別の収穫記録がありません"
+    )
   );
-
-  const history = document.createElement("div");
-  history.className = "daily-history";
-
-  const title = document.createElement("p");
-  title.className = "daily-history-title";
-  title.textContent = "日別";
-  history.append(title);
-
-  Object.entries(dayGroups)
-    .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
-    .slice(0, 7)
-    .forEach(([date, total]) => {
-      const row = document.createElement("div");
-      row.className = "daily-history-row";
-
-      const dateElement = document.createElement("span");
-      dateElement.textContent = date;
-
-      const totalElement = document.createElement("strong");
-      totalElement.textContent = formatHarvestTotals(total);
-
-      row.append(dateElement, totalElement);
-      history.append(row);
-    });
-
-  elements.harvestSummary.append(history);
 }
 
 function createSummaryCard(label, value) {
@@ -898,10 +881,94 @@ function createSummaryCard(label, value) {
 
   const valueElement = document.createElement("strong");
   valueElement.className = "summary-value";
-  valueElement.textContent = value;
+  valueElement.textContent = String(value).replaceAll(" / ", "\n");
 
   card.append(labelElement, valueElement);
   return card;
+}
+
+function createHarvestChartPanel(title, rows, emptyText = "収穫記録がありません") {
+  const panel = document.createElement("article");
+  panel.className = "harvest-chart-panel";
+
+  const titleElement = document.createElement("p");
+  titleElement.className = "harvest-chart-title";
+  titleElement.textContent = title;
+  panel.append(titleElement);
+
+  if (!rows.length) {
+    const empty = document.createElement("p");
+    empty.className = "chart-empty";
+    empty.textContent = emptyText;
+    panel.append(empty);
+    return panel;
+  }
+
+  const maxAmount = Math.max(...rows.map((row) => row.amount), 1);
+  rows.forEach((row) => {
+    const item = document.createElement("div");
+    item.className = "harvest-chart-row";
+    if (row.cropName) applyCropTheme(item, row.cropName);
+
+    const label = document.createElement("span");
+    label.className = "harvest-chart-label";
+    label.textContent = row.label;
+
+    const barWrap = document.createElement("div");
+    barWrap.className = "harvest-chart-bar-wrap";
+
+    const bar = document.createElement("span");
+    bar.className = "harvest-chart-bar";
+    bar.style.setProperty("--bar-size", `${Math.max(7, Math.round((row.amount / maxAmount) * 100))}%`);
+    barWrap.append(bar);
+
+    const total = document.createElement("strong");
+    total.className = "harvest-chart-total";
+    total.textContent = row.totalText;
+
+    item.append(label, barWrap, total);
+    panel.append(item);
+  });
+
+  return panel;
+}
+
+function harvestCropChartRows(predicate) {
+  const groups = state.harvests
+    .filter(predicate)
+    .reduce((acc, harvest) => {
+      const seedling = findSeedling(harvest.seedlingId);
+      const cropName = seedling?.cropName || "不明";
+      const key = `${cropName}\u0000${harvest.unit}`;
+      acc[key] = acc[key] || { cropName, unit: harvest.unit, amount: 0 };
+      acc[key].amount += harvest.amount;
+      return acc;
+    }, {});
+
+  return Object.values(groups)
+    .sort((a, b) => b.amount - a.amount || a.cropName.localeCompare(b.cropName, "ja"))
+    .slice(0, 6)
+    .map((row) => ({
+      label: row.cropName,
+      cropName: row.cropName,
+      amount: row.amount,
+      totalText: `${formatNumber(row.amount)}${row.unit}`
+    }));
+}
+
+function harvestDailyChartRows(limit) {
+  return Object.entries(harvestTotalsByDate())
+    .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
+    .slice(0, limit)
+    .map(([date, totals]) => {
+      const entries = Object.values(totals);
+      const amount = entries.reduce((sum, item) => sum + item.amount, 0);
+      return {
+        label: formatMonthDay(date),
+        amount,
+        totalText: formatHarvestTotals(totals)
+      };
+    });
 }
 
 function renderSeedlingList() {
@@ -2201,6 +2268,11 @@ function clampNumber(value, min, max) {
 
 function formatNumber(value) {
   return new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 1 }).format(value);
+}
+
+function formatMonthDay(date) {
+  const [, , month, day] = String(date).match(/^(\d{4})-(\d{2})-(\d{2})$/) || [];
+  return month && day ? `${Number(month)}/${Number(day)}` : date;
 }
 
 function createId(prefix) {
