@@ -1,0 +1,69 @@
+# 収穫量管理アプリ
+
+畑の区画、苗、収穫量、費用を記録するためのブラウザアプリです。
+
+## 主な機能
+
+- 左右ページ式の畑マップ
+- 区画ごとの野菜・品種登録
+- 区画からの収穫数カウント
+- 野菜別・品種別の収穫集計
+- 費用記録
+- レシート画像のOCR読み取り
+- 月別・分類別の費用集計
+- PWA対応
+- Supabaseによるクラウド同期の入口
+
+## 公開方式
+
+このアプリは静的ファイルだけで動くため、GitHub Pagesで公開できます。
+
+公開に必要な主なファイル:
+
+- `index.html`
+- `styles.css`
+- `app.js`
+- `storage.js`
+- `manifest.webmanifest`
+- `service-worker.js`
+- `app-icon.svg`
+
+## データ保存
+
+初期状態では、データはブラウザの`localStorage`に保存されます。
+
+保存キー:
+
+```text
+field-harvest-manager-v1
+```
+
+PCとスマホで同じデータを使うには、アプリ右上のクラウド同期設定からSupabaseを設定します。
+
+## Supabase同期
+
+Supabase側には以下のSQLを実行してください。
+
+```text
+supabase-schema.sql
+```
+
+その後、アプリの`☁`ボタンから以下を設定します。
+
+- Supabase URL
+- anon public key
+- 共有データID
+
+## ローカルでスマホ確認
+
+同じWi-Fi内でスマホから確認する場合は、PCで以下を起動します。
+
+```text
+start-mobile-server.cmd
+```
+
+詳しい手順は以下を参照してください。
+
+```text
+スマホで開く手順.md
+```

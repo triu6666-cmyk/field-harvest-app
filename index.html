@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0a914d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="収穫量管理">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>収穫量管理</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="app-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="app-icon.svg">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">畑の記録</p>
+        <h1>収穫量管理</h1>
+      </div>
+      <div class="header-actions">
+        <button class="icon-button" id="syncSettingsButton" type="button" title="クラウド同期を設定" aria-label="クラウド同期を設定">☁</button>
+        <button class="icon-button" id="exportButton" type="button" title="データを書き出す" aria-label="データを書き出す">↓</button>
+        <label class="icon-button file-button" title="データを読み込む" aria-label="データを読み込む">
+          ↑
+          <input id="importInput" type="file" accept="application/json">
+        </label>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="map-section" aria-labelledby="mapTitle">
+        <div class="section-heading">
+          <div>
+            <h2 id="mapTitle">畑マップ</h2>
+            <p id="summaryText" class="muted"></p>
+          </div>
+          <div class="map-tools">
+            <div class="map-pages" aria-label="畑の左右ページ">
+              <button class="page-button active" type="button" data-side="L">左ページ</button>
+              <button class="page-button" type="button" data-side="R">右ページ</button>
+            </div>
+            <div class="grid-controls" aria-label="畑マップの形">
+              <label>
+                1行の区画数
+                <input id="columnsInput" type="number" min="1" max="30" value="20">
+              </label>
+              <label>
+                段数
+                <input id="rowsInput" type="number" min="1" max="20" value="5">
+              </label>
+              <button id="resizeGridButton" class="secondary-button" type="button">変更</button>
+            </div>
+            <label class="filter-control">
+              表示
+              <select id="mapFilterSelect">
+                <option value="all">全部</option>
+                <option value="planted">植えてある区画だけ</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div id="fieldGrid" class="field-grid" aria-label="畑のマス"></div>
+      </section>
+
+      <section class="workspace">
+        <nav class="tabs" aria-label="入力メニュー">
+          <button class="tab-button hidden" type="button" data-tab="seedlings">苗</button>
+          <button class="tab-button" type="button" data-tab="harvests">収穫</button>
+          <button class="tab-button" type="button" data-tab="expenses">費用</button>
+          <button class="tab-button active" type="button" data-tab="records">一覧</button>
+        </nav>
+
+        <div class="tab-panel" id="seedlingsPanel">
+          <form id="seedlingForm" class="form-grid">
+            <label>
+              野菜名
+              <select id="cropNameInput" required>
+                <option value="" disabled selected>野菜を選択</option>
+                <option value="トマト">トマト</option>
+                <option value="ミニトマト">ミニトマト</option>
+                <option value="ナス">ナス</option>
+                <option value="きゅうり">きゅうり</option>
+                <option value="ゴーヤ">ゴーヤ</option>
+                <option value="ズッキーニ">ズッキーニ</option>
+                <option value="ピーマン">ピーマン</option>
+                <option value="赤パプリカ">赤パプリカ</option>
+                <option value="黄パプリカ">黄パプリカ</option>
+                <option value="ししとう">ししとう</option>
+                <option value="オクラ">オクラ</option>
+                <option value="いんげん">いんげん</option>
+                <option value="枝豆">枝豆</option>
+                <option value="えんどう">えんどう</option>
+                <option value="とうもろこし">とうもろこし</option>
+                <option value="かぼちゃ">かぼちゃ</option>
+                <option value="スイカ">スイカ</option>
+                <option value="メロン">メロン</option>
+                <option value="大根">大根</option>
+                <option value="かぶ">かぶ</option>
+                <option value="にんじん">にんじん</option>
+                <option value="じゃがいも">じゃがいも</option>
+                <option value="さつまいも">さつまいも</option>
+                <option value="さといも">さといも</option>
+                <option value="玉ねぎ">玉ねぎ</option>
+                <option value="にんにく">にんにく</option>
+                <option value="しょうが">しょうが</option>
+                <option value="ねぎ">ねぎ</option>
+                <option value="レタス">レタス</option>
+                <option value="キャベツ">キャベツ</option>
+                <option value="白菜">白菜</option>
+                <option value="ブロッコリー">ブロッコリー</option>
+                <option value="ほうれん草">ほうれん草</option>
+                <option value="小松菜">小松菜</option>
+                <option value="春菊">春菊</option>
+                <option value="パセリ">パセリ</option>
+                <option value="シソ">シソ</option>
+                <option value="アスパラ">アスパラ</option>
+                <option value="いちご">いちご</option>
+              </select>
+            </label>
+            <label>
+              品種・苗名
+              <input id="varietyInput" placeholder="桃太郎 1番苗">
+            </label>
+            <label>
+              植えた日
+              <input id="plantedDateInput" type="date">
+            </label>
+            <label>
+              マス
+              <select id="cellSelect"></select>
+            </label>
+            <label class="wide">
+              メモ
+              <input id="seedlingMemoInput" placeholder="支柱あり、日当たり良好など">
+            </label>
+            <div class="form-actions wide">
+              <button id="seedlingSubmitButton" class="primary-button" type="submit">苗を登録</button>
+              <button id="cancelSeedlingEditButton" class="secondary-button hidden" type="button">編集をやめる</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="tab-panel" id="harvestsPanel">
+          <form id="harvestForm" class="form-grid">
+            <label>
+              苗
+              <select id="harvestSeedlingSelect" required></select>
+            </label>
+            <label>
+              収穫日
+              <input id="harvestDateInput" type="date" required>
+            </label>
+            <label>
+              数量
+              <input id="harvestAmountInput" type="number" min="0" step="0.1" required>
+            </label>
+            <label>
+              単位
+              <select id="harvestUnitInput">
+                <option value="個">個</option>
+                <option value="g">g</option>
+                <option value="kg">kg</option>
+                <option value="本">本</option>
+                <option value="束">束</option>
+              </select>
+            </label>
+            <label class="wide">
+              メモ
+              <input id="harvestMemoInput" placeholder="完熟、傷あり、家用など">
+            </label>
+            <button class="primary-button wide" type="submit">収穫を記録</button>
+          </form>
+        </div>
+
+        <div class="tab-panel" id="expensesPanel">
+          <form id="expenseForm" class="form-grid">
+            <label>
+              日付
+              <input id="expenseDateInput" type="date" required>
+            </label>
+            <label>
+              内容
+              <input id="expenseNameInput" placeholder="肥料、支柱、苗など">
+            </label>
+            <label>
+              分類
+              <select id="expenseCategoryInput">
+                <option value="苗・種">苗・種</option>
+                <option value="肥料・土">肥料・土</option>
+                <option value="資材・道具">資材・道具</option>
+                <option value="薬剤・防虫">薬剤・防虫</option>
+                <option value="その他">その他</option>
+              </select>
+            </label>
+            <label>
+              金額
+              <input id="expenseAmountInput" type="number" min="0" step="1" required>
+            </label>
+            <select id="expenseSeedlingSelect" class="hidden" aria-hidden="true"></select>
+            <label class="wide receipt-field">
+              レシート画像
+              <input id="receiptImageInput" type="file" accept="image/*">
+              <span class="field-hint">写真を残せます。読み取り後も金額は確認してから登録します。</span>
+            </label>
+            <div id="receiptPreview" class="receipt-preview wide hidden"></div>
+            <div class="receipt-ocr-actions wide">
+              <button id="receiptReadButton" class="secondary-button" type="button" disabled>合計金額を読み取る</button>
+              <span id="receiptOcrStatus" class="receipt-ocr-status">レシート画像を選ぶと読み取りできます。</span>
+              <div id="receiptCandidateList" class="receipt-candidate-list hidden" aria-live="polite"></div>
+            </div>
+            <label class="wide">
+              メモ
+              <input id="expenseMemoInput" placeholder="購入店、内容など">
+            </label>
+            <button class="primary-button wide" type="submit">費用を記録</button>
+          </form>
+          <section class="expense-dashboard-section">
+            <h3>費用ダッシュボード</h3>
+            <div id="expenseSummary" class="expense-summary"></div>
+          </section>
+          <section class="expense-dashboard-section">
+            <h3>最近の費用</h3>
+            <div id="expenseManagerList" class="record-list"></div>
+          </section>
+        </div>
+
+        <div class="tab-panel active" id="recordsPanel">
+          <section class="harvest-summary-section">
+            <h3>収穫ダッシュボード</h3>
+            <div id="harvestSummary" class="harvest-summary"></div>
+          </section>
+          <section class="record-table-section">
+            <div class="record-section-header">
+              <h3>野菜・品種別の収穫</h3>
+              <div class="aggregate-tabs" aria-label="収穫集計の切り替え">
+                <button id="aggregateByVarietyButton" class="aggregate-tab active" type="button">品種別</button>
+                <button id="aggregateByCropButton" class="aggregate-tab" type="button">野菜別</button>
+              </div>
+            </div>
+            <div id="seedlingList" class="record-list"></div>
+          </section>
+          <div class="record-columns">
+            <section>
+              <h3>最近の収穫</h3>
+              <div id="harvestList" class="record-list"></div>
+            </section>
+            <section>
+              <h3>費用</h3>
+              <div id="expenseList" class="record-list"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="seedlingModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="seedlingModalTitle">
+      <section class="modal-panel">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">区画に登録</p>
+            <h2 id="seedlingModalTitle">苗を登録</h2>
+          </div>
+          <button id="closeSeedlingModalButton" class="modal-close-button" type="button" aria-label="閉じる"></button>
+        </div>
+        <form id="modalSeedlingForm" class="form-grid">
+          <div class="wide">
+            <div class="modal-tool-row">
+              <span class="field-label">野菜名</span>
+              <button id="pasteSeedlingButton" class="secondary-button paste-seedling-button hidden" type="button">コピーを貼り付け</button>
+            </div>
+            <div id="cropPicker" class="crop-picker" role="listbox" aria-label="野菜名"></div>
+            <select id="modalCropNameInput" class="visually-hidden-select" aria-label="選択中の野菜名"></select>
+          </div>
+          <label>
+            品種・苗名
+            <input id="modalVarietyInput" placeholder="桃太郎 1番苗">
+          </label>
+          <label>
+            植えた日
+            <input id="modalPlantedDateInput" type="date">
+          </label>
+          <label>
+            マス
+            <select id="modalCellSelect"></select>
+          </label>
+          <label class="wide">
+            メモ
+            <input id="modalSeedlingMemoInput" placeholder="支柱あり、日当たり良好など">
+          </label>
+          <div class="form-actions wide">
+            <button id="modalSeedlingSubmitButton" class="primary-button" type="submit">苗を登録</button>
+            <button id="cancelModalSeedlingButton" class="secondary-button" type="button">キャンセル</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div id="syncModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="syncModalTitle">
+      <section class="modal-panel sync-modal-panel">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">クラウド同期</p>
+            <h2 id="syncModalTitle">スマホとPCで同じデータを使う</h2>
+          </div>
+          <button id="closeSyncModalButton" class="modal-close-button" type="button" aria-label="閉じる"></button>
+        </div>
+        <div class="sync-panel">
+          <p id="syncStatusText" class="sync-status">未設定です。設定するまでは、この端末内だけに保存します。</p>
+          <div class="sync-schema-box">
+            <strong>Supabaseに作るテーブル</strong>
+            <code>field_app_states(id text primary key, data jsonb not null, updated_at timestamptz)</code>
+          </div>
+          <label>
+            Supabase URL
+            <input id="syncUrlInput" type="url" placeholder="https://xxxx.supabase.co">
+          </label>
+          <label>
+            anon public key
+            <input id="syncAnonKeyInput" type="password" placeholder="Supabaseのanon key">
+          </label>
+          <label>
+            共有データID
+            <div class="sync-record-id-row">
+              <input id="syncRecordIdInput" placeholder="生成ボタンで作成">
+              <button id="generateSyncIdButton" class="secondary-button" type="button">生成</button>
+            </div>
+          </label>
+          <div class="form-actions sync-actions">
+            <button id="saveSyncSettingsButton" class="primary-button" type="button">設定を保存</button>
+            <button id="testCloudButton" class="secondary-button" type="button">接続テスト</button>
+            <button id="pullCloudButton" class="secondary-button" type="button">クラウドから取得</button>
+            <button id="pushCloudButton" class="secondary-button" type="button">クラウドへ保存</button>
+            <button id="copySyncLinkButton" class="secondary-button" type="button">設定リンクをコピー</button>
+            <button id="clearSyncSettingsButton" class="danger-button" type="button">設定を削除</button>
+          </div>
+          <div id="syncLinkBox" class="sync-link-box hidden">
+            <strong>スマホ設定リンク</strong>
+            <textarea id="syncLinkOutput" readonly rows="3" aria-label="スマホ設定リンク"></textarea>
+            <span>このリンクにはanon keyと共有データIDが含まれます。自分の端末や信頼できる相手だけに送ってください。</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <template id="emptyStateTemplate">
+      <p class="empty-state">まだ記録がありません。</p>
+    </template>
+
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="storage.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

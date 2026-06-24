@@ -1,0 +1,19 @@
+{
+  "name": "収穫量管理",
+  "short_name": "収穫管理",
+  "description": "畑の苗、収穫量、費用を記録するアプリ",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3fbff",
+  "theme_color": "#0a914d",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,2133 @@
+const storage = window.fieldHarvestStorage;
+
+const defaultState = {
+  layoutVersion: 2,
+  grid: { columns: 20, rows: 5 },
+  seedlings: [],
+  harvests: [],
+  expenses: []
+};
+
+const CROP_PICKER_ITEMS = [
+  { name: "トマト" },
+  { name: "ミニトマト" },
+  { name: "ナス" },
+  { name: "きゅうり" },
+  { name: "ゴーヤ" },
+  { name: "ズッキーニ" },
+  { name: "ピーマン" },
+  { name: "赤パプリカ" },
+  { name: "黄パプリカ" },
+  { name: "ししとう" },
+  { name: "オクラ" },
+  { name: "いんげん" },
+  { name: "枝豆" },
+  { name: "えんどう" },
+  { name: "とうもろこし" },
+  { name: "かぼちゃ" },
+  { name: "スイカ" },
+  { name: "メロン" },
+  { name: "大根" },
+  { name: "かぶ" },
+  { name: "にんじん" },
+  { name: "じゃがいも" },
+  { name: "さつまいも" },
+  { name: "さといも" },
+  { name: "玉ねぎ" },
+  { name: "にんにく" },
+  { name: "しょうが" },
+  { name: "ねぎ" },
+  { name: "レタス" },
+  { name: "キャベツ" },
+  { name: "白菜" },
+  { name: "ブロッコリー" },
+  { name: "ほうれん草" },
+  { name: "小松菜" },
+  { name: "春菊" },
+  { name: "パセリ" },
+  { name: "シソ" },
+  { name: "アスパラ" },
+  { name: "いちご" }
+];
+
+let state = loadState();
+let editingSeedlingId = "";
+let modalSeedlingId = "";
+let copiedSeedlingTemplate = null;
+let copyPlacementTemplate = null;
+let pendingReceiptImage = "";
+let receiptAmountCandidates = [];
+let activeSide = "L";
+let mapFilter = "all";
+let aggregateMode = "variety";
+
+const elements = {
+  columnsInput: document.querySelector("#columnsInput"),
+  rowsInput: document.querySelector("#rowsInput"),
+  resizeGridButton: document.querySelector("#resizeGridButton"),
+  fieldGrid: document.querySelector("#fieldGrid"),
+  summaryText: document.querySelector("#summaryText"),
+  cellSelect: document.querySelector("#cellSelect"),
+  cropNameInput: document.querySelector("#cropNameInput"),
+  varietyInput: document.querySelector("#varietyInput"),
+  plantedDateInput: document.querySelector("#plantedDateInput"),
+  seedlingMemoInput: document.querySelector("#seedlingMemoInput"),
+  seedlingForm: document.querySelector("#seedlingForm"),
+  seedlingSubmitButton: document.querySelector("#seedlingSubmitButton"),
+  cancelSeedlingEditButton: document.querySelector("#cancelSeedlingEditButton"),
+  seedlingModal: document.querySelector("#seedlingModal"),
+  seedlingModalTitle: document.querySelector("#seedlingModalTitle"),
+  modalSeedlingForm: document.querySelector("#modalSeedlingForm"),
+  cropPicker: document.querySelector("#cropPicker"),
+  modalCropNameInput: document.querySelector("#modalCropNameInput"),
+  modalVarietyInput: document.querySelector("#modalVarietyInput"),
+  modalPlantedDateInput: document.querySelector("#modalPlantedDateInput"),
+  modalCellSelect: document.querySelector("#modalCellSelect"),
+  modalSeedlingMemoInput: document.querySelector("#modalSeedlingMemoInput"),
+  modalSeedlingSubmitButton: document.querySelector("#modalSeedlingSubmitButton"),
+  pasteSeedlingButton: document.querySelector("#pasteSeedlingButton"),
+  closeSeedlingModalButton: document.querySelector("#closeSeedlingModalButton"),
+  cancelModalSeedlingButton: document.querySelector("#cancelModalSeedlingButton"),
+  syncSettingsButton: document.querySelector("#syncSettingsButton"),
+  syncModal: document.querySelector("#syncModal"),
+  closeSyncModalButton: document.querySelector("#closeSyncModalButton"),
+  syncStatusText: document.querySelector("#syncStatusText"),
+  syncUrlInput: document.querySelector("#syncUrlInput"),
+  syncAnonKeyInput: document.querySelector("#syncAnonKeyInput"),
+  syncRecordIdInput: document.querySelector("#syncRecordIdInput"),
+  generateSyncIdButton: document.querySelector("#generateSyncIdButton"),
+  saveSyncSettingsButton: document.querySelector("#saveSyncSettingsButton"),
+  testCloudButton: document.querySelector("#testCloudButton"),
+  pullCloudButton: document.querySelector("#pullCloudButton"),
+  pushCloudButton: document.querySelector("#pushCloudButton"),
+  copySyncLinkButton: document.querySelector("#copySyncLinkButton"),
+  clearSyncSettingsButton: document.querySelector("#clearSyncSettingsButton"),
+  syncLinkBox: document.querySelector("#syncLinkBox"),
+  syncLinkOutput: document.querySelector("#syncLinkOutput"),
+  harvestSeedlingSelect: document.querySelector("#harvestSeedlingSelect"),
+  harvestDateInput: document.querySelector("#harvestDateInput"),
+  harvestAmountInput: document.querySelector("#harvestAmountInput"),
+  harvestUnitInput: document.querySelector("#harvestUnitInput"),
+  harvestMemoInput: document.querySelector("#harvestMemoInput"),
+  harvestForm: document.querySelector("#harvestForm"),
+  expenseSeedlingSelect: document.querySelector("#expenseSeedlingSelect"),
+  expenseDateInput: document.querySelector("#expenseDateInput"),
+  expenseNameInput: document.querySelector("#expenseNameInput"),
+  expenseCategoryInput: document.querySelector("#expenseCategoryInput"),
+  expenseAmountInput: document.querySelector("#expenseAmountInput"),
+  expenseMemoInput: document.querySelector("#expenseMemoInput"),
+  receiptImageInput: document.querySelector("#receiptImageInput"),
+  receiptPreview: document.querySelector("#receiptPreview"),
+  receiptReadButton: document.querySelector("#receiptReadButton"),
+  receiptOcrStatus: document.querySelector("#receiptOcrStatus"),
+  receiptCandidateList: document.querySelector("#receiptCandidateList"),
+  expenseForm: document.querySelector("#expenseForm"),
+  expenseSummary: document.querySelector("#expenseSummary"),
+  expenseManagerList: document.querySelector("#expenseManagerList"),
+  seedlingList: document.querySelector("#seedlingList"),
+  aggregateByVarietyButton: document.querySelector("#aggregateByVarietyButton"),
+  aggregateByCropButton: document.querySelector("#aggregateByCropButton"),
+  harvestList: document.querySelector("#harvestList"),
+  expenseList: document.querySelector("#expenseList"),
+  harvestSummary: document.querySelector("#harvestSummary"),
+  emptyStateTemplate: document.querySelector("#emptyStateTemplate"),
+  exportButton: document.querySelector("#exportButton"),
+  importInput: document.querySelector("#importInput"),
+  mapFilterSelect: document.querySelector("#mapFilterSelect"),
+  mapSideButtons: document.querySelectorAll(".page-button")
+};
+
+const today = new Date().toISOString().slice(0, 10);
+elements.plantedDateInput.value = today;
+elements.modalPlantedDateInput.value = today;
+elements.harvestDateInput.value = today;
+elements.expenseDateInput.value = today;
+elements.expenseCategoryInput.value = "その他";
+elements.columnsInput.value = state.grid.columns;
+elements.rowsInput.value = state.grid.rows;
+copyCropOptionsToModal();
+renderCropPicker();
+
+document.querySelectorAll(".tab-button").forEach((button) => {
+  button.addEventListener("click", () => activateTab(button.dataset.tab));
+});
+
+elements.mapSideButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    activeSide = button.dataset.side;
+    renderField();
+    renderSideButtons();
+  });
+});
+
+elements.resizeGridButton.addEventListener("click", () => {
+  const columns = clampNumber(elements.columnsInput.value, 1, 30);
+  const rows = clampNumber(elements.rowsInput.value, 1, 20);
+  const previousGrid = state.grid;
+  const nextGrid = { columns, rows };
+  state.seedlings = state.seedlings.map((seedling) => ({
+    ...seedling,
+    cell: remapCellForGridResize(seedling.cell, previousGrid, nextGrid)
+  }));
+  state.grid = nextGrid;
+  saveAndRender();
+});
+
+elements.seedlingForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const seedlingData = {
+    cropName: elements.cropNameInput.value.trim(),
+    variety: elements.varietyInput.value.trim(),
+    plantedDate: elements.plantedDateInput.value,
+    cell: elements.cellSelect.value,
+    memo: elements.seedlingMemoInput.value.trim()
+  };
+
+  if (editingSeedlingId) {
+    state.seedlings = state.seedlings.map((seedling) => (
+      seedling.id === editingSeedlingId ? { ...seedling, ...seedlingData } : seedling
+    ));
+    finishSeedlingEdit();
+  } else {
+    const seedling = {
+      id: createId("seedling"),
+      ...seedlingData
+    };
+    state.seedlings.push(seedling);
+    elements.seedlingForm.reset();
+    elements.plantedDateInput.value = today;
+    saveAndRender();
+    const nextCell = nextAvailableCell(seedling.cell);
+    if (nextCell) {
+      elements.cellSelect.value = nextCell;
+    }
+  }
+});
+
+elements.cancelSeedlingEditButton.addEventListener("click", () => {
+  finishSeedlingEdit();
+});
+
+elements.pasteSeedlingButton.addEventListener("click", () => {
+  if (!copiedSeedlingTemplate) return;
+  applySeedlingTemplateToModal(copiedSeedlingTemplate);
+});
+
+elements.modalSeedlingForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (!elements.modalCropNameInput.value) {
+    alert("野菜を選択してください。");
+    return;
+  }
+
+  const seedlingData = {
+    cropName: elements.modalCropNameInput.value.trim(),
+    variety: elements.modalVarietyInput.value.trim(),
+    plantedDate: elements.modalPlantedDateInput.value,
+    cell: elements.modalCellSelect.value,
+    memo: elements.modalSeedlingMemoInput.value.trim()
+  };
+
+  if (modalSeedlingId) {
+    state.seedlings = state.seedlings.map((seedling) => (
+      seedling.id === modalSeedlingId ? { ...seedling, ...seedlingData } : seedling
+    ));
+  } else {
+    state.seedlings.push({
+      id: createId("seedling"),
+      ...seedlingData
+    });
+  }
+
+  copiedSeedlingTemplate = createSeedlingTemplate(seedlingData);
+  closeSeedlingModal();
+  saveAndRender();
+});
+
+elements.closeSeedlingModalButton.addEventListener("click", closeSeedlingModal);
+elements.cancelModalSeedlingButton.addEventListener("click", closeSeedlingModal);
+elements.seedlingModal.addEventListener("click", (event) => {
+  if (event.target === elements.seedlingModal) {
+    closeSeedlingModal();
+  }
+});
+
+elements.syncSettingsButton.addEventListener("click", openSyncModal);
+elements.closeSyncModalButton.addEventListener("click", closeSyncModal);
+elements.syncModal.addEventListener("click", (event) => {
+  if (event.target === elements.syncModal) {
+    closeSyncModal();
+  }
+});
+
+elements.saveSyncSettingsButton.addEventListener("click", () => {
+  storage.saveSettings({
+    url: elements.syncUrlInput.value,
+    anonKey: elements.syncAnonKeyInput.value,
+    recordId: elements.syncRecordIdInput.value
+  });
+  renderSyncSettings();
+  renderSyncStatus("同期設定を保存しました。次の保存からクラウドにも送ります。");
+});
+
+elements.generateSyncIdButton.addEventListener("click", () => {
+  elements.syncRecordIdInput.value = createSyncRecordId();
+  renderSyncStatus("共有データIDを生成しました。PCとスマホで同じIDを使ってください。");
+});
+
+elements.clearSyncSettingsButton.addEventListener("click", () => {
+  storage.clearSettings();
+  renderSyncSettings();
+  renderSyncLink("");
+  renderSyncStatus("同期設定を削除しました。この端末内だけに保存します。");
+});
+
+elements.testCloudButton.addEventListener("click", async () => {
+  storage.saveSettings({
+    url: elements.syncUrlInput.value,
+    anonKey: elements.syncAnonKeyInput.value,
+    recordId: elements.syncRecordIdInput.value
+  });
+  await runCloudAction("接続を確認中です...", async () => {
+    await storage.testCloudConnection();
+    renderSyncStatus("Supabaseへ接続できました。クラウド保存を試せます。");
+  });
+});
+
+elements.pushCloudButton.addEventListener("click", async () => {
+  await runCloudAction("クラウドへ保存中です...", async () => {
+    await storage.pushCloud(state);
+    renderSyncStatus("現在のデータをクラウドへ保存しました。");
+  });
+});
+
+elements.copySyncLinkButton.addEventListener("click", async () => {
+  storage.saveSettings({
+    url: elements.syncUrlInput.value,
+    anonKey: elements.syncAnonKeyInput.value,
+    recordId: elements.syncRecordIdInput.value
+  });
+
+  try {
+    const link = createSyncSetupLink();
+    renderSyncLink(link);
+    await copyTextToClipboard(link);
+    renderSyncStatus("同期設定リンクをコピーしました。スマホで開くと同じ設定を取り込めます。");
+  } catch (error) {
+    renderSyncLink("");
+    renderSyncStatus(error.message || "同期設定リンクを作成できませんでした。");
+  }
+});
+
+[elements.syncUrlInput, elements.syncAnonKeyInput, elements.syncRecordIdInput].forEach((input) => {
+  input.addEventListener("input", () => renderSyncLink(""));
+});
+
+elements.pullCloudButton.addEventListener("click", async () => {
+  await runCloudAction("クラウドから取得中です...", async () => {
+    const remote = await storage.pullCloud();
+    if (!remote) {
+      renderSyncStatus("クラウドにデータがまだありません。先にクラウドへ保存してください。");
+      return;
+    }
+
+    state = normalizeState(remote.state);
+    render();
+    renderSyncStatus(`クラウドから取得しました。更新: ${formatSyncDate(remote.updatedAt)}`);
+  });
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !elements.syncModal.classList.contains("hidden")) {
+    closeSyncModal();
+  } else if (event.key === "Escape" && !elements.seedlingModal.classList.contains("hidden")) {
+    closeSeedlingModal();
+  } else if (event.key === "Escape" && copyPlacementTemplate) {
+    cancelCopyPlacement();
+  }
+});
+
+elements.mapFilterSelect.addEventListener("change", () => {
+  mapFilter = elements.mapFilterSelect.value;
+  renderField();
+});
+
+elements.aggregateByVarietyButton.addEventListener("click", () => {
+  aggregateMode = "variety";
+  renderSeedlingList();
+  renderAggregateTabs();
+});
+
+elements.aggregateByCropButton.addEventListener("click", () => {
+  aggregateMode = "crop";
+  renderSeedlingList();
+  renderAggregateTabs();
+});
+
+elements.receiptImageInput.addEventListener("change", async (event) => {
+  const file = event.target.files?.[0];
+  receiptAmountCandidates = [];
+  renderReceiptAmountCandidates();
+  if (!file) {
+    pendingReceiptImage = "";
+    renderReceiptPreview();
+    renderReceiptOcrStatus("レシート画像を選ぶと読み取りできます。");
+    return;
+  }
+
+  pendingReceiptImage = await resizeReceiptImage(file);
+  renderReceiptPreview();
+  renderReceiptOcrStatus("画像を保存予定です。必要なら合計金額を読み取れます。");
+});
+
+elements.receiptReadButton.addEventListener("click", async () => {
+  if (!pendingReceiptImage) return;
+
+  renderReceiptOcrStatus("読み取り中です...");
+  elements.receiptReadButton.disabled = true;
+
+  try {
+    const detectedText = await detectReceiptText(pendingReceiptImage);
+    receiptAmountCandidates = extractReceiptAmountCandidates(detectedText);
+    renderReceiptAmountCandidates(receiptAmountCandidates);
+    const amount = receiptAmountCandidates[0]?.amount || 0;
+    if (!amount) {
+      renderReceiptOcrStatus("合計金額を見つけられませんでした。金額欄へ手入力してください。");
+      return;
+    }
+
+    elements.expenseAmountInput.value = String(amount);
+    const suffix = receiptAmountCandidates.length > 1 ? "候補が違う場合は下の金額を押してください。" : "確認して登録してください。";
+    renderReceiptOcrStatus(`候補 ${formatNumber(amount)}円 を金額欄に入れました。${suffix}`);
+  } catch (error) {
+    renderReceiptOcrStatus(error.message || "読み取りに失敗しました。金額欄へ手入力してください。");
+  } finally {
+    elements.receiptReadButton.disabled = !pendingReceiptImage;
+  }
+});
+
+elements.receiptCandidateList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-receipt-amount]");
+  if (!button) return;
+
+  const amount = Number(button.dataset.receiptAmount);
+  if (!amount) return;
+
+  elements.expenseAmountInput.value = String(amount);
+  renderReceiptOcrStatus(`${formatNumber(amount)}円 を金額欄に入れました。確認して登録してください。`);
+});
+
+elements.harvestForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  addHarvest({
+    seedlingId: elements.harvestSeedlingSelect.value,
+    date: elements.harvestDateInput.value,
+    amount: Number(elements.harvestAmountInput.value),
+    unit: elements.harvestUnitInput.value,
+    memo: elements.harvestMemoInput.value.trim()
+  });
+  elements.harvestForm.reset();
+  elements.harvestDateInput.value = today;
+  elements.harvestUnitInput.value = "個";
+});
+
+elements.expenseForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  state.expenses.push({
+    id: createId("expense"),
+    seedlingId: "",
+    date: elements.expenseDateInput.value,
+    name: elements.expenseNameInput.value.trim() || "費用",
+    category: elements.expenseCategoryInput.value,
+    amount: Number(elements.expenseAmountInput.value),
+    memo: elements.expenseMemoInput.value.trim(),
+    source: pendingReceiptImage ? "receipt" : "manual",
+    receiptImage: pendingReceiptImage,
+    createdAt: new Date().toISOString()
+  });
+  elements.expenseForm.reset();
+  pendingReceiptImage = "";
+  renderReceiptPreview();
+  renderReceiptOcrStatus("レシート画像を選ぶと読み取りできます。");
+  elements.expenseDateInput.value = today;
+  elements.expenseCategoryInput.value = "その他";
+  saveAndRender();
+});
+
+elements.exportButton.addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `harvest-records-${today}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+elements.importInput.addEventListener("change", async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  try {
+    const imported = JSON.parse(await file.text());
+    state = normalizeState(imported);
+    saveAndRender();
+  } catch {
+    alert("読み込めないファイルです。");
+  } finally {
+    elements.importInput.value = "";
+  }
+});
+
+function render() {
+  elements.columnsInput.value = state.grid.columns;
+  elements.rowsInput.value = state.grid.rows;
+  renderMapFilterOptions();
+  renderCellOptions();
+  renderModalCellOptions();
+  renderSeedlingOptions();
+  renderField();
+  renderSideButtons();
+  renderRecords();
+  renderExpenseDashboard();
+  renderExpenseManagerList();
+  renderSummary();
+}
+
+function renderCellOptions() {
+  const occupiedCells = new Set(state.seedlings.map((seedling) => seedling.cell));
+  const editingSeedling = findSeedling(editingSeedlingId);
+  elements.cellSelect.replaceChildren();
+
+  getCells().forEach((cell) => {
+    const isCurrentEditingCell = editingSeedling?.cell === cell;
+    const isOccupied = occupiedCells.has(cell) && !isCurrentEditingCell;
+    const option = document.createElement("option");
+    option.value = cell;
+    option.textContent = isOccupied ? `${cellDisplayName(cell)} 使用中` : cellDisplayName(cell);
+    option.disabled = isOccupied;
+    elements.cellSelect.append(option);
+  });
+}
+
+function renderSeedlingOptions() {
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = state.seedlings.length ? "苗を選択" : "先に苗を登録";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+
+  elements.harvestSeedlingSelect.replaceChildren(placeholder.cloneNode(true));
+  elements.expenseSeedlingSelect.replaceChildren();
+
+  const allExpenseOption = document.createElement("option");
+  allExpenseOption.value = "";
+  allExpenseOption.textContent = "畑全体";
+  elements.expenseSeedlingSelect.append(allExpenseOption);
+
+  state.seedlings.forEach((seedling) => {
+    const option = document.createElement("option");
+    option.value = seedling.id;
+    option.textContent = seedlingLabel(seedling);
+    elements.harvestSeedlingSelect.append(option.cloneNode(true));
+    elements.expenseSeedlingSelect.append(option);
+  });
+}
+
+function renderField() {
+  elements.fieldGrid.replaceChildren();
+
+  const title = document.createElement("div");
+  title.className = "field-page-title";
+  title.textContent = activeSide === "L" ? "左ページ" : "右ページ";
+  elements.fieldGrid.append(title);
+
+  if (copyPlacementTemplate) {
+    elements.fieldGrid.append(createCopyModeBanner());
+  }
+
+  for (let row = 1; row <= state.grid.rows; row += 1) {
+    const fieldRow = document.createElement("div");
+    fieldRow.className = "field-row";
+
+    const rowLabel = document.createElement("div");
+    rowLabel.className = "row-label";
+    rowLabel.textContent = `${row}段`;
+
+    const cells = document.createElement("div");
+    cells.className = "compact-cells";
+    cells.style.setProperty("--segments", state.grid.columns);
+
+    for (let segment = 1; segment <= state.grid.columns; segment += 1) {
+      cells.append(createFieldCell(cellId(row, activeSide, segment)));
+    }
+
+    fieldRow.append(rowLabel, cells);
+    elements.fieldGrid.append(fieldRow);
+  }
+}
+
+function createCopyModeBanner() {
+  const banner = document.createElement("div");
+  banner.className = "copy-mode-banner";
+  applyCropTheme(banner, copyPlacementTemplate.cropName);
+
+  const text = document.createElement("div");
+  text.className = "copy-mode-text";
+  const cropName = document.createElement("strong");
+  cropName.textContent = copyPlacementTemplate.cropName;
+  text.append(cropName, "を複製中。空き区画の「置く」を押すと、そのまま登録します。");
+
+  const cancelButton = document.createElement("button");
+  cancelButton.className = "copy-mode-cancel";
+  cancelButton.type = "button";
+  cancelButton.textContent = "終了";
+  cancelButton.addEventListener("click", cancelCopyPlacement);
+
+  banner.append(text, cancelButton);
+  return banner;
+}
+
+function renderModalCellOptions() {
+  const occupiedCells = new Set(state.seedlings.map((seedling) => seedling.cell));
+  const editingSeedling = findSeedling(modalSeedlingId);
+  const selectedCell = elements.modalCellSelect.value;
+  elements.modalCellSelect.replaceChildren();
+
+  getCells().forEach((cell) => {
+    const isCurrentEditingCell = editingSeedling?.cell === cell;
+    const isOccupied = occupiedCells.has(cell) && !isCurrentEditingCell;
+    const option = document.createElement("option");
+    option.value = cell;
+    option.textContent = isOccupied ? `${cellDisplayName(cell)} 使用中` : cellDisplayName(cell);
+    option.disabled = isOccupied;
+    elements.modalCellSelect.append(option);
+  });
+
+  if (selectedCell && [...elements.modalCellSelect.options].some((option) => option.value === selectedCell && !option.disabled)) {
+    elements.modalCellSelect.value = selectedCell;
+  }
+}
+
+function renderMapFilterOptions() {
+  const selectedValue = mapFilter;
+  elements.mapFilterSelect.replaceChildren();
+
+  const options = [
+    { value: "all", label: "全部" },
+    { value: "planted", label: "植えてある区画だけ" },
+    ...uniqueCropNames().map((cropName) => ({
+      value: `crop:${cropName}`,
+      label: `${cropName}だけ`
+    }))
+  ];
+
+  options.forEach((item) => {
+    const option = document.createElement("option");
+    option.value = item.value;
+    option.textContent = item.label;
+    elements.mapFilterSelect.append(option);
+  });
+
+  elements.mapFilterSelect.value = options.some((item) => item.value === selectedValue) ? selectedValue : "all";
+  mapFilter = elements.mapFilterSelect.value;
+}
+
+function createFieldCell(cell) {
+  const seedling = state.seedlings.find((item) => item.cell === cell);
+  const visibleByFilter = isCellVisibleByFilter(seedling);
+  const tile = document.createElement("article");
+  tile.className = seedling ? "field-cell planted" : "field-cell";
+  tile.classList.toggle("copy-target", !seedling && Boolean(copyPlacementTemplate));
+  tile.classList.toggle("filtered-out", !visibleByFilter);
+  if (seedling) {
+    applyCropTheme(tile, seedling.cropName);
+  }
+
+  const code = document.createElement("div");
+  code.className = "cell-code";
+  code.textContent = cellShortName(cell);
+  tile.append(code);
+
+  const content = document.createElement("div");
+  if (seedling) {
+    content.className = "cell-planted-content";
+
+    const name = document.createElement("div");
+    name.className = "plant-name";
+    name.textContent = compactCropName(seedling.cropName);
+    name.title = seedlingLabel(seedling);
+    content.append(name);
+
+    if (seedling.variety) {
+      const variety = document.createElement("div");
+      variety.className = "plant-variety";
+      variety.textContent = compactVarietyName(seedling.variety);
+      variety.title = seedling.variety;
+      content.append(variety);
+    }
+
+    const count = document.createElement("div");
+    count.className = "harvest-count";
+    const countValue = document.createElement("span");
+    countValue.className = "harvest-count-value";
+    countValue.textContent = formatNumber(harvestTotalForSeedlingUnit(seedling.id, "個"));
+
+    const countUnit = document.createElement("span");
+    countUnit.className = "harvest-count-unit";
+    countUnit.textContent = "個";
+
+    count.append(countValue, countUnit);
+    content.append(count);
+  } else {
+    content.className = "cell-empty";
+  }
+  tile.append(content);
+
+  if (seedling) {
+    const actionRow = document.createElement("div");
+    actionRow.className = "harvest-actions";
+
+    const copyButton = document.createElement("button");
+    copyButton.className = "cell-copy-button";
+    copyButton.type = "button";
+    copyButton.textContent = "複";
+    copyButton.setAttribute("aria-label", `${seedlingLabel(seedling)}をコピーして登録`);
+    copyButton.title = "この苗をコピーして空き区画に置く";
+    copyButton.addEventListener("click", () => {
+      startCopyPlacement(seedling);
+    });
+    tile.append(copyButton);
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "cell-delete-button";
+    deleteButton.type = "button";
+    deleteButton.setAttribute("aria-label", "この区画の苗を削除");
+    deleteButton.title = "この区画の苗を削除";
+    deleteButton.addEventListener("click", () => {
+      if (confirm(`${seedlingLabel(seedling)}を削除しますか？\nこの苗の収穫記録も削除されます。`)) {
+        deleteSeedling(seedling.id);
+      }
+    });
+    tile.append(deleteButton);
+
+    const decrementButton = document.createElement("button");
+    decrementButton.className = "quick-button undo-button";
+    decrementButton.type = "button";
+    decrementButton.textContent = "-1";
+    decrementButton.title = "最新の収穫を1個取り消し";
+    decrementButton.addEventListener("click", () => {
+      undoLatestHarvestUnit(seedling.id, "個");
+    });
+
+    const incrementButton = document.createElement("button");
+    incrementButton.className = "quick-button";
+    incrementButton.type = "button";
+    incrementButton.textContent = "+1";
+    incrementButton.title = "今日の収穫を1個追加";
+    incrementButton.addEventListener("click", () => {
+      addHarvest({
+        seedlingId: seedling.id,
+        date: today,
+        amount: 1,
+        unit: "個",
+        memo: "畑マップから追加"
+      });
+    });
+    actionRow.append(decrementButton, incrementButton);
+    content.append(actionRow);
+  } else {
+    const emptyAction = document.createElement("button");
+    emptyAction.className = copyPlacementTemplate ? "quick-button place-copy-button" : "quick-button";
+    emptyAction.type = "button";
+    emptyAction.textContent = copyPlacementTemplate ? "置く" : "+";
+    emptyAction.title = copyPlacementTemplate ? `${cellDisplayName(cell)}にコピーを配置` : `${cellDisplayName(cell)}に登録`;
+    if (copyPlacementTemplate) {
+      emptyAction.setAttribute("aria-label", `${cellDisplayName(cell)}にここへ置く`);
+    }
+    emptyAction.addEventListener("click", () => {
+      if (copyPlacementTemplate) {
+        placeCopiedSeedling(cell);
+      } else {
+        openSeedlingModal({ cell });
+      }
+    });
+    content.append(emptyAction);
+  }
+
+  return tile;
+}
+
+function isCellVisibleByFilter(seedling) {
+  if (mapFilter === "all") return true;
+  if (mapFilter === "planted") return Boolean(seedling);
+  if (mapFilter.startsWith("crop:")) {
+    return seedling?.cropName === mapFilter.slice(5);
+  }
+  return true;
+}
+
+function createQuickHarvest(seedling) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "cell-actions";
+
+  const input = document.createElement("input");
+  input.className = "quick-input";
+  input.type = "number";
+  input.min = "0";
+  input.step = "0.1";
+  input.value = "1";
+  input.ariaLabel = `${seedlingLabel(seedling)}の収穫量`;
+
+  const button = document.createElement("button");
+  button.className = "quick-button";
+  button.type = "button";
+  button.textContent = "+";
+  button.title = "今日の収穫を追加";
+  button.addEventListener("click", () => {
+    const amount = Number(input.value);
+    if (!amount) return;
+    addHarvest({
+      seedlingId: seedling.id,
+      date: today,
+      amount,
+      unit: "個",
+      memo: "畑マップから追加"
+    });
+  });
+
+  wrapper.append(input, button);
+  return wrapper;
+}
+
+function renderRecords() {
+  renderHarvestSummary();
+  renderAggregateTabs();
+  renderSeedlingList();
+  renderHarvestList();
+  renderExpenseList();
+}
+
+function renderAggregateTabs() {
+  elements.aggregateByVarietyButton.classList.toggle("active", aggregateMode === "variety");
+  elements.aggregateByCropButton.classList.toggle("active", aggregateMode === "crop");
+}
+
+function renderHarvestSummary() {
+  elements.harvestSummary.replaceChildren();
+
+  if (!state.harvests.length) {
+    appendEmpty(elements.harvestSummary);
+    return;
+  }
+
+  const currentMonth = today.slice(0, 7);
+  const todayTotals = harvestTotalsForPeriod((harvest) => harvest.date === today);
+  const monthTotals = harvestTotalsForPeriod((harvest) => harvest.date?.startsWith(currentMonth));
+  const dayGroups = harvestTotalsByDate();
+
+  elements.harvestSummary.append(
+    createSummaryCard("今日", todayTotals || "収穫なし"),
+    createSummaryCard("今月", monthTotals || "収穫なし")
+  );
+
+  const history = document.createElement("div");
+  history.className = "daily-history";
+
+  const title = document.createElement("p");
+  title.className = "daily-history-title";
+  title.textContent = "日別";
+  history.append(title);
+
+  Object.entries(dayGroups)
+    .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
+    .slice(0, 7)
+    .forEach(([date, total]) => {
+      const row = document.createElement("div");
+      row.className = "daily-history-row";
+
+      const dateElement = document.createElement("span");
+      dateElement.textContent = date;
+
+      const totalElement = document.createElement("strong");
+      totalElement.textContent = formatHarvestTotals(total);
+
+      row.append(dateElement, totalElement);
+      history.append(row);
+    });
+
+  elements.harvestSummary.append(history);
+}
+
+function createSummaryCard(label, value) {
+  const card = document.createElement("article");
+  card.className = "summary-card";
+
+  const labelElement = document.createElement("span");
+  labelElement.className = "summary-label";
+  labelElement.textContent = label;
+
+  const valueElement = document.createElement("strong");
+  valueElement.className = "summary-value";
+  valueElement.textContent = value;
+
+  card.append(labelElement, valueElement);
+  return card;
+}
+
+function renderSeedlingList() {
+  elements.seedlingList.replaceChildren();
+  if (!state.seedlings.length) {
+    appendEmpty(elements.seedlingList);
+    return;
+  }
+
+  elements.seedlingList.append(createHarvestAggregateTable());
+}
+
+function createHarvestAggregateTable() {
+  const wrapper = document.createElement("div");
+  wrapper.className = "aggregate-table-wrap";
+
+  const table = document.createElement("table");
+  table.className = "aggregate-table";
+
+  const thead = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+  ["野菜", aggregateMode === "crop" ? "品種数" : "品種", "区画数", "収穫合計"].forEach((label) => {
+    const th = document.createElement("th");
+    th.textContent = label;
+    headerRow.append(th);
+  });
+  thead.append(headerRow);
+
+  const tbody = document.createElement("tbody");
+  harvestAggregateRows().forEach((row) => {
+    const tr = document.createElement("tr");
+    applyCropTheme(tr, row.cropName);
+
+    const cropCell = document.createElement("td");
+    cropCell.className = "aggregate-crop-cell";
+    const cropContent = document.createElement("div");
+    cropContent.className = "aggregate-crop-content";
+    const cropName = document.createElement("span");
+    cropName.className = "aggregate-crop-name";
+    cropName.textContent = row.cropName;
+    cropContent.append(createCropIllustration(row.cropName), cropName);
+    cropCell.append(cropContent);
+
+    const varietyCell = document.createElement("td");
+    varietyCell.textContent = aggregateMode === "crop" ? row.varietySummary : (row.variety || "品種なし");
+
+    const countCell = document.createElement("td");
+    countCell.className = "number-cell";
+    countCell.textContent = `${row.seedlingCount}区画`;
+
+    const totalCell = document.createElement("td");
+    totalCell.className = "total-cell";
+    totalCell.textContent = row.total || "収穫なし";
+
+    tr.append(cropCell, varietyCell, countCell, totalCell);
+    tbody.append(tr);
+  });
+
+  table.append(thead, tbody);
+  wrapper.append(table);
+  return wrapper;
+}
+
+function harvestAggregateRows() {
+  const groups = new Map();
+
+  state.seedlings.forEach((seedling) => {
+    const variety = seedling.variety || "";
+    const key = aggregateMode === "crop" ? seedling.cropName : `${seedling.cropName}\u0000${variety}`;
+    const group = groups.get(key) || {
+      cropName: seedling.cropName,
+      variety: aggregateMode === "crop" ? "" : variety,
+      seedlings: []
+    };
+    group.seedlings.push(seedling);
+    groups.set(key, group);
+  });
+
+  return [...groups.values()]
+    .map((group) => {
+      const seedlingIds = new Set(group.seedlings.map((seedling) => seedling.id));
+      const harvests = state.harvests.filter((harvest) => seedlingIds.has(harvest.seedlingId));
+      const locations = group.seedlings
+        .map((seedling) => cellDisplayName(seedling.cell))
+        .sort((a, b) => a.localeCompare(b, "ja"));
+
+      return {
+        cropName: group.cropName,
+        variety: group.variety,
+        varietySummary: aggregateMode === "crop" ? varietySummaryForSeedlings(group.seedlings) : "",
+        seedlingCount: group.seedlings.length,
+        locations,
+        locationSummary: summarizeLocations(locations),
+        total: formatUnitTotals(harvests)
+      };
+    })
+    .sort((a, b) => (
+      b.seedlingCount - a.seedlingCount
+      || a.cropName.localeCompare(b.cropName, "ja")
+      || a.variety.localeCompare(b.variety, "ja")
+    ));
+}
+
+function varietySummaryForSeedlings(seedlings) {
+  const varieties = [...new Set(seedlings.map((seedling) => seedling.variety).filter(Boolean))];
+  if (!varieties.length) return "品種なし";
+  return `${varieties.length}品種`;
+}
+
+function summarizeLocations(locations) {
+  if (locations.length <= 3) return locations.join(" / ");
+  return `${locations.slice(0, 3).join(" / ")} ほか${locations.length - 3}区画`;
+}
+
+function formatUnitTotals(harvests) {
+  if (!harvests.length) return "";
+
+  const totals = harvests.reduce((acc, harvest) => {
+    acc[harvest.unit] = (acc[harvest.unit] || 0) + harvest.amount;
+    return acc;
+  }, {});
+
+  return Object.entries(totals)
+    .sort(([unitA], [unitB]) => unitA.localeCompare(unitB, "ja"))
+    .map(([unit, amount]) => `${formatNumber(amount)}${unit}`)
+    .join(" / ");
+}
+
+function renderHarvestList() {
+  elements.harvestList.replaceChildren();
+  if (!state.harvests.length) {
+    appendEmpty(elements.harvestList);
+    return;
+  }
+
+  [...state.harvests]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 6)
+    .forEach((harvest) => {
+      const seedling = findSeedling(harvest.seedlingId);
+      const item = createRecordItem({
+        title: seedling ? seedlingLabel(seedling) : "削除済みの苗",
+        meta: [harvest.date, harvest.memo].filter(Boolean).join(" / "),
+        total: `${formatNumber(harvest.amount)} ${harvest.unit}`,
+        onDelete: () => deleteRecord("harvests", harvest.id)
+      });
+      elements.harvestList.append(item);
+    });
+}
+
+function renderExpenseList() {
+  elements.expenseList.replaceChildren();
+  if (!state.expenses.length) {
+    appendEmpty(elements.expenseList);
+    return;
+  }
+
+  [...state.expenses]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 6)
+    .forEach((expense) => {
+      const seedling = findSeedling(expense.seedlingId);
+      const related = seedling ? seedlingLabel(seedling) : "畑全体";
+      const item = createRecordItem({
+        title: `${expense.name} (${expense.category})`,
+        meta: [expense.date, related, expense.receiptImage ? "レシートあり" : "", expense.memo].filter(Boolean).join(" / "),
+        total: `${formatNumber(expense.amount)}円`,
+        onDelete: () => deleteRecord("expenses", expense.id)
+      });
+      elements.expenseList.append(item);
+    });
+}
+
+function renderExpenseDashboard() {
+  elements.expenseSummary.replaceChildren();
+  if (!state.expenses.length) {
+    appendEmpty(elements.expenseSummary);
+    return;
+  }
+
+  const currentMonth = today.slice(0, 7);
+  const todayTotal = expenseTotalForPeriod((expense) => expense.date === today);
+  const monthTotal = expenseTotalForPeriod((expense) => expense.date?.startsWith(currentMonth));
+  const allTotal = expenseTotalForPeriod(() => true);
+
+  elements.expenseSummary.append(
+    createSummaryCard("今日", `${formatNumber(todayTotal)}円`),
+    createSummaryCard("今月", `${formatNumber(monthTotal)}円`),
+    createSummaryCard("全体", `${formatNumber(allTotal)}円`)
+  );
+
+  elements.expenseSummary.append(
+    createExpenseChartPanel("月別推移", expenseTotalsByMonth(), formatYearMonthLabel),
+    createExpenseChartPanel("分類別内訳", expenseTotalsByCategory())
+  );
+
+  const history = document.createElement("div");
+  history.className = "daily-history expense-daily-history";
+
+  const title = document.createElement("p");
+  title.className = "daily-history-title";
+  title.textContent = "日別";
+  history.append(title);
+
+  Object.entries(expenseTotalsByDate())
+    .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
+    .slice(0, 7)
+    .forEach(([date, total]) => {
+      const row = document.createElement("div");
+      row.className = "daily-history-row";
+
+      const dateElement = document.createElement("span");
+      dateElement.textContent = date;
+
+      const totalElement = document.createElement("strong");
+      totalElement.textContent = `${formatNumber(total)}円`;
+
+      row.append(dateElement, totalElement);
+      history.append(row);
+    });
+
+  elements.expenseSummary.append(history);
+}
+
+function createExpenseChartPanel(title, rows, labelFormatter = (label) => label) {
+  const panel = document.createElement("article");
+  panel.className = "expense-chart-panel";
+
+  const titleElement = document.createElement("p");
+  titleElement.className = "expense-chart-title";
+  titleElement.textContent = title;
+  panel.append(titleElement);
+
+  const maxTotal = Math.max(...rows.map((row) => row.total), 1);
+  rows.forEach((row) => {
+    const item = document.createElement("div");
+    item.className = "expense-chart-row";
+
+    const label = document.createElement("span");
+    label.className = "expense-chart-label";
+    label.textContent = labelFormatter(row.label);
+
+    const barWrap = document.createElement("div");
+    barWrap.className = "expense-chart-bar-wrap";
+
+    const bar = document.createElement("span");
+    bar.className = "expense-chart-bar";
+    bar.style.setProperty("--bar-size", `${Math.max(4, Math.round((row.total / maxTotal) * 100))}%`);
+    barWrap.append(bar);
+
+    const total = document.createElement("strong");
+    total.className = "expense-chart-total";
+    total.textContent = `${formatNumber(row.total)}円`;
+
+    item.append(label, barWrap, total);
+    panel.append(item);
+  });
+
+  return panel;
+}
+
+function renderExpenseManagerList() {
+  elements.expenseManagerList.replaceChildren();
+  if (!state.expenses.length) {
+    appendEmpty(elements.expenseManagerList);
+    return;
+  }
+
+  [...state.expenses]
+    .sort((a, b) => `${b.date || ""}${b.createdAt || ""}`.localeCompare(`${a.date || ""}${a.createdAt || ""}`))
+    .slice(0, 10)
+    .forEach((expense) => {
+      elements.expenseManagerList.append(createExpenseManagerItem(expense));
+    });
+}
+
+function createExpenseManagerItem(expense) {
+  const article = document.createElement("article");
+  article.className = "expense-manager-item";
+
+  const thumbnail = document.createElement("div");
+  thumbnail.className = expense.receiptImage ? "receipt-thumb has-image" : "receipt-thumb";
+  if (expense.receiptImage) {
+    const image = document.createElement("img");
+    image.src = expense.receiptImage;
+    image.alt = "レシート画像";
+    thumbnail.append(image);
+  } else {
+    thumbnail.textContent = "手入力";
+  }
+
+  const main = document.createElement("div");
+  main.className = "record-main";
+
+  const title = document.createElement("p");
+  title.className = "record-title";
+  title.textContent = `${expense.name || "費用"} (${expense.category || "その他"})`;
+
+  const meta = document.createElement("p");
+  meta.className = "record-meta";
+  meta.textContent = [expense.date, expense.receiptImage ? "レシートあり" : "手入力", expense.memo].filter(Boolean).join(" / ");
+
+  main.append(title, meta);
+
+  const actions = document.createElement("div");
+  actions.className = "record-actions";
+
+  const total = document.createElement("div");
+  total.className = "record-total";
+  total.textContent = `${formatNumber(expense.amount)}円`;
+
+  const deleteButton = document.createElement("button");
+  deleteButton.className = "danger-button";
+  deleteButton.type = "button";
+  deleteButton.textContent = "削除";
+  deleteButton.addEventListener("click", () => deleteRecord("expenses", expense.id));
+
+  actions.append(total, deleteButton);
+  article.append(thumbnail, main, actions);
+  return article;
+}
+
+function expenseTotalForPeriod(predicate) {
+  return state.expenses
+    .filter(predicate)
+    .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+}
+
+function expenseTotalsByDate() {
+  return state.expenses.reduce((acc, expense) => {
+    if (!expense.date) return acc;
+    acc[expense.date] = (acc[expense.date] || 0) + Number(expense.amount || 0);
+    return acc;
+  }, {});
+}
+
+function expenseTotalsByMonth() {
+  const totals = state.expenses.reduce((acc, expense) => {
+    const month = expense.date?.slice(0, 7) || "日付なし";
+    acc[month] = (acc[month] || 0) + Number(expense.amount || 0);
+    return acc;
+  }, {});
+
+  return Object.entries(totals)
+    .map(([label, total]) => ({ label, total }))
+    .sort((a, b) => b.label.localeCompare(a.label))
+    .slice(0, 6)
+    .reverse();
+}
+
+function expenseTotalsByCategory() {
+  const totals = state.expenses.reduce((acc, expense) => {
+    const category = expense.category || "その他";
+    acc[category] = (acc[category] || 0) + Number(expense.amount || 0);
+    return acc;
+  }, {});
+
+  return Object.entries(totals)
+    .map(([label, total]) => ({ label, total }))
+    .sort((a, b) => b.total - a.total || a.label.localeCompare(b.label, "ja"));
+}
+
+function formatYearMonthLabel(value) {
+  if (!/^\d{4}-\d{2}$/.test(value)) return value;
+  const [year, month] = value.split("-");
+  return `${year}/${Number(month)}月`;
+}
+
+function renderReceiptPreview() {
+  elements.receiptPreview.replaceChildren();
+  elements.receiptPreview.classList.toggle("hidden", !pendingReceiptImage);
+  elements.receiptReadButton.disabled = !pendingReceiptImage;
+  if (!pendingReceiptImage) return;
+
+  const image = document.createElement("img");
+  image.src = pendingReceiptImage;
+  image.alt = "保存予定のレシート画像";
+
+  const text = document.createElement("span");
+  text.textContent = "このレシート画像を保存します";
+
+  elements.receiptPreview.append(image, text);
+}
+
+function renderReceiptOcrStatus(message) {
+  elements.receiptOcrStatus.textContent = message;
+  elements.receiptReadButton.disabled = !pendingReceiptImage;
+}
+
+function renderReceiptAmountCandidates(candidates = []) {
+  elements.receiptCandidateList.replaceChildren();
+  elements.receiptCandidateList.classList.toggle("hidden", !candidates.length);
+  if (!candidates.length) return;
+
+  const label = document.createElement("span");
+  label.className = "receipt-candidate-label";
+  label.textContent = "候補";
+  elements.receiptCandidateList.append(label);
+
+  candidates.slice(0, 6).forEach((candidate, index) => {
+    const button = document.createElement("button");
+    button.className = "receipt-candidate-button";
+    button.type = "button";
+    button.dataset.receiptAmount = String(candidate.amount);
+    button.title = candidate.line;
+    button.textContent = `${formatNumber(candidate.amount)}円`;
+    if (index === 0) {
+      button.classList.add("primary-candidate");
+    }
+    elements.receiptCandidateList.append(button);
+  });
+}
+
+async function detectReceiptText(imageDataUrl) {
+  if ("Tesseract" in window) {
+    return detectReceiptTextWithTesseract(imageDataUrl);
+  }
+
+  if ("TextDetector" in window) {
+    return detectReceiptTextWithBrowser(imageDataUrl);
+  }
+
+  throw new Error("OCRライブラリを読み込めませんでした。インターネット接続を確認するか、金額欄へ手入力してください。");
+}
+
+async function detectReceiptTextWithTesseract(imageDataUrl) {
+  renderReceiptOcrStatus("OCRを準備中です...");
+  const result = await Tesseract.recognize(imageDataUrl, "jpn+eng", {
+    logger: (progress) => {
+      if (progress.status === "recognizing text") {
+        renderReceiptOcrStatus(`読み取り中です... ${Math.round(progress.progress * 100)}%`);
+      }
+    }
+  });
+
+  const text = result?.data?.text?.trim() || "";
+  if (!text) {
+    throw new Error("文字を読み取れませんでした。金額欄へ手入力してください。");
+  }
+
+  return text;
+}
+
+async function detectReceiptTextWithBrowser(imageDataUrl) {
+  const detector = new TextDetector();
+  const imageBitmap = await createImageBitmap(await dataUrlToBlob(imageDataUrl));
+  const detections = await detector.detect(imageBitmap);
+  imageBitmap.close?.();
+
+  const text = detections
+    .map((detection) => detection.rawValue || "")
+    .filter(Boolean)
+    .join("\n");
+
+  if (!text) {
+    throw new Error("文字を読み取れませんでした。金額欄へ手入力してください。");
+  }
+
+  return text;
+}
+
+function extractReceiptTotalAmount(text) {
+  return extractReceiptAmountCandidates(text)[0]?.amount || 0;
+}
+
+function extractReceiptAmountCandidates(text) {
+  const lines = text
+    .replace(/[￥¥]/g, "円")
+    .replace(/[Oo]/g, "0")
+    .replace(/[Il]/g, "1")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const candidates = lines.flatMap((line, index) => {
+    const amounts = [...line.matchAll(/(?:円\s*)?([0-9０-９]{1,3}(?:[,，][0-9０-９]{3})+|[0-9０-９]{2,7})\s*円?/g)]
+      .map((match) => normalizeYenAmount(match[1]))
+      .filter((amount) => amount >= 1 && amount <= 9999999);
+    return amounts.map((amount) => ({ amount, line, score: scoreReceiptAmountLine(line, amount, index) }));
+  });
+
+  const uniqueCandidates = new Map();
+  candidates.forEach((candidate) => {
+    const existing = uniqueCandidates.get(candidate.amount);
+    if (!existing || candidate.score > existing.score) {
+      uniqueCandidates.set(candidate.amount, candidate);
+    }
+  });
+
+  return [...uniqueCandidates.values()].sort((a, b) => b.score - a.score);
+}
+
+function scoreReceiptAmountLine(line, amount, index) {
+  const normalizedLine = line.toUpperCase();
+  let score = 100000 - index * 20;
+
+  const topPriorityWords = ["合計", "総合計", "請求", "お会計", "ご利用額", "支払合計", "TOTAL", "T0TAL"];
+  const mediumPriorityWords = ["税込", "税込計", "小計", "買上", "売上"];
+  const avoidWords = ["お預", "預り", "預かり", "釣", "お釣", "釣銭", "返金", "ポイント", "消費税", "内税", "外税", "対象", "値引", "割引", "単価"];
+
+  if (topPriorityWords.some((word) => normalizedLine.includes(word))) score += 9000000;
+  if (mediumPriorityWords.some((word) => normalizedLine.includes(word))) score += 3000000;
+  if (avoidWords.some((word) => normalizedLine.includes(word))) score -= 7000000;
+  if (line.includes("円")) score += 10000;
+  if (amount >= 100 && amount <= 300000) score += 30000;
+
+  return score;
+}
+
+function normalizeYenAmount(value) {
+  const normalized = value
+    .replace(/[０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xFEE0))
+    .replace(/[,，]/g, "");
+  return Number(normalized);
+}
+
+function dataUrlToBlob(dataUrl) {
+  const [header, data] = dataUrl.split(",");
+  const mime = /data:(.*?);base64/.exec(header)?.[1] || "image/jpeg";
+  const binary = atob(data);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new Blob([bytes], { type: mime });
+}
+
+function resizeReceiptImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      const image = new Image();
+      image.addEventListener("load", () => {
+        const maxSize = 2200;
+        const ratio = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * ratio));
+        canvas.height = Math.max(1, Math.round(image.height * ratio));
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.92));
+      });
+      image.addEventListener("error", reject);
+      image.src = reader.result;
+    });
+    reader.addEventListener("error", reject);
+    reader.readAsDataURL(file);
+  });
+}
+
+function createRecordItem({ title, meta, total, onEdit, onDelete }) {
+  const article = document.createElement("article");
+  article.className = "record-item";
+
+  const main = document.createElement("div");
+  main.className = "record-main";
+
+  const titleElement = document.createElement("p");
+  titleElement.className = "record-title";
+  titleElement.textContent = title;
+  main.append(titleElement);
+
+  if (meta) {
+    const metaElement = document.createElement("p");
+    metaElement.className = "record-meta";
+    metaElement.textContent = meta;
+    main.append(metaElement);
+  }
+
+  const side = document.createElement("div");
+  side.className = "record-total";
+  side.textContent = total;
+
+  const deleteButton = document.createElement("button");
+  deleteButton.className = "danger-button";
+  deleteButton.type = "button";
+  deleteButton.textContent = "削除";
+  deleteButton.addEventListener("click", onDelete);
+
+  const actions = document.createElement("div");
+  actions.className = "record-actions";
+  actions.append(side);
+
+  if (onEdit) {
+    const editButton = document.createElement("button");
+    editButton.className = "secondary-button";
+    editButton.type = "button";
+    editButton.textContent = "編集";
+    editButton.addEventListener("click", onEdit);
+    actions.append(editButton);
+  }
+
+  actions.append(deleteButton);
+
+  article.append(main, actions);
+  return article;
+}
+
+function startSeedlingEdit(id) {
+  const seedling = findSeedling(id);
+  if (!seedling) return;
+
+  openSeedlingModal({ seedling });
+}
+
+function finishSeedlingEdit() {
+  editingSeedlingId = "";
+  elements.seedlingForm.reset();
+  elements.plantedDateInput.value = today;
+  elements.seedlingSubmitButton.textContent = "苗を登録";
+  elements.cancelSeedlingEditButton.classList.add("hidden");
+  saveAndRender();
+}
+
+function openSeedlingModal({ cell = "", seedling = null, template = null } = {}) {
+  modalSeedlingId = seedling?.id || "";
+  const source = seedling || template;
+  renderModalCellOptions();
+  elements.seedlingModalTitle.textContent = seedling ? "苗を編集" : template ? "苗をコピー登録" : "苗を登録";
+  elements.modalSeedlingSubmitButton.textContent = seedling ? "苗を更新" : "苗を登録";
+  elements.modalCropNameInput.value = source?.cropName || "";
+  elements.modalVarietyInput.value = source?.variety || "";
+  elements.modalPlantedDateInput.value = source?.plantedDate || today;
+  elements.modalCellSelect.value = seedling?.cell || cell;
+  elements.modalSeedlingMemoInput.value = source?.memo || "";
+  renderCropPicker();
+  renderPasteSeedlingButton();
+  elements.seedlingModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  const selectedCropCard = elements.cropPicker.querySelector(".crop-card.selected");
+  (selectedCropCard || elements.cropPicker.querySelector(".crop-card") || elements.modalVarietyInput).focus();
+}
+
+function closeSeedlingModal() {
+  modalSeedlingId = "";
+  elements.modalSeedlingForm.reset();
+  elements.modalPlantedDateInput.value = today;
+  renderCropPicker();
+  elements.seedlingModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+}
+
+function openSyncModal() {
+  renderSyncSettings();
+  renderSyncLink("");
+  elements.syncModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+}
+
+function closeSyncModal() {
+  elements.syncModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+}
+
+function renderSyncSettings() {
+  const settings = storage.loadSettings();
+  elements.syncUrlInput.value = settings.url;
+  elements.syncAnonKeyInput.value = settings.anonKey;
+  elements.syncRecordIdInput.value = settings.recordId || "";
+  renderSyncStatus(storage.isCloudConfigured()
+    ? `同期設定あり: ${settings.recordId}`
+    : "未設定です。設定するまでは、この端末内だけに保存します。");
+}
+
+function renderSyncStatus(message) {
+  elements.syncStatusText.textContent = message;
+}
+
+function renderSyncLink(link) {
+  elements.syncLinkOutput.value = link;
+  elements.syncLinkBox.classList.toggle("hidden", !link);
+}
+
+async function runCloudAction(loadingMessage, action) {
+  renderSyncStatus(loadingMessage);
+  setSyncButtonsDisabled(true);
+  try {
+    await action();
+  } catch (error) {
+    renderSyncStatus(error.message || "クラウド同期に失敗しました。設定と通信状態を確認してください。");
+  } finally {
+    setSyncButtonsDisabled(false);
+  }
+}
+
+function setSyncButtonsDisabled(disabled) {
+  [
+    elements.saveSyncSettingsButton,
+    elements.generateSyncIdButton,
+    elements.testCloudButton,
+    elements.pullCloudButton,
+    elements.pushCloudButton,
+    elements.copySyncLinkButton,
+    elements.clearSyncSettingsButton
+  ].forEach((button) => {
+    button.disabled = disabled;
+  });
+}
+
+function formatSyncDate(value) {
+  if (!value) return "不明";
+  return new Intl.DateTimeFormat("ja-JP", {
+    dateStyle: "short",
+    timeStyle: "short"
+  }).format(new Date(value));
+}
+
+function createSyncRecordId() {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return `farm-${[...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function createSyncSetupLink() {
+  const settings = storage.loadSettings();
+  if (!settings.url || !settings.anonKey || !settings.recordId) {
+    throw new Error("URL、anon key、共有データIDを入力してから作成してください。");
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("sync", encodeSyncSettings(settings));
+  return url.toString();
+}
+
+function encodeSyncSettings(settings) {
+  const json = JSON.stringify({
+    url: settings.url,
+    anonKey: settings.anonKey,
+    recordId: settings.recordId
+  });
+  const bytes = new TextEncoder().encode(json);
+  const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function decodeSyncSettings(value) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.append(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
+function applySyncSettingsFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const encodedSettings = params.get("sync");
+  if (!encodedSettings) return;
+
+  try {
+    const settings = decodeSyncSettings(encodedSettings);
+    storage.saveSettings(settings);
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete("sync");
+    window.history.replaceState({}, "", cleanUrl.toString());
+    openSyncModal();
+    renderSyncStatus("同期設定を取り込みました。必要なら「クラウドから取得」を押してください。");
+  } catch {
+    openSyncModal();
+    renderSyncStatus("同期設定リンクを読み込めませんでした。");
+  }
+}
+
+function copyCropOptionsToModal() {
+  elements.modalCropNameInput.replaceChildren(
+    ...[...elements.cropNameInput.options].map((option) => option.cloneNode(true))
+  );
+}
+
+function renderCropPicker() {
+  const selectedCrop = elements.modalCropNameInput.value;
+  elements.cropPicker.replaceChildren();
+
+  CROP_PICKER_ITEMS.forEach((crop) => {
+    const card = document.createElement("button");
+    card.className = "crop-card";
+    card.type = "button";
+    card.setAttribute("role", "option");
+    card.setAttribute("aria-selected", crop.name === selectedCrop ? "true" : "false");
+    card.classList.toggle("selected", crop.name === selectedCrop);
+    applyCropTheme(card, crop.name);
+
+    const icon = createCropIllustration(crop.name);
+
+    const label = document.createElement("span");
+    label.className = "crop-card-label";
+    label.textContent = crop.name;
+
+    card.append(icon, label);
+    card.addEventListener("click", () => {
+      elements.modalCropNameInput.value = crop.name;
+      renderCropPicker();
+      elements.modalVarietyInput.focus();
+    });
+    elements.cropPicker.append(card);
+  });
+}
+
+function createCropIllustration(cropName) {
+  const icon = document.createElement("span");
+  icon.className = "crop-illustration";
+  icon.innerHTML = cropIconSvg(cropName);
+  return icon;
+}
+
+function cropIconSvg(cropName) {
+  const svg = (body) => `<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">${body}</svg>`;
+  const leaf = `<path d="M23 11c-3-7 8-9 12-5-2 7-8 9-12 5Z" fill="#35b85a"/><path d="M22 13c-5-4-2-11 4-12 3 6 1 11-4 12Z" fill="#178f45"/>`;
+
+  const icons = {
+    "トマト": svg(`${leaf}<circle cx="24" cy="27" r="14" fill="#ef3f32"/><path d="M15 22c4-5 12-8 21-2" fill="none" stroke="#ff9b88" stroke-width="3" stroke-linecap="round"/><circle cx="19" cy="24" r="3" fill="#ff7664"/>`),
+    "ミニトマト": svg(`${leaf}<circle cx="18" cy="29" r="9" fill="#ef3f32"/><circle cx="30" cy="27" r="10" fill="#ff5543"/><path d="M14 26c3-3 7-4 11-2" fill="none" stroke="#ffb09f" stroke-width="2" stroke-linecap="round"/>`),
+    "ナス": svg(`<path d="M18 16c12-6 23 4 16 19-4 9-17 10-22 1-4-7-2-16 6-20Z" fill="#7b44dc"/><path d="M17 18c2 9 6 18 16 18" fill="none" stroke="#b793ff" stroke-width="3" stroke-linecap="round"/><path d="M17 16c1-7 10-9 16-5-3 6-9 8-16 5Z" fill="#35b85a"/>`),
+    "きゅうり": svg(`<g transform="rotate(-35 24 24)"><rect x="13" y="11" width="22" height="30" rx="11" fill="#29a847"/><path d="M18 14c-2 9-1 17 4 24" fill="none" stroke="#7ee18d" stroke-width="3" stroke-linecap="round"/><circle cx="26" cy="18" r="1.4" fill="#c6ffd0"/><circle cx="21" cy="26" r="1.3" fill="#c6ffd0"/><circle cx="29" cy="32" r="1.3" fill="#c6ffd0"/></g>`),
+    "ゴーヤ": svg(`<g transform="rotate(-32 24 24)"><path d="M16 9c13 2 20 14 16 30-12-1-21-13-16-30Z" fill="#239f48"/><path d="M20 13c-3 9 1 18 9 23" fill="none" stroke="#92e58c" stroke-width="3" stroke-linecap="round"/><circle cx="23" cy="17" r="1.6" fill="#c8ffd0"/><circle cx="28" cy="22" r="1.5" fill="#c8ffd0"/><circle cx="24" cy="29" r="1.5" fill="#c8ffd0"/><circle cx="31" cy="32" r="1.4" fill="#c8ffd0"/></g>`),
+    "ズッキーニ": svg(`<g transform="rotate(-28 24 24)"><rect x="13" y="10" width="21" height="32" rx="10" fill="#218f45"/><path d="M18 14c-1 9 1 18 7 25" fill="none" stroke="#79d96f" stroke-width="3" stroke-linecap="round"/><path d="M19 10c0-4 6-6 10-3-1 4-5 5-10 3Z" fill="#f6d65a"/></g>`),
+    "ピーマン": svg(`<path d="M18 15c3-5 10-4 12 0 7 0 11 8 6 17-4 8-20 9-25 0-5-9 0-17 7-17Z" fill="#25a84a"/><path d="M24 15c-3 8-3 16 0 25" fill="none" stroke="#77df82" stroke-width="3" stroke-linecap="round"/><path d="M22 15c1-5 7-7 11-3-2 5-7 6-11 3Z" fill="#178f45"/>`),
+    "赤パプリカ": svg(`<path d="M18 15c3-5 10-4 12 0 7 0 11 8 6 17-4 8-20 9-25 0-5-9 0-17 7-17Z" fill="#e73b32"/><path d="M24 15c-3 8-3 16 0 25" fill="none" stroke="#ff9a88" stroke-width="3" stroke-linecap="round"/><path d="M22 15c1-5 7-7 11-3-2 5-7 6-11 3Z" fill="#178f45"/>`),
+    "黄パプリカ": svg(`<path d="M18 15c3-5 10-4 12 0 7 0 11 8 6 17-4 8-20 9-25 0-5-9 0-17 7-17Z" fill="#f6c431"/><path d="M24 15c-3 8-3 16 0 25" fill="none" stroke="#fff08a" stroke-width="3" stroke-linecap="round"/><path d="M22 15c1-5 7-7 11-3-2 5-7 6-11 3Z" fill="#178f45"/>`),
+    "ししとう": svg(`<path d="M14 34c7-19 19-23 25-18-1 12-10 23-25 18Z" fill="#43c15f"/><path d="M17 31c7-2 14-8 19-15" fill="none" stroke="#bff2a9" stroke-width="3" stroke-linecap="round"/><path d="M37 16c1-4 4-5 7-4" fill="none" stroke="#178f45" stroke-width="3" stroke-linecap="round"/>`),
+    "オクラ": svg(`<polygon points="24,7 37,17 32,39 16,39 11,17" fill="#2eaf55"/><polygon points="24,14 31,20 28,32 20,32 17,20" fill="#d9ffd3"/><circle cx="24" cy="23" r="2" fill="#68bf55"/><circle cx="20" cy="27" r="1.8" fill="#68bf55"/><circle cx="28" cy="27" r="1.8" fill="#68bf55"/><path d="M24 7c-1-4 4-6 8-4" fill="none" stroke="#178f45" stroke-width="3" stroke-linecap="round"/>`),
+    "いんげん": svg(`<path d="M12 33c8-16 18-23 28-18-3 15-14 23-28 18Z" fill="#36b657"/><path d="M15 31c8-3 15-9 22-16" fill="none" stroke="#bdf5a4" stroke-width="3" stroke-linecap="round"/><circle cx="23" cy="28" r="2" fill="#7bd96b"/><circle cx="29" cy="23" r="2" fill="#7bd96b"/><circle cx="35" cy="18" r="1.8" fill="#7bd96b"/>`),
+    "枝豆": svg(`<path d="M13 31c4-17 17-22 25-12-1 15-16 21-25 12Z" fill="#60c957"/><circle cx="21" cy="28" r="4" fill="#c8f489"/><circle cx="28" cy="24" r="4" fill="#c8f489"/><circle cx="34" cy="20" r="3.3" fill="#c8f489"/><path d="M14 31c9-3 17-8 24-14" fill="none" stroke="#239548" stroke-width="2" stroke-linecap="round"/>`),
+    "えんどう": svg(`<path d="M11 30c8-15 21-18 30-9-6 14-20 19-30 9Z" fill="#78d85f"/><circle cx="20" cy="28" r="3.4" fill="#e0ffad"/><circle cx="27" cy="25" r="3.4" fill="#e0ffad"/><circle cx="34" cy="22" r="3.1" fill="#e0ffad"/><path d="M13 30c10-1 18-5 28-11" fill="none" stroke="#38a64e" stroke-width="2" stroke-linecap="round"/>`),
+    "とうもろこし": svg(`<path d="M17 13c8-9 20 0 16 19-2 10-16 12-20 2-2-6-1-15 4-21Z" fill="#ffd33d"/><path d="M17 17h16M15 24h19M16 31h17M21 12v28M27 13v27" stroke="#e0a51b" stroke-width="1.4"/><path d="M14 25c-6 5-6 13 5 17" fill="#45bf5e"/><path d="M33 25c7 5 6 13-4 17" fill="#31a54f"/>`),
+    "かぼちゃ": svg(`<path d="M12 26c0-12 24-13 24 0 0 12-8 16-12 16s-12-4-12-16Z" fill="#ff9f28"/><path d="M24 10c3 8 3 24 0 32M17 14c-4 9-4 18 0 25M31 14c4 9 4 18 0 25" fill="none" stroke="#d97717" stroke-width="2"/><path d="M24 11c0-6 6-6 8-3" fill="none" stroke="#178f45" stroke-width="3" stroke-linecap="round"/>`),
+    "スイカ": svg(`<path d="M8 30c5-18 29-22 36-1-8 12-27 13-36 1Z" fill="#2ebc63"/><path d="M13 29c6-10 20-14 27-1-6 8-20 9-27 1Z" fill="#ff4866"/><circle cx="22" cy="29" r="1.4" fill="#4b1c1c"/><circle cx="30" cy="27" r="1.4" fill="#4b1c1c"/>`),
+    "メロン": svg(`<circle cx="24" cy="25" r="15" fill="#b9dc72"/><path d="M13 20c8 5 15 5 22 0M13 30c8-5 15-5 22 0M19 12c-4 8-4 17 0 26M29 12c4 8 4 17 0 26" fill="none" stroke="#79ad54" stroke-width="2"/><path d="M23 10c-1-5 5-7 9-4" fill="none" stroke="#178f45" stroke-width="3" stroke-linecap="round"/>`),
+    "大根": svg(`<path d="M19 15c8-3 15 0 14 8-1 10-5 17-9 22-5-5-9-12-10-21-1-4 1-7 5-9Z" fill="#fffdf2"/><path d="M18 24c4 2 9 2 14 0" fill="none" stroke="#d6dfd7" stroke-width="2" stroke-linecap="round"/><path d="M22 16c-5-7-1-13 6-13 0 7-2 11-6 13Z" fill="#35b85a"/><path d="M26 15c2-8 8-10 13-5-3 6-7 8-13 5Z" fill="#46c86a"/><path d="M20 16c-7-3-8-9-3-13 5 4 6 8 3 13Z" fill="#248f43"/>`),
+    "かぶ": svg(`<path d="M15 27c0-9 18-12 20 0 1 9-6 16-10 18-5-2-11-9-10-18Z" fill="#fff7ee"/><path d="M17 29c5 3 11 3 17 0" fill="none" stroke="#d9d2c4" stroke-width="2" stroke-linecap="round"/><path d="M24 18c-5-7-2-14 6-14 1 8-2 12-6 14Z" fill="#32a852"/><path d="M26 18c4-8 11-9 15-3-4 5-9 6-15 3Z" fill="#4cc86a"/>`),
+    "にんじん": svg(`<path d="M16 17c5-5 14-4 17 2-2 10-7 18-14 25-4-9-5-18-3-27Z" fill="#ff8a24"/><path d="M18 25c4 2 7 2 11 0M19 32c3 1 5 1 8 0" fill="none" stroke="#d96a18" stroke-width="2" stroke-linecap="round"/><path d="M23 17c-5-6-2-13 4-14 2 6 0 11-4 14Z" fill="#32a852"/><path d="M25 17c2-7 8-9 13-5-3 5-7 7-13 5Z" fill="#45c469"/>`),
+    "じゃがいも": svg(`<path d="M13 28c-2-10 8-20 20-15 9 4 9 18 0 23-9 6-18 2-20-8Z" fill="#c98f47"/><circle cx="20" cy="24" r="1.6" fill="#7a4b20"/><circle cx="30" cy="21" r="1.4" fill="#7a4b20"/><circle cx="28" cy="31" r="1.6" fill="#7a4b20"/><path d="M16 22c4-5 11-7 17-4" fill="none" stroke="#e1b270" stroke-width="2" stroke-linecap="round"/>`),
+    "さつまいも": svg(`<path d="M11 31c2-14 16-24 29-13-1 15-16 24-29 13Z" fill="#7b3f84"/><path d="M16 29c5-6 12-10 20-11" fill="none" stroke="#b474b8" stroke-width="3" stroke-linecap="round"/><path d="M36 17c1-4 5-5 8-3" fill="none" stroke="#178f45" stroke-width="3" stroke-linecap="round"/>`),
+    "さといも": svg(`<path d="M13 27c-1-10 8-18 19-14 8 3 9 16 2 22-8 8-20 3-21-8Z" fill="#b98762"/><path d="M18 22c4-5 11-6 16-2" fill="none" stroke="#dfb58a" stroke-width="2" stroke-linecap="round"/><circle cx="21" cy="28" r="1.5" fill="#7b543c"/><circle cx="30" cy="25" r="1.4" fill="#7b543c"/><path d="M25 14c-2-6 3-10 9-8-1 6-4 8-9 8Z" fill="#49b85d"/>`),
+    "玉ねぎ": svg(`<path d="M13 28c0-10 6-17 11-19 6 2 11 9 11 19 0 10-6 16-11 16s-11-6-11-16Z" fill="#f1c86a"/><path d="M24 9c-2 8-2 23 0 35M17 22c-2 8 0 15 5 20M31 22c2 8 0 15-5 20" fill="none" stroke="#c89136" stroke-width="2" stroke-linecap="round"/><path d="M24 10c-2-5 2-9 7-8-1 5-3 7-7 8Z" fill="#39a856"/><path d="M24 10c2-5-1-8-6-8 1 5 3 7 6 8Z" fill="#4fbd65"/>`),
+    "にんにく": svg(`<path d="M15 29c0-9 4-15 9-18 5 3 9 9 9 18 0 9-5 14-9 15-4-1-9-6-9-15Z" fill="#fff6df"/><path d="M24 12c-2 8-2 21 0 31M18 24c-2 7 0 13 4 18M30 24c2 7 0 13-4 18" fill="none" stroke="#d9caa8" stroke-width="2" stroke-linecap="round"/><path d="M24 11c-3-4 0-8 5-8" fill="none" stroke="#5eb85d" stroke-width="3" stroke-linecap="round"/>`),
+    "しょうが": svg(`<path d="M10 31c5-8 12-8 17-4 4-6 12-8 16-2-2 8-12 9-17 5-4 6-12 8-16 1Z" fill="#d99b4a"/><path d="M15 31c5-2 9-4 13-7M27 29c4-3 8-4 13-4" fill="none" stroke="#f0c47c" stroke-width="2" stroke-linecap="round"/><path d="M26 25c-2-5 2-9 8-8" fill="none" stroke="#49a856" stroke-width="3" stroke-linecap="round"/>`),
+    "ねぎ": svg(`<path d="M12 35c7-8 15-17 23-28" fill="none" stroke="#2eaf55" stroke-width="8" stroke-linecap="round"/><path d="M10 38c8-8 15-17 23-28" fill="none" stroke="#f9fff2" stroke-width="7" stroke-linecap="round"/><path d="M26 17c5-5 10-8 17-7M28 15c3-6 7-9 12-11" fill="none" stroke="#238f45" stroke-width="3" stroke-linecap="round"/>`),
+    "レタス": svg(`<path d="M12 27c-5-11 8-20 16-12 9-4 18 8 10 18-4 8-22 10-26-6Z" fill="#8ee66d"/><path d="M17 30c7-5 11-8 17-13M23 35c-1-8 1-15 5-21" fill="none" stroke="#3fae4b" stroke-width="2" stroke-linecap="round"/>`),
+    "キャベツ": svg(`<circle cx="24" cy="26" r="16" fill="#8ee66d"/><path d="M12 26c7-8 16-11 25-5M15 34c6-8 15-10 24-7M22 11c-4 9-3 19 2 31" fill="none" stroke="#3fae4b" stroke-width="2" stroke-linecap="round"/>`),
+    "白菜": svg(`<path d="M12 27c0-12 8-20 12-22 5 2 13 10 13 22 0 10-6 17-13 18-7-1-12-8-12-18Z" fill="#eef6c9"/><path d="M24 6c-2 12-2 25 0 38M16 18c5 6 11 8 19 7M15 29c6 5 13 6 21 3" fill="none" stroke="#80bd55" stroke-width="2" stroke-linecap="round"/><path d="M13 24c-6-9 3-17 10-13-4 8-6 13-10 13Z" fill="#84d66a"/><path d="M35 24c7-8-2-17-10-13 5 7 7 12 10 13Z" fill="#73c95f"/>`),
+    "ブロッコリー": svg(`<circle cx="18" cy="18" r="7" fill="#36ad48"/><circle cx="28" cy="17" r="8" fill="#2f9d43"/><circle cx="33" cy="25" r="7" fill="#3cbc52"/><circle cx="16" cy="27" r="8" fill="#42bd55"/><path d="M24 28v13M18 39h13" fill="none" stroke="#7ccf62" stroke-width="6" stroke-linecap="round"/>`),
+    "ほうれん草": svg(`<path d="M23 41c-2-12-1-25 2-36" fill="none" stroke="#196f35" stroke-width="3" stroke-linecap="round"/><path d="M23 21c-11-9-8-19 3-18 5 8 2 15-3 18Z" fill="#2eaf55"/><path d="M25 22c12-7 14-18 4-20-7 6-8 14-4 20Z" fill="#3ec665"/><path d="M23 31c-10-4-12-13-3-17 6 3 7 10 3 17Z" fill="#2b9d48"/>`),
+    "小松菜": svg(`<path d="M24 42c-1-12 0-24 2-36" fill="none" stroke="#196f35" stroke-width="3" stroke-linecap="round"/><path d="M22 20c-12-7-10-16 1-17 6 6 5 13-1 17Z" fill="#31ad4f"/><path d="M27 21c12-6 13-16 3-18-7 5-8 12-3 18Z" fill="#44c564"/><path d="M22 33c-11-3-14-11-5-16 6 2 8 9 5 16Z" fill="#3bb65a"/><path d="M27 34c11-4 13-12 5-17-6 2-8 9-5 17Z" fill="#2ea24e"/>`),
+    "春菊": svg(`<path d="M24 42V9" fill="none" stroke="#176f37" stroke-width="3" stroke-linecap="round"/><path d="M23 18c-7-8-3-14 5-14 4 7 1 12-5 14Z" fill="#38b95a"/><path d="M25 21c9-7 14-4 14 4-7 4-12 2-14-4Z" fill="#4bc86a"/><path d="M22 29c-10-4-11-10-4-15 6 3 8 9 4 15Z" fill="#2fa44f"/><path d="M26 31c10-4 11-11 4-15-6 3-8 9-4 15Z" fill="#43bd61"/>`),
+    "パセリ": svg(`<circle cx="18" cy="17" r="6" fill="#2f9d43"/><circle cx="27" cy="15" r="7" fill="#35ad4d"/><circle cx="34" cy="22" r="6" fill="#3cbf55"/><circle cx="15" cy="27" r="7" fill="#42bd55"/><circle cx="27" cy="28" r="8" fill="#2fa34a"/><path d="M24 29v13" fill="none" stroke="#176f37" stroke-width="4" stroke-linecap="round"/>`),
+    "シソ": svg(`<path d="M24 43c-9-9-14-18-12-28 10-8 22-5 25 5-2 10-7 17-13 23Z" fill="#4aa850"/><path d="M24 41V12M16 20c7 3 13 3 20 0M18 29c6 2 11 2 17-1" fill="none" stroke="#d5ffd0" stroke-width="2" stroke-linecap="round"/><path d="M23 12c-2-5 4-8 9-5" fill="#73d36e"/>`),
+    "アスパラ": svg(`<path d="M17 42c3-11 8-22 14-36" fill="none" stroke="#2ea652" stroke-width="8" stroke-linecap="round"/><path d="M24 19c4-2 8-2 12-1M21 26c4-2 8-2 12-1M18 33c4-2 8-2 12-1" fill="none" stroke="#a8ef8a" stroke-width="2" stroke-linecap="round"/><path d="M31 6c3 2 5 5 5 8-5 1-9-1-11-5 1-2 3-3 6-3Z" fill="#5cc66c"/>`),
+    "いちご": svg(`<path d="M14 21c1-11 19-12 20 0 0 10-10 20-10 20S14 31 14 21Z" fill="#ef3f5f"/><path d="M19 13c-4-5 4-9 8-5-2 5-5 6-8 5Z" fill="#35b85a"/><path d="M25 13c1-6 8-7 11-2-4 4-7 5-11 2Z" fill="#42bd55"/><circle cx="20" cy="23" r="1.2" fill="#ffe78a"/><circle cx="27" cy="22" r="1.2" fill="#ffe78a"/><circle cx="24" cy="30" r="1.2" fill="#ffe78a"/>`)
+  };
+
+  return icons[cropName] || svg(`<circle cx="24" cy="24" r="15" fill="#55d768"/><path d="M18 24c6-10 15-12 22-5" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>`);
+}
+
+function renderPasteSeedlingButton() {
+  elements.pasteSeedlingButton.classList.toggle("hidden", !copiedSeedlingTemplate || Boolean(modalSeedlingId));
+  if (copiedSeedlingTemplate) {
+    elements.pasteSeedlingButton.textContent = `${copiedSeedlingTemplate.cropName}を貼り付け`;
+  }
+}
+
+function applySeedlingTemplateToModal(template) {
+  elements.modalCropNameInput.value = template.cropName || "";
+  elements.modalVarietyInput.value = template.variety || "";
+  elements.modalPlantedDateInput.value = template.plantedDate || today;
+  elements.modalSeedlingMemoInput.value = template.memo || "";
+  renderCropPicker();
+  elements.modalVarietyInput.focus();
+}
+
+function startCopyPlacement(seedling) {
+  copiedSeedlingTemplate = createSeedlingTemplate(seedling);
+  copyPlacementTemplate = copiedSeedlingTemplate;
+  mapFilter = "all";
+  elements.mapFilterSelect.value = "all";
+  closeSeedlingModal();
+  renderField();
+}
+
+function cancelCopyPlacement() {
+  copyPlacementTemplate = null;
+  renderField();
+}
+
+function placeCopiedSeedling(cell) {
+  if (!copyPlacementTemplate || state.seedlings.some((seedling) => seedling.cell === cell)) return;
+
+  state.seedlings.push({
+    id: createId("seedling"),
+    ...copyPlacementTemplate,
+    cell
+  });
+  saveAndRender();
+}
+
+function createSeedlingTemplate(seedling) {
+  return {
+    cropName: seedling.cropName,
+    variety: seedling.variety || "",
+    plantedDate: seedling.plantedDate || today,
+    memo: seedling.memo || ""
+  };
+}
+
+function renderSummary() {
+  const totalExpense = state.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const planted = state.seedlings.length;
+  const cells = state.grid.columns * state.grid.rows * 2;
+  elements.summaryText.textContent = `左ページ・右ページ / ${state.grid.rows}段 x ${state.grid.columns}区画 x 2 / ${cells}区画中 ${planted}区画使用 / 費用合計 ${formatNumber(totalExpense)}円`;
+}
+
+function addHarvest(data) {
+  if (!data.seedlingId || !data.amount) return;
+  state.harvests.push({
+    id: createId("harvest"),
+    ...data
+  });
+  saveAndRender();
+}
+
+function undoLatestHarvestUnit(seedlingId, unit) {
+  const index = [...state.harvests]
+    .map((harvest, originalIndex) => ({ harvest, originalIndex }))
+    .reverse()
+    .find((entry) => entry.harvest.seedlingId === seedlingId && entry.harvest.unit === unit)?.originalIndex;
+
+  if (index === undefined) return;
+
+  const harvest = state.harvests[index];
+  if (harvest.amount <= 1) {
+    state.harvests.splice(index, 1);
+  } else {
+    state.harvests[index] = { ...harvest, amount: harvest.amount - 1 };
+  }
+  saveAndRender();
+}
+
+function deleteSeedling(id) {
+  state.seedlings = state.seedlings.filter((seedling) => seedling.id !== id);
+  state.harvests = state.harvests.filter((harvest) => harvest.seedlingId !== id);
+  state.expenses = state.expenses.map((expense) => (
+    expense.seedlingId === id ? { ...expense, seedlingId: "" } : expense
+  ));
+  if (editingSeedlingId === id) {
+    editingSeedlingId = "";
+    elements.seedlingForm.reset();
+    elements.plantedDateInput.value = today;
+    elements.seedlingSubmitButton.textContent = "苗を登録";
+    elements.cancelSeedlingEditButton.classList.add("hidden");
+  }
+  saveAndRender();
+}
+
+function deleteRecord(collection, id) {
+  state[collection] = state[collection].filter((item) => item.id !== id);
+  saveAndRender();
+}
+
+function harvestTotalsForSeedling(seedlingId) {
+  const totals = state.harvests
+    .filter((harvest) => harvest.seedlingId === seedlingId)
+    .reduce((acc, harvest) => {
+      acc[harvest.unit] = (acc[harvest.unit] || 0) + harvest.amount;
+      return acc;
+    }, {});
+
+  return Object.entries(totals)
+    .map(([unit, amount]) => `${formatNumber(amount)} ${unit}`)
+    .join(" / ");
+}
+
+function harvestTotalsForPeriod(predicate) {
+  return formatHarvestTotals(state.harvests
+    .filter(predicate)
+    .reduce((acc, harvest) => {
+      const seedling = findSeedling(harvest.seedlingId);
+      const cropName = seedling?.cropName || "不明";
+      const key = `${cropName}:${harvest.unit}`;
+      acc[key] = {
+        cropName,
+        unit: harvest.unit,
+        amount: (acc[key]?.amount || 0) + harvest.amount
+      };
+      return acc;
+    }, {}));
+}
+
+function harvestTotalsByDate() {
+  return state.harvests.reduce((acc, harvest) => {
+    acc[harvest.date] = acc[harvest.date] || {};
+    const seedling = findSeedling(harvest.seedlingId);
+    const cropName = seedling?.cropName || "不明";
+    const key = `${cropName}:${harvest.unit}`;
+    acc[harvest.date][key] = {
+      cropName,
+      unit: harvest.unit,
+      amount: (acc[harvest.date][key]?.amount || 0) + harvest.amount
+    };
+    return acc;
+  }, {});
+}
+
+function formatHarvestTotals(totals) {
+  const entries = Object.values(totals);
+  if (!entries.length) return "";
+
+  return entries
+    .sort((a, b) => b.amount - a.amount)
+    .map((item) => `${item.cropName} ${formatNumber(item.amount)}${item.unit}`)
+    .join(" / ");
+}
+
+function harvestTotalForSeedlingUnit(seedlingId, unit) {
+  return state.harvests
+    .filter((harvest) => harvest.seedlingId === seedlingId && harvest.unit === unit)
+    .reduce((sum, harvest) => sum + harvest.amount, 0);
+}
+
+function getCells() {
+  const cells = [];
+  for (let row = 1; row <= state.grid.rows; row += 1) {
+    ["L", "R"].forEach((side) => {
+      for (let segment = 1; segment <= state.grid.columns; segment += 1) {
+        cells.push(cellId(row, side, segment));
+      }
+    });
+  }
+  return cells;
+}
+
+function uniqueCropNames() {
+  return [...new Set(state.seedlings.map((seedling) => seedling.cropName))]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+function cellExists(cell) {
+  return getCells().includes(cell);
+}
+
+function remapCellForGridResize(cell, previousGrid, nextGrid) {
+  const position = parseCellPosition(cell);
+  if (!position) return cell;
+
+  const displaySegment = previousGrid.columns - position.segment + 1;
+  const nextSegment = nextGrid.columns - displaySegment + 1;
+  return cellId(position.row, position.side, nextSegment);
+}
+
+function parseCellPosition(cell) {
+  const match = /^(\d+)-(L|R)-(-?\d+)$/.exec(cell);
+  if (!match) return null;
+
+  return {
+    row: Number(match[1]),
+    side: match[2],
+    segment: Number(match[3])
+  };
+}
+
+function nextAvailableCell(currentCell) {
+  const cells = getCells();
+  const occupiedCells = new Set(state.seedlings.map((seedling) => seedling.cell));
+  const startIndex = Math.max(0, cells.indexOf(currentCell));
+  return cells.slice(startIndex + 1).find((cell) => !occupiedCells.has(cell))
+    || cells.find((cell) => !occupiedCells.has(cell))
+    || "";
+}
+
+function seedlingLabel(seedling) {
+  const variety = seedling.variety ? ` / ${seedling.variety}` : "";
+  return `${cellDisplayName(seedling.cell)} ${seedling.cropName}${variety}`;
+}
+
+function cellId(row, side, segment) {
+  return `${row}-${side}-${segment}`;
+}
+
+function cellDisplayName(cell) {
+  const position = parseCellPosition(cell);
+  if (!position) return cell;
+
+  const sideName = position.side === "L" ? "左" : "右";
+  return `${position.row}段目 ${sideName} ${displaySegmentNumber(position.segment)}番`;
+}
+
+function cellShortName(cell) {
+  const position = parseCellPosition(cell);
+  if (!position) return cell;
+
+  const segment = displaySegmentNumber(position.segment);
+  return segment === 1 || segment % 5 === 0 ? String(segment) : "";
+}
+
+function displaySegmentNumber(segment) {
+  return state.grid.columns - Number(segment) + 1;
+}
+
+function compactCropName(cropName) {
+  return cropName.length > 3 ? cropName.slice(0, 2) : cropName;
+}
+
+function compactVarietyName(variety) {
+  return variety.length > 6 ? `${variety.slice(0, 6)}…` : variety;
+}
+
+function applyCropTheme(element, cropName) {
+  const themes = [
+    { crops: ["トマト", "ミニトマト"], start: "#ffe3d8", end: "#ff6b4a", ink: "#6f1608" },
+    { crops: ["ナス"], start: "#eee2ff", end: "#8f62ff", ink: "#2e155f" },
+    { crops: ["赤パプリカ"], start: "#ffe1d8", end: "#f2553f", ink: "#6f1608" },
+    { crops: ["黄パプリカ"], start: "#fff7bf", end: "#f6c431", ink: "#674600" },
+    { crops: ["きゅうり", "ゴーヤ", "ズッキーニ", "ピーマン", "ししとう", "オクラ", "いんげん"], start: "#e0ffd7", end: "#45d56d", ink: "#064428" },
+    { crops: ["枝豆", "えんどう"], start: "#ddffbe", end: "#7ed957", ink: "#315000" },
+    { crops: ["とうもろこし"], start: "#fff2a8", end: "#f6c431", ink: "#674600" },
+    { crops: ["かぼちゃ"], start: "#ffe6b8", end: "#ff9c32", ink: "#5c3100" },
+    { crops: ["スイカ", "メロン"], start: "#dfffc8", end: "#28c587", ink: "#063d2b" },
+    { crops: ["大根", "かぶ", "にんじん", "じゃがいも", "さつまいも", "さといも", "玉ねぎ", "にんにく", "しょうが", "ねぎ"], start: "#fff0d6", end: "#d99b4a", ink: "#583000" },
+    { crops: ["レタス", "キャベツ", "白菜", "ブロッコリー", "ほうれん草", "小松菜", "春菊", "パセリ", "シソ", "アスパラ"], start: "#ecffd9", end: "#6edc55", ink: "#15430d" },
+    { crops: ["いちご"], start: "#ffdbe8", end: "#ff4d79", ink: "#6b0925" }
+  ];
+  const theme = themes.find((item) => item.crops.includes(cropName))
+    || { start: "#f0ffd9", end: "#55d768", ink: "#053c25" };
+
+  element.style.setProperty("--crop-start", theme.start);
+  element.style.setProperty("--crop-end", theme.end);
+  element.style.setProperty("--crop-ink", theme.ink);
+}
+
+function renderSideButtons() {
+  elements.mapSideButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.side === activeSide);
+  });
+}
+
+function findSeedling(id) {
+  return state.seedlings.find((seedling) => seedling.id === id);
+}
+
+function activateTab(tabName) {
+  document.querySelectorAll(".tab-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.tab === tabName);
+  });
+  document.querySelectorAll(".tab-panel").forEach((panel) => {
+    panel.classList.toggle("active", panel.id === `${tabName}Panel`);
+  });
+}
+
+function appendEmpty(target) {
+  target.append(elements.emptyStateTemplate.content.cloneNode(true));
+}
+
+function saveAndRender() {
+  storage.save(state);
+  render();
+}
+
+function loadState() {
+  const stored = storage.load();
+  return stored ? normalizeState(stored) : structuredClone(defaultState);
+}
+
+function normalizeState(value) {
+  const seedlings = Array.isArray(value?.seedlings) ? value.seedlings : [];
+  const harvests = Array.isArray(value?.harvests) ? value.harvests : [];
+  const expenses = Array.isArray(value?.expenses) ? value.expenses : [];
+  const hasRecords = seedlings.length || harvests.length || expenses.length;
+  const savedColumns = value?.grid?.columns;
+  const savedRows = value?.grid?.rows;
+  const isOldLayout = value?.layoutVersion !== defaultState.layoutVersion;
+  const shouldUseNewDefault = !hasRecords && (
+    (savedColumns === 6 && savedRows === 4) ||
+    (savedColumns === 7 && savedRows === 5)
+  );
+  const shouldExpandOldLayout = isOldLayout && savedColumns < defaultState.grid.columns;
+  const grid = {
+    columns: clampNumber((shouldUseNewDefault || shouldExpandOldLayout) ? defaultState.grid.columns : savedColumns ?? defaultState.grid.columns, 1, 30),
+    rows: clampNumber(shouldUseNewDefault ? defaultState.grid.rows : savedRows ?? defaultState.grid.rows, 1, 20)
+  };
+
+  return {
+    layoutVersion: defaultState.layoutVersion,
+    grid,
+    seedlings: repairStaleOverflowCells(seedlings, grid),
+    harvests,
+    expenses
+  };
+}
+
+function repairStaleOverflowCells(seedlings, grid) {
+  const maxSegmentsByLine = new Map();
+
+  seedlings.forEach((seedling) => {
+    const position = parseCellPosition(seedling.cell);
+    if (!position || position.segment <= grid.columns) return;
+
+    const key = `${position.row}-${position.side}`;
+    maxSegmentsByLine.set(key, Math.max(maxSegmentsByLine.get(key) || grid.columns, position.segment));
+  });
+
+  if (!maxSegmentsByLine.size) return seedlings;
+
+  return seedlings.map((seedling) => {
+    const position = parseCellPosition(seedling.cell);
+    if (!position || position.segment <= grid.columns) return seedling;
+
+    const key = `${position.row}-${position.side}`;
+    const effectiveColumns = maxSegmentsByLine.get(key) || grid.columns;
+    const displaySegment = effectiveColumns - position.segment + 1;
+    return {
+      ...seedling,
+      cell: cellId(position.row, position.side, grid.columns - displaySegment + 1)
+    };
+  });
+}
+
+function clampNumber(value, min, max) {
+  const number = Number(value);
+  if (Number.isNaN(number)) return min;
+  return Math.min(max, Math.max(min, Math.trunc(number)));
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 1 }).format(value);
+}
+
+function createId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  if (!["http:", "https:"].includes(window.location.protocol)) return;
+
+  navigator.serviceWorker.register("./service-worker.js").catch(() => {
+    // The app still works without offline caching.
+  });
+}
+
+registerServiceWorker();
+render();
+applySyncSettingsFromUrl();
