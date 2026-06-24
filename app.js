@@ -60,6 +60,10 @@ let receiptAmountCandidates = [];
 let activeSide = "L";
 let mapFilter = "all";
 let aggregateMode = "variety";
+let harvestHistoryMonthFilter = "all";
+let harvestHistoryCropFilter = "all";
+let expenseHistoryMonthFilter = "all";
+let expenseHistoryCategoryFilter = "all";
 
 const elements = {
   columnsInput: document.querySelector("#columnsInput"),
@@ -130,6 +134,10 @@ const elements = {
   aggregateByCropButton: document.querySelector("#aggregateByCropButton"),
   harvestList: document.querySelector("#harvestList"),
   expenseList: document.querySelector("#expenseList"),
+  harvestMonthFilter: document.querySelector("#harvestMonthFilter"),
+  harvestCropFilter: document.querySelector("#harvestCropFilter"),
+  expenseMonthFilter: document.querySelector("#expenseMonthFilter"),
+  expenseCategoryFilter: document.querySelector("#expenseCategoryFilter"),
   harvestSummary: document.querySelector("#harvestSummary"),
   emptyStateTemplate: document.querySelector("#emptyStateTemplate"),
   exportButton: document.querySelector("#exportButton"),
@@ -366,6 +374,26 @@ elements.aggregateByCropButton.addEventListener("click", () => {
   aggregateMode = "crop";
   renderSeedlingList();
   renderAggregateTabs();
+});
+
+elements.harvestMonthFilter.addEventListener("change", () => {
+  harvestHistoryMonthFilter = elements.harvestMonthFilter.value;
+  renderHarvestList();
+});
+
+elements.harvestCropFilter.addEventListener("change", () => {
+  harvestHistoryCropFilter = elements.harvestCropFilter.value;
+  renderHarvestList();
+});
+
+elements.expenseMonthFilter.addEventListener("change", () => {
+  expenseHistoryMonthFilter = elements.expenseMonthFilter.value;
+  renderExpenseList();
+});
+
+elements.expenseCategoryFilter.addEventListener("change", () => {
+  expenseHistoryCategoryFilter = elements.expenseCategoryFilter.value;
+  renderExpenseList();
 });
 
 elements.receiptImageInput.addEventListener("change", async (event) => {
@@ -844,6 +872,7 @@ function renderRecords() {
   renderHarvestSummary();
   renderAggregateTabs();
   renderSeedlingList();
+  renderHistoryFilterOptions();
   renderHarvestList();
   renderExpenseList();
 }
@@ -1108,6 +1137,75 @@ function formatUnitTotals(harvests) {
     .join(" / ");
 }
 
+function renderHistoryFilterOptions() {
+  harvestHistoryMonthFilter = syncSelectOptions(
+    elements.harvestMonthFilter,
+    [
+      { value: "all", label: "全期間" },
+      ...uniqueMonths(state.harvests).map((month) => ({ value: month, label: formatYearMonthLabel(month) }))
+    ],
+    harvestHistoryMonthFilter
+  );
+
+  harvestHistoryCropFilter = syncSelectOptions(
+    elements.harvestCropFilter,
+    [
+      { value: "all", label: "全部" },
+      ...uniqueHarvestCrops().map((cropName) => ({ value: cropName, label: cropName }))
+    ],
+    harvestHistoryCropFilter
+  );
+
+  expenseHistoryMonthFilter = syncSelectOptions(
+    elements.expenseMonthFilter,
+    [
+      { value: "all", label: "全期間" },
+      ...uniqueMonths(state.expenses).map((month) => ({ value: month, label: formatYearMonthLabel(month) }))
+    ],
+    expenseHistoryMonthFilter
+  );
+
+  expenseHistoryCategoryFilter = syncSelectOptions(
+    elements.expenseCategoryFilter,
+    [
+      { value: "all", label: "全部" },
+      ...uniqueExpenseCategories().map((category) => ({ value: category, label: category }))
+    ],
+    expenseHistoryCategoryFilter
+  );
+}
+
+function syncSelectOptions(select, options, selectedValue) {
+  select.replaceChildren();
+  options.forEach((item) => {
+    const option = document.createElement("option");
+    option.value = item.value;
+    option.textContent = item.label;
+    select.append(option);
+  });
+
+  const nextValue = options.some((item) => item.value === selectedValue) ? selectedValue : "all";
+  select.value = nextValue;
+  return nextValue;
+}
+
+function uniqueMonths(records) {
+  return [...new Set(records.map((record) => record.date?.slice(0, 7)).filter(Boolean))]
+    .sort((a, b) => b.localeCompare(a));
+}
+
+function uniqueHarvestCrops() {
+  return [...new Set(state.harvests
+    .map((harvest) => findSeedling(harvest.seedlingId)?.cropName)
+    .filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+function uniqueExpenseCategories() {
+  return [...new Set(state.expenses.map((expense) => expense.category || "その他"))]
+    .sort((a, b) => a.localeCompare(b, "ja"));
+}
+
 function renderHarvestList() {
   elements.harvestList.replaceChildren();
   if (!state.harvests.length) {
@@ -1115,9 +1213,21 @@ function renderHarvestList() {
     return;
   }
 
-  [...state.harvests]
+  const filteredHarvests = state.harvests
+    .filter((harvest) => harvestHistoryMonthFilter === "all" || harvest.date?.startsWith(harvestHistoryMonthFilter))
+    .filter((harvest) => {
+      if (harvestHistoryCropFilter === "all") return true;
+      return findSeedling(harvest.seedlingId)?.cropName === harvestHistoryCropFilter;
+    });
+
+  if (!filteredHarvests.length) {
+    appendEmptyMessage(elements.harvestList, "条件に合う収穫記録がありません。");
+    return;
+  }
+
+  filteredHarvests
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 6)
+    .slice(0, 20)
     .forEach((harvest) => {
       const seedling = findSeedling(harvest.seedlingId);
       const item = createRecordItem({
@@ -1140,9 +1250,18 @@ function renderExpenseList() {
     return;
   }
 
-  [...state.expenses]
+  const filteredExpenses = state.expenses
+    .filter((expense) => expenseHistoryMonthFilter === "all" || expense.date?.startsWith(expenseHistoryMonthFilter))
+    .filter((expense) => expenseHistoryCategoryFilter === "all" || (expense.category || "その他") === expenseHistoryCategoryFilter);
+
+  if (!filteredExpenses.length) {
+    appendEmptyMessage(elements.expenseList, "条件に合う費用記録がありません。");
+    return;
+  }
+
+  filteredExpenses
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 6)
+    .slice(0, 20)
     .forEach((expense) => {
       const seedling = findSeedling(expense.seedlingId);
       const related = seedling ? seedlingLabel(seedling) : "畑全体";
@@ -2166,6 +2285,13 @@ function activateTab(tabName) {
 
 function appendEmpty(target) {
   target.append(elements.emptyStateTemplate.content.cloneNode(true));
+}
+
+function appendEmptyMessage(target, message) {
+  const empty = document.createElement("p");
+  empty.className = "empty-state";
+  empty.textContent = message;
+  target.append(empty);
 }
 
 function saveAndRender() {

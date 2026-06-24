@@ -255,10 +255,30 @@
           <div class="record-columns">
             <section>
               <h3>最近の収穫</h3>
+              <div class="history-filter-row" aria-label="収穫履歴の絞り込み">
+                <label>
+                  月
+                  <select id="harvestMonthFilter"></select>
+                </label>
+                <label>
+                  野菜
+                  <select id="harvestCropFilter"></select>
+                </label>
+              </div>
               <div id="harvestList" class="record-list"></div>
             </section>
             <section>
               <h3>費用</h3>
+              <div class="history-filter-row" aria-label="費用履歴の絞り込み">
+                <label>
+                  月
+                  <select id="expenseMonthFilter"></select>
+                </label>
+                <label>
+                  分類
+                  <select id="expenseCategoryFilter"></select>
+                </label>
+              </div>
               <div id="expenseList" class="record-list"></div>
             </section>
           </div>
