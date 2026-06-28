@@ -65,6 +65,11 @@ let harvestHistoryCropFilter = "all";
 let expenseHistoryMonthFilter = "all";
 let expenseHistoryCategoryFilter = "all";
 let detailSeedlingId = "";
+let harvestModeUnit = "個";
+let harvestModeCropFilter = "all";
+let lastHarvestModeAction = null;
+
+const HARVEST_MODE_UNITS = ["個", "本", "玉", "g", "kg"];
 
 const elements = {
   columnsInput: document.querySelector("#columnsInput"),
@@ -97,6 +102,14 @@ const elements = {
   seedlingDetailTitle: document.querySelector("#seedlingDetailTitle"),
   seedlingDetailBody: document.querySelector("#seedlingDetailBody"),
   closeSeedlingDetailButton: document.querySelector("#closeSeedlingDetailButton"),
+  openHarvestModeButton: document.querySelector("#openHarvestModeButton"),
+  harvestModeModal: document.querySelector("#harvestModeModal"),
+  harvestModeSummary: document.querySelector("#harvestModeSummary"),
+  harvestModeUnitPicker: document.querySelector("#harvestModeUnitPicker"),
+  harvestModeCropFilters: document.querySelector("#harvestModeCropFilters"),
+  harvestModeList: document.querySelector("#harvestModeList"),
+  closeHarvestModeButton: document.querySelector("#closeHarvestModeButton"),
+  undoHarvestModeButton: document.querySelector("#undoHarvestModeButton"),
   syncSettingsButton: document.querySelector("#syncSettingsButton"),
   syncMiniStatus: document.querySelector("#syncMiniStatus"),
   syncModal: document.querySelector("#syncModal"),
@@ -151,7 +164,7 @@ const elements = {
   mapSideButtons: document.querySelectorAll(".page-button")
 };
 
-const today = new Date().toISOString().slice(0, 10);
+const today = currentLocalDate();
 elements.plantedDateInput.value = today;
 elements.modalPlantedDateInput.value = today;
 elements.harvestDateInput.value = today;
@@ -271,6 +284,14 @@ elements.seedlingDetailModal.addEventListener("click", (event) => {
     closeSeedlingDetailModal();
   }
 });
+elements.openHarvestModeButton.addEventListener("click", openHarvestMode);
+elements.closeHarvestModeButton.addEventListener("click", closeHarvestMode);
+elements.undoHarvestModeButton.addEventListener("click", undoLastHarvestModeAction);
+elements.harvestModeModal.addEventListener("click", (event) => {
+  if (event.target === elements.harvestModeModal) {
+    closeHarvestMode();
+  }
+});
 
 elements.syncSettingsButton.addEventListener("click", openSyncModal);
 elements.closeSyncModalButton.addEventListener("click", closeSyncModal);
@@ -363,6 +384,8 @@ elements.pullCloudButton.addEventListener("click", async () => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.syncModal.classList.contains("hidden")) {
     closeSyncModal();
+  } else if (event.key === "Escape" && !elements.harvestModeModal.classList.contains("hidden")) {
+    closeHarvestMode();
   } else if (event.key === "Escape" && !elements.seedlingDetailModal.classList.contains("hidden")) {
     closeSeedlingDetailModal();
   } else if (event.key === "Escape" && !elements.seedlingModal.classList.contains("hidden")) {
@@ -537,6 +560,9 @@ function render() {
   renderExpenseDashboard();
   renderExpenseManagerList();
   renderSummary();
+  if (!elements.harvestModeModal.classList.contains("hidden")) {
+    renderHarvestMode();
+  }
 }
 
 function renderCellOptions() {
@@ -1904,6 +1930,209 @@ function createDetailRecord(date, meta, total) {
   return row;
 }
 
+function openHarvestMode() {
+  harvestModeCropFilter = "all";
+  lastHarvestModeAction = null;
+  renderHarvestMode();
+  elements.harvestModeModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  elements.closeHarvestModeButton.focus();
+}
+
+function closeHarvestMode() {
+  elements.harvestModeModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+}
+
+function renderHarvestMode() {
+  if (!elements.harvestModeList) return;
+
+  const todayTotal = harvestTotalsForPeriod((harvest) => harvest.date === today);
+  elements.harvestModeSummary.textContent = todayTotal || "まだ収穫はありません";
+  elements.undoHarvestModeButton.disabled = !lastHarvestModeAction;
+
+  renderHarvestModeUnits();
+  renderHarvestModeFilters();
+  elements.harvestModeList.replaceChildren();
+
+  const seedlings = [...state.seedlings]
+    .filter((seedling) => harvestModeCropFilter === "all" || seedling.cropName === harvestModeCropFilter)
+    .sort((a, b) => (
+      a.cropName.localeCompare(b.cropName, "ja")
+      || cellDisplayName(a.cell).localeCompare(cellDisplayName(b.cell), "ja", { numeric: true })
+    ));
+
+  if (!seedlings.length) {
+    appendEmptyMessage(
+      elements.harvestModeList,
+      state.seedlings.length ? "この野菜の苗は登録されていません。" : "先に畑マップへ苗を登録してください。"
+    );
+    return;
+  }
+
+  seedlings.forEach((seedling) => {
+    elements.harvestModeList.append(createHarvestModeCard(seedling));
+  });
+}
+
+function renderHarvestModeUnits() {
+  elements.harvestModeUnitPicker.replaceChildren();
+  HARVEST_MODE_UNITS.forEach((unit) => {
+    const button = document.createElement("button");
+    button.className = "harvest-mode-unit";
+    button.classList.toggle("active", unit === harvestModeUnit);
+    button.type = "button";
+    button.textContent = unit;
+    button.setAttribute("aria-pressed", String(unit === harvestModeUnit));
+    button.addEventListener("click", () => {
+      harvestModeUnit = unit;
+      renderHarvestMode();
+    });
+    elements.harvestModeUnitPicker.append(button);
+  });
+}
+
+function renderHarvestModeFilters() {
+  elements.harvestModeCropFilters.replaceChildren();
+  const filters = [
+    { value: "all", label: "すべて" },
+    ...uniqueCropNames().map((cropName) => ({ value: cropName, label: cropName }))
+  ];
+
+  if (!filters.some((filter) => filter.value === harvestModeCropFilter)) {
+    harvestModeCropFilter = "all";
+  }
+
+  filters.forEach((filter) => {
+    const button = document.createElement("button");
+    button.className = "harvest-mode-filter";
+    button.classList.toggle("active", filter.value === harvestModeCropFilter);
+    button.type = "button";
+    button.textContent = filter.label;
+    button.setAttribute("aria-pressed", String(filter.value === harvestModeCropFilter));
+    button.addEventListener("click", () => {
+      harvestModeCropFilter = filter.value;
+      renderHarvestMode();
+    });
+    elements.harvestModeCropFilters.append(button);
+  });
+}
+
+function createHarvestModeCard(seedling) {
+  const card = document.createElement("article");
+  card.className = "harvest-mode-card";
+  applyCropTheme(card, seedling.cropName);
+
+  const identity = document.createElement("div");
+  identity.className = "harvest-mode-identity";
+  identity.append(createCropIllustration(seedling.cropName));
+
+  const identityText = document.createElement("div");
+  const cropName = document.createElement("strong");
+  cropName.textContent = seedling.cropName;
+  const meta = document.createElement("span");
+  meta.textContent = [seedling.variety || "品種なし", cellDisplayName(seedling.cell)].join(" / ");
+  identityText.append(cropName, meta);
+  identity.append(identityText);
+
+  const todayCount = document.createElement("div");
+  todayCount.className = "harvest-mode-count";
+  const countLabel = document.createElement("span");
+  countLabel.textContent = `今日・${harvestModeUnit}`;
+  const countValue = document.createElement("strong");
+  const amount = harvestTotalForSeedlingDateUnit(seedling.id, today, harvestModeUnit);
+  countValue.textContent = formatNumber(amount);
+  const lifetime = document.createElement("small");
+  lifetime.textContent = `累計 ${harvestTotalsForSeedling(seedling.id) || "収穫なし"}`;
+  todayCount.append(countLabel, countValue, lifetime);
+
+  const actions = document.createElement("div");
+  actions.className = "harvest-mode-actions";
+
+  const decrementButton = document.createElement("button");
+  decrementButton.className = "harvest-mode-step decrement";
+  decrementButton.type = "button";
+  decrementButton.textContent = "-1";
+  decrementButton.disabled = amount <= 0;
+  decrementButton.setAttribute("aria-label", `${seedlingLabel(seedling)}を1${harvestModeUnit}減らす`);
+  decrementButton.addEventListener("click", () => applyHarvestModeDelta(seedling.id, -1));
+
+  const incrementButton = document.createElement("button");
+  incrementButton.className = "harvest-mode-step increment";
+  incrementButton.type = "button";
+  incrementButton.textContent = "+1";
+  incrementButton.setAttribute("aria-label", `${seedlingLabel(seedling)}を1${harvestModeUnit}増やす`);
+  incrementButton.addEventListener("click", () => applyHarvestModeDelta(seedling.id, 1));
+
+  actions.append(decrementButton, incrementButton);
+  card.append(identity, todayCount, actions);
+  return card;
+}
+
+function applyHarvestModeDelta(seedlingId, delta) {
+  if (delta > 0) {
+    const harvest = {
+      id: createId("harvest"),
+      seedlingId,
+      date: today,
+      amount: 1,
+      unit: harvestModeUnit,
+      memo: "収穫モードから追加"
+    };
+    state.harvests.push(harvest);
+    lastHarvestModeAction = { type: "add", harvestId: harvest.id };
+    saveAndRender();
+    return;
+  }
+
+  const index = findLatestTodayHarvestIndex(seedlingId, harvestModeUnit);
+  if (index === -1) return;
+
+  const previous = structuredClone(state.harvests[index]);
+  if (previous.amount <= 1) {
+    state.harvests.splice(index, 1);
+  } else {
+    state.harvests[index] = { ...previous, amount: previous.amount - 1 };
+  }
+  lastHarvestModeAction = { type: "subtract", previous, index };
+  saveAndRender();
+}
+
+function findLatestTodayHarvestIndex(seedlingId, unit) {
+  for (let index = state.harvests.length - 1; index >= 0; index -= 1) {
+    const harvest = state.harvests[index];
+    if (harvest.seedlingId === seedlingId && harvest.unit === unit && harvest.date === today) {
+      return index;
+    }
+  }
+  return -1;
+}
+
+function undoLastHarvestModeAction() {
+  if (!lastHarvestModeAction) return;
+
+  if (lastHarvestModeAction.type === "add") {
+    state.harvests = state.harvests.filter((harvest) => harvest.id !== lastHarvestModeAction.harvestId);
+  } else if (lastHarvestModeAction.type === "subtract") {
+    const { previous, index } = lastHarvestModeAction;
+    const currentIndex = state.harvests.findIndex((harvest) => harvest.id === previous.id);
+    if (currentIndex >= 0) {
+      state.harvests[currentIndex] = previous;
+    } else {
+      state.harvests.splice(Math.min(index, state.harvests.length), 0, previous);
+    }
+  }
+
+  lastHarvestModeAction = null;
+  saveAndRender();
+}
+
+function harvestTotalForSeedlingDateUnit(seedlingId, date, unit) {
+  return state.harvests
+    .filter((harvest) => harvest.seedlingId === seedlingId && harvest.date === date && harvest.unit === unit)
+    .reduce((sum, harvest) => sum + Number(harvest.amount || 0), 0);
+}
+
 function openSyncModal() {
   renderSyncSettings();
   renderSyncLink("");
@@ -2544,6 +2773,14 @@ function clampNumber(value, min, max) {
   const number = Number(value);
   if (Number.isNaN(number)) return min;
   return Math.min(max, Math.max(min, Math.trunc(number)));
+}
+
+function currentLocalDate() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function formatNumber(value) {

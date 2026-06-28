@@ -48,6 +48,13 @@
             <p id="summaryText" class="muted"></p>
           </div>
           <div class="map-tools">
+            <button id="openHarvestModeButton" class="harvest-mode-launch" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5v14"></path>
+                <path d="M5 12h14"></path>
+              </svg>
+              <span>収穫モード</span>
+            </button>
             <div class="map-pages" aria-label="畑の左右ページ">
               <button class="page-button active" type="button" data-side="L">左ページ</button>
               <button class="page-button" type="button" data-side="R">右ページ</button>
@@ -338,6 +345,28 @@
           <button id="closeSeedlingDetailButton" class="modal-close-button" type="button" aria-label="閉じる"></button>
         </div>
         <div id="seedlingDetailBody" class="seedling-detail-body"></div>
+      </section>
+    </div>
+
+    <div id="harvestModeModal" class="modal-backdrop harvest-mode-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="harvestModeTitle">
+      <section class="harvest-mode-panel">
+        <header class="harvest-mode-header">
+          <div>
+            <p class="eyebrow">今日の収穫</p>
+            <h2 id="harvestModeTitle">収穫モード</h2>
+            <p id="harvestModeSummary" class="harvest-mode-summary"></p>
+          </div>
+          <button id="closeHarvestModeButton" class="modal-close-button" type="button" aria-label="閉じる"></button>
+        </header>
+        <div class="harvest-mode-toolbar">
+          <div>
+            <span class="field-label">数える単位</span>
+            <div id="harvestModeUnitPicker" class="harvest-mode-unit-picker" aria-label="収穫単位"></div>
+          </div>
+          <button id="undoHarvestModeButton" class="harvest-mode-undo" type="button" disabled>直前操作を戻す</button>
+        </div>
+        <div id="harvestModeCropFilters" class="harvest-mode-filters" aria-label="野菜で絞り込み"></div>
+        <div id="harvestModeList" class="harvest-mode-list"></div>
       </section>
     </div>
 

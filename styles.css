@@ -192,11 +192,40 @@ h3 {
 
 .map-tools {
   display: grid;
-  grid-template-columns: auto auto minmax(180px, 260px);
+  grid-template-columns: auto auto auto minmax(180px, 260px);
   gap: 10px;
   align-items: end;
   justify-content: start;
   width: fit-content;
+}
+
+.harvest-mode-launch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 14px;
+  background: linear-gradient(135deg, #ff5d3a, #ffca2f);
+  color: #391500;
+  font-weight: 900;
+  box-shadow: 0 10px 22px rgba(255, 93, 58, 0.2);
+}
+
+.harvest-mode-launch svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.harvest-mode-launch:hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
 }
 
 .filter-control {
@@ -1672,6 +1701,256 @@ select:focus {
   white-space: nowrap;
 }
 
+.harvest-mode-backdrop {
+  padding: 16px;
+  background: rgba(5, 52, 34, 0.5);
+}
+
+.harvest-mode-panel {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  width: min(960px, 100%);
+  height: min(820px, calc(100dvh - 32px));
+  overflow: hidden;
+  border: 1px solid rgba(18, 201, 106, 0.38);
+  border-radius: 12px;
+  background: #f7fff8;
+  box-shadow: 0 30px 90px rgba(3, 43, 29, 0.38);
+}
+
+.harvest-mode-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid rgba(32, 115, 74, 0.14);
+  background: linear-gradient(110deg, #087642, #10b962 62%, #ffca2f 140%);
+  color: #ffffff;
+}
+
+.harvest-mode-header h2,
+.harvest-mode-header p {
+  margin: 0;
+}
+
+.harvest-mode-header h2 {
+  font-size: 25px;
+}
+
+.harvest-mode-header .eyebrow {
+  margin-bottom: 3px;
+  color: #fff4b0;
+}
+
+.harvest-mode-header .modal-close-button {
+  border-color: rgba(255, 255, 255, 0.52);
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.harvest-mode-summary {
+  margin-top: 6px !important;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.harvest-mode-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(32, 115, 74, 0.12);
+  background: #ffffff;
+}
+
+.harvest-mode-toolbar > div {
+  display: grid;
+  gap: 6px;
+}
+
+.harvest-mode-unit-picker {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(48px, 1fr));
+  gap: 5px;
+  max-width: 420px;
+}
+
+.harvest-mode-unit,
+.harvest-mode-filter,
+.harvest-mode-undo {
+  border: 1px solid rgba(8, 118, 66, 0.2);
+  border-radius: 7px;
+  background: #ffffff;
+  color: #29563c;
+  font-weight: 900;
+}
+
+.harvest-mode-unit {
+  min-height: 38px;
+  padding: 6px 8px;
+}
+
+.harvest-mode-unit.active,
+.harvest-mode-filter.active {
+  border-color: transparent;
+  background: #087642;
+  color: #ffffff;
+}
+
+.harvest-mode-undo {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-color: rgba(255, 93, 58, 0.28);
+  background: #fff6f0;
+  color: #a43620;
+}
+
+.harvest-mode-undo:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.harvest-mode-filters {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(32, 115, 74, 0.12);
+  background: #f1fff3;
+  scrollbar-width: thin;
+}
+
+.harvest-mode-filter {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 6px 11px;
+  white-space: nowrap;
+}
+
+.harvest-mode-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-content: start;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 16px 18px;
+}
+
+.harvest-mode-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, auto);
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid color-mix(in srgb, var(--crop-end, #55d768) 58%, #ffffff);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7)),
+    linear-gradient(135deg, var(--crop-start, #f0ffd9), var(--crop-end, #55d768));
+  box-shadow: 0 9px 20px rgba(22, 63, 46, 0.09);
+}
+
+.harvest-mode-identity {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.harvest-mode-identity .crop-illustration {
+  width: 42px;
+  height: 42px;
+}
+
+.harvest-mode-identity > div:last-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.harvest-mode-identity strong {
+  overflow: hidden;
+  color: var(--crop-ink, #063f2a);
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.harvest-mode-identity span {
+  overflow: hidden;
+  color: #536951;
+  font-size: 11px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.harvest-mode-count {
+  display: grid;
+  justify-items: end;
+  min-width: 84px;
+}
+
+.harvest-mode-count span,
+.harvest-mode-count small {
+  color: #5c705c;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.harvest-mode-count strong {
+  color: #074f31;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.harvest-mode-count small {
+  max-width: 126px;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.harvest-mode-actions {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.harvest-mode-step {
+  min-height: 48px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.harvest-mode-step.decrement {
+  border: 1px solid rgba(11, 179, 232, 0.3);
+  background: #edfaff;
+  color: #006f88;
+}
+
+.harvest-mode-step.increment {
+  background: linear-gradient(135deg, #12c96a, #ffca2f);
+  color: #0b351d;
+  box-shadow: 0 8px 17px rgba(18, 201, 106, 0.18);
+}
+
+.harvest-mode-step:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .sync-panel {
   display: grid;
   gap: 12px;
@@ -1796,7 +2075,7 @@ select:focus {
 
 @media (max-width: 640px) {
   body {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
   }
 
   .app-header,
@@ -1866,6 +2145,17 @@ select:focus {
     grid-template-columns: 1fr;
     justify-items: stretch;
     gap: 8px;
+  }
+
+  .harvest-mode-launch {
+    position: fixed;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: 10px;
+    z-index: 30;
+    min-height: 54px;
+    font-size: 16px;
+    box-shadow: 0 14px 30px rgba(126, 55, 16, 0.3);
   }
 
   .filter-control {
@@ -2087,6 +2377,67 @@ select:focus {
 
   .modal-backdrop {
     padding: 8px;
+  }
+
+  .harvest-mode-backdrop {
+    padding: 0;
+  }
+
+  .harvest-mode-panel {
+    width: 100%;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .harvest-mode-header {
+    padding: calc(12px + env(safe-area-inset-top)) 12px 11px;
+  }
+
+  .harvest-mode-header h2 {
+    font-size: 21px;
+  }
+
+  .harvest-mode-summary {
+    max-width: 280px;
+    font-size: 11px;
+  }
+
+  .harvest-mode-toolbar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .harvest-mode-unit-picker {
+    max-width: none;
+  }
+
+  .harvest-mode-unit {
+    min-height: 42px;
+  }
+
+  .harvest-mode-undo {
+    min-height: 38px;
+  }
+
+  .harvest-mode-filters {
+    padding: 8px 10px;
+  }
+
+  .harvest-mode-list {
+    grid-template-columns: 1fr;
+    gap: 9px;
+    padding: 10px 10px calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .harvest-mode-card {
+    padding: 10px;
+  }
+
+  .harvest-mode-step {
+    min-height: 56px;
+    font-size: 20px;
   }
 
   .modal-panel {

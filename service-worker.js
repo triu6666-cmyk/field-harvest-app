@@ -1,4 +1,4 @@
-const CACHE_NAME = "field-harvest-manager-v19";
+const CACHE_NAME = "field-harvest-manager-v20";
 const APP_SHELL = [
   "./",
   "./index.html",
