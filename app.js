@@ -64,6 +64,7 @@ let harvestHistoryMonthFilter = "all";
 let harvestHistoryCropFilter = "all";
 let expenseHistoryMonthFilter = "all";
 let expenseHistoryCategoryFilter = "all";
+let detailSeedlingId = "";
 
 const elements = {
   columnsInput: document.querySelector("#columnsInput"),
@@ -92,6 +93,10 @@ const elements = {
   pasteSeedlingButton: document.querySelector("#pasteSeedlingButton"),
   closeSeedlingModalButton: document.querySelector("#closeSeedlingModalButton"),
   cancelModalSeedlingButton: document.querySelector("#cancelModalSeedlingButton"),
+  seedlingDetailModal: document.querySelector("#seedlingDetailModal"),
+  seedlingDetailTitle: document.querySelector("#seedlingDetailTitle"),
+  seedlingDetailBody: document.querySelector("#seedlingDetailBody"),
+  closeSeedlingDetailButton: document.querySelector("#closeSeedlingDetailButton"),
   syncSettingsButton: document.querySelector("#syncSettingsButton"),
   syncMiniStatus: document.querySelector("#syncMiniStatus"),
   syncModal: document.querySelector("#syncModal"),
@@ -260,6 +265,12 @@ elements.seedlingModal.addEventListener("click", (event) => {
     closeSeedlingModal();
   }
 });
+elements.closeSeedlingDetailButton.addEventListener("click", closeSeedlingDetailModal);
+elements.seedlingDetailModal.addEventListener("click", (event) => {
+  if (event.target === elements.seedlingDetailModal) {
+    closeSeedlingDetailModal();
+  }
+});
 
 elements.syncSettingsButton.addEventListener("click", openSyncModal);
 elements.closeSyncModalButton.addEventListener("click", closeSyncModal);
@@ -352,6 +363,8 @@ elements.pullCloudButton.addEventListener("click", async () => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.syncModal.classList.contains("hidden")) {
     closeSyncModal();
+  } else if (event.key === "Escape" && !elements.seedlingDetailModal.classList.contains("hidden")) {
+    closeSeedlingDetailModal();
   } else if (event.key === "Escape" && !elements.seedlingModal.classList.contains("hidden")) {
     closeSeedlingModal();
   } else if (event.key === "Escape" && copyPlacementTemplate) {
@@ -709,6 +722,17 @@ function createFieldCell(cell) {
   const content = document.createElement("div");
   if (seedling) {
     content.className = "cell-planted-content";
+    content.tabIndex = 0;
+    content.setAttribute("role", "button");
+    content.setAttribute("aria-label", `${seedlingLabel(seedling)}の詳細を見る`);
+    content.title = "苗の詳細を見る";
+    content.addEventListener("click", () => openSeedlingDetail(seedling.id));
+    content.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openSeedlingDetail(seedling.id);
+      }
+    });
 
     const name = document.createElement("div");
     name.className = "plant-name";
@@ -1759,6 +1783,125 @@ function closeSeedlingModal() {
   renderCropPicker();
   elements.seedlingModal.classList.add("hidden");
   document.body.classList.remove("modal-open");
+}
+
+function openSeedlingDetail(seedlingId) {
+  const seedling = findSeedling(seedlingId);
+  if (!seedling) return;
+
+  detailSeedlingId = seedlingId;
+  renderSeedlingDetail(seedling);
+  elements.seedlingDetailModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  elements.closeSeedlingDetailButton.focus();
+}
+
+function closeSeedlingDetailModal() {
+  detailSeedlingId = "";
+  elements.seedlingDetailBody.replaceChildren();
+  elements.seedlingDetailModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+}
+
+function renderSeedlingDetail(seedling) {
+  elements.seedlingDetailTitle.textContent = seedlingLabel(seedling);
+  elements.seedlingDetailBody.replaceChildren();
+
+  const harvests = state.harvests
+    .filter((harvest) => harvest.seedlingId === seedling.id)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const expenses = state.expenses
+    .filter((expense) => expense.seedlingId === seedling.id)
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const hero = document.createElement("section");
+  hero.className = "seedling-detail-hero";
+  applyCropTheme(hero, seedling.cropName);
+  hero.append(createCropIllustration(seedling.cropName));
+
+  const heroText = document.createElement("div");
+  const crop = document.createElement("strong");
+  crop.textContent = seedling.cropName;
+  const meta = document.createElement("span");
+  meta.textContent = [seedling.variety || "品種なし", cellDisplayName(seedling.cell)].join(" / ");
+  heroText.append(crop, meta);
+  hero.append(heroText);
+
+  const editButton = document.createElement("button");
+  editButton.className = "secondary-button";
+  editButton.type = "button";
+  editButton.textContent = "編集";
+  editButton.addEventListener("click", () => {
+    closeSeedlingDetailModal();
+    openSeedlingModal({ seedling });
+  });
+  hero.append(editButton);
+
+  const stats = document.createElement("section");
+  stats.className = "seedling-detail-stats";
+  stats.append(
+    createDetailStat("収穫合計", harvestTotalsForSeedling(seedling.id) || "収穫なし"),
+    createDetailStat("収穫回数", `${harvests.length}回`),
+    createDetailStat("植えた日", seedling.plantedDate || "未入力"),
+    createDetailStat("費用", expenses.length ? `${formatNumber(expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0))}円` : "記録なし")
+  );
+
+  const memo = document.createElement("section");
+  memo.className = "seedling-detail-section";
+  memo.append(createDetailSectionTitle("メモ"));
+  const memoText = document.createElement("p");
+  memoText.className = "seedling-detail-note";
+  memoText.textContent = seedling.memo || "メモはありません。";
+  memo.append(memoText);
+
+  const harvestList = document.createElement("section");
+  harvestList.className = "seedling-detail-section";
+  harvestList.append(createDetailSectionTitle("最近の収穫"));
+  const harvestRecordList = document.createElement("div");
+  harvestRecordList.className = "detail-record-list";
+  if (harvests.length) {
+    harvests.slice(0, 8).forEach((harvest) => {
+      harvestRecordList.append(createDetailRecord(harvest.date, [harvest.memo].filter(Boolean).join(" / "), `${formatNumber(harvest.amount)}${harvest.unit}`));
+    });
+  } else {
+    appendEmptyMessage(harvestRecordList, "まだ収穫記録がありません。");
+  }
+  harvestList.append(harvestRecordList);
+
+  elements.seedlingDetailBody.append(hero, stats, memo, harvestList);
+}
+
+function createDetailStat(label, value) {
+  const card = document.createElement("article");
+  card.className = "detail-stat-card";
+  const labelElement = document.createElement("span");
+  labelElement.textContent = label;
+  const valueElement = document.createElement("strong");
+  valueElement.textContent = String(value).replaceAll(" / ", "\n");
+  card.append(labelElement, valueElement);
+  return card;
+}
+
+function createDetailSectionTitle(text) {
+  const title = document.createElement("h3");
+  title.className = "detail-section-title";
+  title.textContent = text;
+  return title;
+}
+
+function createDetailRecord(date, meta, total) {
+  const row = document.createElement("article");
+  row.className = "detail-record-item";
+  const main = document.createElement("div");
+  const dateElement = document.createElement("strong");
+  dateElement.textContent = date;
+  const metaElement = document.createElement("span");
+  metaElement.textContent = meta || "メモなし";
+  main.append(dateElement, metaElement);
+  const totalElement = document.createElement("b");
+  totalElement.textContent = total;
+  row.append(main, totalElement);
+  return row;
 }
 
 function openSyncModal() {

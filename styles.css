@@ -508,6 +508,13 @@ select:focus {
   gap: 1px;
   min-width: 0;
   align-items: center;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.cell-planted-content:focus-visible {
+  outline: 2px solid rgba(11, 179, 232, 0.72);
+  outline-offset: 2px;
 }
 
 .cell-code {
@@ -1534,6 +1541,137 @@ select:focus {
   width: min(720px, 100%);
 }
 
+.detail-modal-panel {
+  width: min(680px, 100%);
+}
+
+.seedling-detail-body {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.seedling-detail-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--crop-end, #55d768) 60%, #ffffff);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.44)),
+    linear-gradient(135deg, var(--crop-start, #f0ffd9), var(--crop-end, #55d768));
+  color: var(--crop-ink, #063f2a);
+}
+
+.seedling-detail-hero .crop-illustration {
+  width: 44px;
+  height: 44px;
+}
+
+.seedling-detail-hero div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.seedling-detail-hero strong {
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.seedling-detail-hero span {
+  min-width: 0;
+  color: color-mix(in srgb, var(--crop-ink, #063f2a) 76%, #ffffff);
+  font-size: 12px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seedling-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.detail-stat-card,
+.seedling-detail-section {
+  border: 1px solid rgba(32, 115, 74, 0.14);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #f2fff3);
+  padding: 10px;
+}
+
+.detail-stat-card span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.detail-stat-card strong {
+  display: block;
+  color: #064428;
+  font-size: 14px;
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
+.detail-section-title {
+  margin: 0 0 8px;
+  color: #063f2a;
+  font-size: 14px;
+}
+
+.seedling-detail-note {
+  margin: 0;
+  color: #335237;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.detail-record-list {
+  display: grid;
+  gap: 7px;
+}
+
+.detail-record-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid rgba(32, 115, 74, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.detail-record-item div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.detail-record-item strong {
+  color: #075638;
+  font-size: 12px;
+}
+
+.detail-record-item span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.detail-record-item b {
+  color: #087642;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .sync-panel {
   display: grid;
   gap: 12px;
@@ -1963,6 +2101,22 @@ select:focus {
 
   .modal-body {
     padding: 12px;
+  }
+
+  .seedling-detail-body {
+    padding: 12px;
+  }
+
+  .seedling-detail-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .seedling-detail-hero .secondary-button {
+    grid-column: 1 / -1;
+  }
+
+  .seedling-detail-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .crop-card {
