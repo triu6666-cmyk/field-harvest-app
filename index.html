@@ -85,6 +85,7 @@
       <section class="workspace">
         <nav class="tabs" aria-label="入力メニュー">
           <button class="tab-button hidden" type="button" data-tab="seedlings">苗</button>
+          <button class="tab-button" type="button" data-tab="activities">作業</button>
           <button class="tab-button" type="button" data-tab="harvests">収穫</button>
           <button class="tab-button" type="button" data-tab="expenses">費用</button>
           <button class="tab-button active" type="button" data-tab="records">一覧</button>
@@ -158,6 +159,43 @@
               <button id="cancelSeedlingEditButton" class="secondary-button hidden" type="button">編集をやめる</button>
             </div>
           </form>
+        </div>
+
+        <div class="tab-panel" id="activitiesPanel">
+          <form id="activityForm" class="form-grid">
+            <label>
+              作業日
+              <input id="activityDateInput" type="date" required>
+            </label>
+            <label>
+              作業内容
+              <select id="activityTypeInput">
+                <option value="水やり">水やり</option>
+                <option value="追肥">追肥</option>
+                <option value="薬剤">薬剤</option>
+                <option value="整枝・誘引">整枝・誘引</option>
+                <option value="除草">除草</option>
+                <option value="その他">その他</option>
+              </select>
+            </label>
+            <label class="wide">
+              対象
+              <select id="activityTargetSelect"></select>
+            </label>
+            <label class="wide">
+              メモ
+              <input id="activityMemoInput" placeholder="肥料名、薬剤名、作業した範囲など">
+            </label>
+            <button class="primary-button wide" type="submit">作業を記録</button>
+          </form>
+          <section class="activity-dashboard-section">
+            <h3>作業の記録</h3>
+            <div id="activitySummary" class="activity-summary"></div>
+          </section>
+          <section class="activity-dashboard-section">
+            <h3>最近の作業</h3>
+            <div id="activityList" class="record-list"></div>
+          </section>
         </div>
 
         <div class="tab-panel" id="harvestsPanel">
@@ -301,6 +339,14 @@
           <path d="M15 6v15"></path>
         </svg>
         <span>畑</span>
+      </button>
+      <button class="mobile-nav-button" type="button" data-mobile-view="activities">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 4h10a2 2 0 0 1 2 2v16H5V6a2 2 0 0 1 2-2Z"></path>
+          <path d="M9 4V2h6v2"></path>
+          <path d="m8 13 2 2 5-5"></path>
+        </svg>
+        <span>作業</span>
       </button>
       <button class="mobile-nav-button harvest" type="button" data-mobile-view="harvest">
         <svg viewBox="0 0 24 24" aria-hidden="true">

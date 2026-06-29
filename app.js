@@ -5,7 +5,8 @@ const defaultState = {
   grid: { columns: 20, rows: 5 },
   seedlings: [],
   harvests: [],
-  expenses: []
+  expenses: [],
+  activities: []
 };
 
 const CROP_PICKER_ITEMS = [
@@ -139,6 +140,13 @@ const elements = {
   harvestUnitInput: document.querySelector("#harvestUnitInput"),
   harvestMemoInput: document.querySelector("#harvestMemoInput"),
   harvestForm: document.querySelector("#harvestForm"),
+  activityDateInput: document.querySelector("#activityDateInput"),
+  activityTypeInput: document.querySelector("#activityTypeInput"),
+  activityTargetSelect: document.querySelector("#activityTargetSelect"),
+  activityMemoInput: document.querySelector("#activityMemoInput"),
+  activityForm: document.querySelector("#activityForm"),
+  activitySummary: document.querySelector("#activitySummary"),
+  activityList: document.querySelector("#activityList"),
   expenseSeedlingSelect: document.querySelector("#expenseSeedlingSelect"),
   expenseDateInput: document.querySelector("#expenseDateInput"),
   expenseNameInput: document.querySelector("#expenseNameInput"),
@@ -175,6 +183,7 @@ const today = currentLocalDate();
 elements.plantedDateInput.value = today;
 elements.modalPlantedDateInput.value = today;
 elements.harvestDateInput.value = today;
+elements.activityDateInput.value = today;
 elements.expenseDateInput.value = today;
 elements.expenseCategoryInput.value = "その他";
 elements.columnsInput.value = state.grid.columns;
@@ -187,6 +196,8 @@ document.querySelectorAll(".tab-button").forEach((button) => {
     activateTab(button.dataset.tab);
     if (button.dataset.tab === "expenses") {
       setMobileNavActive("expenses");
+    } else if (button.dataset.tab === "activities") {
+      setMobileNavActive("activities");
     } else if (button.dataset.tab === "records") {
       setMobileNavActive("records");
     } else if (button.dataset.tab === "harvests") {
@@ -522,6 +533,25 @@ elements.harvestForm.addEventListener("submit", (event) => {
   elements.harvestUnitInput.value = "個";
 });
 
+elements.activityForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const seedling = findSeedling(elements.activityTargetSelect.value);
+  state.activities.push({
+    id: createId("activity"),
+    date: elements.activityDateInput.value,
+    type: elements.activityTypeInput.value,
+    seedlingId: seedling?.id || "",
+    targetLabel: seedling ? seedlingLabel(seedling) : "畑全体",
+    memo: elements.activityMemoInput.value.trim(),
+    createdAt: new Date().toISOString()
+  });
+  elements.activityForm.reset();
+  elements.activityDateInput.value = today;
+  elements.activityTypeInput.value = "水やり";
+  saveAndRender();
+  activateTab("activities");
+});
+
 elements.expenseForm.addEventListener("submit", (event) => {
   event.preventDefault();
   state.expenses.push({
@@ -577,11 +607,14 @@ function render() {
   renderCellOptions();
   renderModalCellOptions();
   renderSeedlingOptions();
+  renderActivityTargetOptions();
   renderField();
   renderSideButtons();
   renderRecords();
   renderExpenseDashboard();
   renderExpenseManagerList();
+  renderActivitySummary();
+  renderActivityList();
   renderSummary();
   if (!elements.harvestModeModal.classList.contains("hidden")) {
     renderHarvestMode();
@@ -626,6 +659,27 @@ function renderSeedlingOptions() {
     elements.harvestSeedlingSelect.append(option.cloneNode(true));
     elements.expenseSeedlingSelect.append(option);
   });
+}
+
+function renderActivityTargetOptions() {
+  const selectedValue = elements.activityTargetSelect.value;
+  elements.activityTargetSelect.replaceChildren();
+
+  const fieldOption = document.createElement("option");
+  fieldOption.value = "";
+  fieldOption.textContent = "畑全体";
+  elements.activityTargetSelect.append(fieldOption);
+
+  state.seedlings.forEach((seedling) => {
+    const option = document.createElement("option");
+    option.value = seedling.id;
+    option.textContent = seedlingLabel(seedling);
+    elements.activityTargetSelect.append(option);
+  });
+
+  if ([...elements.activityTargetSelect.options].some((option) => option.value === selectedValue)) {
+    elements.activityTargetSelect.value = selectedValue;
+  }
 }
 
 function renderField() {
@@ -1439,6 +1493,69 @@ function createExpenseChartPanel(title, rows, labelFormatter = (label) => label)
   return panel;
 }
 
+function renderActivitySummary() {
+  elements.activitySummary.replaceChildren();
+  const currentMonth = today.slice(0, 7);
+  const todayCount = state.activities.filter((activity) => activity.date === today).length;
+  const monthCount = state.activities.filter((activity) => activity.date?.startsWith(currentMonth)).length;
+  elements.activitySummary.append(
+    createSummaryCard("今日", `${todayCount}件`),
+    createSummaryCard("今月", `${monthCount}件`),
+    createSummaryCard("累計", `${state.activities.length}件`)
+  );
+}
+
+function renderActivityList() {
+  elements.activityList.replaceChildren();
+  if (!state.activities.length) {
+    appendEmptyMessage(elements.activityList, "まだ作業記録がありません。");
+    return;
+  }
+
+  [...state.activities]
+    .sort((a, b) => `${b.date || ""}${b.createdAt || ""}`.localeCompare(`${a.date || ""}${a.createdAt || ""}`))
+    .slice(0, 20)
+    .forEach((activity) => {
+      const item = createRecordItem({
+        title: `${activity.type} / ${activityTargetLabel(activity)}`,
+        meta: activity.memo || "メモなし",
+        total: activity.date || "日付なし",
+        variant: "activity",
+        icon: activityTypeIcon(activity.type),
+        onDelete: () => deleteRecord("activities", activity.id)
+      });
+      item.dataset.activityType = activityTypeKey(activity.type);
+      elements.activityList.append(item);
+    });
+}
+
+function activityTargetLabel(activity) {
+  if (!activity.seedlingId) return activity.targetLabel || "畑全体";
+  return findSeedling(activity.seedlingId)
+    ? seedlingLabel(findSeedling(activity.seedlingId))
+    : activity.targetLabel || "削除済みの苗";
+}
+
+function activityTypeIcon(type) {
+  return {
+    "水やり": "水",
+    "追肥": "肥",
+    "薬剤": "薬",
+    "整枝・誘引": "整",
+    "除草": "草"
+  }[type] || "他";
+}
+
+function activityTypeKey(type) {
+  return {
+    "水やり": "water",
+    "追肥": "fertilizer",
+    "薬剤": "spray",
+    "整枝・誘引": "training",
+    "除草": "weeding"
+  }[type] || "other";
+}
+
 function renderExpenseManagerList() {
   elements.expenseManagerList.replaceChildren();
   if (!state.expenses.length) {
@@ -1862,6 +1979,9 @@ function renderSeedlingDetail(seedling) {
   const expenses = state.expenses
     .filter((expense) => expense.seedlingId === seedling.id)
     .sort((a, b) => b.date.localeCompare(a.date));
+  const activities = state.activities
+    .filter((activity) => activity.seedlingId === seedling.id)
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   const hero = document.createElement("section");
   hero.className = "seedling-detail-hero";
@@ -1884,7 +2004,24 @@ function renderSeedlingDetail(seedling) {
     closeSeedlingDetailModal();
     openSeedlingModal({ seedling });
   });
-  hero.append(editButton);
+
+  const activityButton = document.createElement("button");
+  activityButton.className = "secondary-button";
+  activityButton.type = "button";
+  activityButton.textContent = "作業を記録";
+  activityButton.addEventListener("click", () => {
+    closeSeedlingDetailModal();
+    activateTab("activities");
+    renderActivityTargetOptions();
+    elements.activityTargetSelect.value = seedling.id;
+    setMobileNavActive("activities");
+    elements.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  const heroActions = document.createElement("div");
+  heroActions.className = "seedling-detail-actions";
+  heroActions.append(activityButton, editButton);
+  hero.append(heroActions);
 
   const stats = document.createElement("section");
   stats.className = "seedling-detail-stats";
@@ -1917,7 +2054,21 @@ function renderSeedlingDetail(seedling) {
   }
   harvestList.append(harvestRecordList);
 
-  elements.seedlingDetailBody.append(hero, stats, memo, harvestList);
+  const activityList = document.createElement("section");
+  activityList.className = "seedling-detail-section";
+  activityList.append(createDetailSectionTitle("最近の作業"));
+  const activityRecordList = document.createElement("div");
+  activityRecordList.className = "detail-record-list";
+  if (activities.length) {
+    activities.slice(0, 8).forEach((activity) => {
+      activityRecordList.append(createDetailRecord(activity.date, activity.memo, activity.type));
+    });
+  } else {
+    appendEmptyMessage(activityRecordList, "まだ作業記録がありません。");
+  }
+  activityList.append(activityRecordList);
+
+  elements.seedlingDetailBody.append(hero, stats, memo, activityList, harvestList);
 }
 
 function createDetailStat(label, value) {
@@ -2005,6 +2156,8 @@ function syncMobileNavFromScroll() {
   const activePanel = document.querySelector(".tab-panel.active");
   if (activePanel?.id === "expensesPanel") {
     setMobileNavActive("expenses");
+  } else if (activePanel?.id === "activitiesPanel") {
+    setMobileNavActive("activities");
   } else if (activePanel?.id === "harvestsPanel") {
     setMobileNavActive("harvest");
   } else {
@@ -2806,7 +2959,8 @@ function normalizeState(value) {
   const seedlings = Array.isArray(value?.seedlings) ? value.seedlings : [];
   const harvests = Array.isArray(value?.harvests) ? value.harvests : [];
   const expenses = Array.isArray(value?.expenses) ? value.expenses : [];
-  const hasRecords = seedlings.length || harvests.length || expenses.length;
+  const activities = Array.isArray(value?.activities) ? value.activities : [];
+  const hasRecords = seedlings.length || harvests.length || expenses.length || activities.length;
   const savedColumns = value?.grid?.columns;
   const savedRows = value?.grid?.rows;
   const isOldLayout = value?.layoutVersion !== defaultState.layoutVersion;
@@ -2825,7 +2979,8 @@ function normalizeState(value) {
     grid,
     seedlings: repairStaleOverflowCells(seedlings, grid),
     harvests,
-    expenses
+    expenses,
+    activities
   };
 }
 

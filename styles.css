@@ -1079,6 +1079,23 @@ select:focus {
   margin-top: 16px;
 }
 
+.activity-dashboard-section {
+  margin-top: 16px;
+}
+
+.activity-dashboard-section h3 {
+  margin: 0 0 8px;
+  color: #063f2a;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.activity-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .expense-dashboard-section h3 {
   margin: 0 0 8px;
   color: #063f2a;
@@ -1436,6 +1453,23 @@ select:focus {
   background: linear-gradient(180deg, var(--accent), var(--sun));
 }
 
+.record-item-activity::before {
+  background: linear-gradient(180deg, #0bb3e8, #12c96a);
+}
+
+.record-item-activity[data-activity-type="fertilizer"]::before {
+  background: linear-gradient(180deg, #ffca2f, #12c96a);
+}
+
+.record-item-activity[data-activity-type="spray"]::before {
+  background: linear-gradient(180deg, #ff5d3a, #ffca2f);
+}
+
+.record-item-activity[data-activity-type="training"]::before,
+.record-item-activity[data-activity-type="weeding"]::before {
+  background: linear-gradient(180deg, #087642, #12c96a);
+}
+
 .record-icon {
   display: grid;
   place-items: center;
@@ -1451,6 +1485,11 @@ select:focus {
 .record-item-expense .record-icon {
   background: rgba(255, 93, 58, 0.14);
   color: #9d2b17;
+}
+
+.record-item-activity .record-icon {
+  background: rgba(11, 179, 232, 0.14);
+  color: #006f88;
 }
 
 .record-main {
@@ -1622,6 +1661,18 @@ select:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.seedling-detail-actions {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 6px;
+}
+
+.seedling-detail-actions .secondary-button {
+  min-height: 38px;
+  padding: 8px 10px;
+  font-size: 12px;
 }
 
 .seedling-detail-stats {
@@ -2162,7 +2213,7 @@ select:focus {
     left: 0;
     z-index: 60;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     min-height: calc(64px + env(safe-area-inset-bottom));
     padding: 4px 8px calc(4px + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(8, 118, 66, 0.2);
@@ -2534,6 +2585,16 @@ select:focus {
 
   .seedling-detail-hero .secondary-button {
     grid-column: 1 / -1;
+  }
+
+  .seedling-detail-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .seedling-detail-hero .seedling-detail-actions .secondary-button {
+    grid-column: auto;
   }
 
   .seedling-detail-stats {
