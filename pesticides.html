@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#087642">
+    <title>野菜別 農薬対応表</title>
+    <link rel="icon" href="app-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="pesticides.css">
+  </head>
+  <body>
+    <header class="pesticide-header">
+      <a class="pesticide-brand" href="index.html">
+        <img src="app-icon.svg" alt="">
+        <span>
+          <small>畑の記録</small>
+          <strong>農薬対応表</strong>
+        </span>
+      </a>
+      <div class="header-commands">
+        <button id="printButton" class="icon-command" type="button" title="印刷" aria-label="印刷">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 9V2h12v7"></path>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <path d="M6 14h12v8H6Z"></path>
+          </svg>
+        </button>
+        <a class="back-link" href="index.html">収穫管理へ戻る</a>
+      </div>
+    </header>
+
+    <main class="pesticide-shell">
+      <section class="page-intro" aria-labelledby="pageTitle">
+        <div>
+          <p class="eyebrow">PESTICIDE REFERENCE</p>
+          <h1 id="pageTitle">野菜別 農薬対応表</h1>
+          <p>野菜ごとに、登録・対象病害虫・収穫前日数・使用回数・希釈倍率を確認するためのひな型です。</p>
+        </div>
+        <span class="draft-badge">調査データ未登録</span>
+      </section>
+
+      <section class="control-band" aria-label="表示する野菜と条件">
+        <div class="control-grid">
+          <label>
+            野菜
+            <select id="cropSelect"></select>
+          </label>
+          <label>
+            農薬名を検索
+            <input id="productSearchInput" type="search" placeholder="商品名・成分名">
+          </label>
+          <label>
+            用途
+            <select id="purposeFilter">
+              <option value="all">すべて</option>
+              <option value="殺菌剤">殺菌剤</option>
+              <option value="殺虫剤">殺虫剤</option>
+              <option value="除草剤">除草剤</option>
+              <option value="その他">その他</option>
+            </select>
+          </label>
+          <label>
+            登録状況
+            <select id="statusFilter">
+              <option value="all">すべて</option>
+              <option value="registered">登録あり</option>
+              <option value="conditional">条件付き</option>
+              <option value="not-registered">登録なし</option>
+              <option value="expired">失効</option>
+              <option value="prohibited">使用禁止</option>
+              <option value="unverified">未確認</option>
+            </select>
+          </label>
+        </div>
+        <div id="cropChips" class="crop-chips" aria-label="野菜の切り替え"></div>
+      </section>
+
+      <section class="reference-section" aria-labelledby="referenceTitle">
+        <div class="reference-heading">
+          <div>
+            <p id="cropCategory" class="crop-category"></p>
+            <h2 id="referenceTitle"></h2>
+            <p id="cropSummary" class="crop-summary"></p>
+          </div>
+          <div class="status-legend" aria-label="登録状況の凡例">
+            <span><b class="status-dot registered"></b>登録あり</span>
+            <span><b class="status-dot conditional"></b>条件付き</span>
+            <span><b class="status-dot not-registered"></b>登録なし</span>
+            <span><b class="status-dot expired"></b>失効</span>
+            <span><b class="status-dot prohibited"></b>使用禁止</span>
+            <span><b class="status-dot unverified"></b>未確認</span>
+          </div>
+        </div>
+
+        <div class="table-scroll" tabindex="0" aria-label="農薬対応表。横にスクロールできます">
+          <table class="pesticide-table">
+            <thead>
+              <tr>
+                <th class="sticky-column">農薬名</th>
+                <th>用途</th>
+                <th>登録</th>
+                <th>対象病害虫・雑草</th>
+                <th>使用時期<br><small>収穫前日数</small></th>
+                <th>本剤の<br>使用回数</th>
+                <th>希釈倍数・使用量</th>
+                <th>使用方法</th>
+                <th>有効成分の<br>総使用回数</th>
+                <th>混用</th>
+                <th>確認日・出典</th>
+              </tr>
+            </thead>
+            <tbody id="pesticideTableBody"></tbody>
+          </table>
+        </div>
+        <p id="emptyTableMessage" class="empty-table-message hidden">条件に一致するデータがありません。</p>
+      </section>
+
+      <section class="safety-band" aria-label="農薬情報の注意事項">
+        <article>
+          <strong>ラベルを最優先</strong>
+          <p>使用直前に製品ラベルと最新の登録情報を確認します。</p>
+        </article>
+        <article>
+          <strong>作物名を厳密に確認</strong>
+          <p>トマト・ミニトマトなど、登録上の作物名を分けて扱います。</p>
+        </article>
+        <article>
+          <strong>混用は推測しない</strong>
+          <p>公式の混用事例が確認できない組み合わせは「未確認」とします。</p>
+        </article>
+      </section>
+
+      <section class="research-section" aria-labelledby="researchTitle">
+        <div class="research-heading">
+          <div>
+            <p class="eyebrow">DEEP RESEARCH</p>
+            <h2 id="researchTitle">調査用プロンプト</h2>
+          </div>
+          <div class="research-actions">
+            <a class="prompt-file-link" href="pesticide-deep-research-prompt.md" target="_blank" rel="noreferrer">全文を開く</a>
+            <button id="copyPromptButton" class="copy-prompt-button" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>プロンプトをコピー</span>
+            </button>
+          </div>
+        </div>
+        <textarea id="researchPrompt" readonly aria-label="Deep Research用プロンプト">読み込み中...</textarea>
+        <p id="copyStatus" class="copy-status" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script src="pesticides.js"></script>
+  </body>
+</html>
