@@ -68,6 +68,10 @@ let detailSeedlingId = "";
 let harvestModeUnit = "個";
 let harvestModeCropFilter = "all";
 let lastHarvestModeAction = null;
+let mobileNavView = "map";
+let mobileNavViewBeforeHarvest = "map";
+let mobileNavScrollLockUntil = 0;
+let mobileNavScrollQueued = false;
 
 const HARVEST_MODE_UNITS = ["個", "本", "玉", "g", "kg"];
 
@@ -75,6 +79,8 @@ const elements = {
   columnsInput: document.querySelector("#columnsInput"),
   rowsInput: document.querySelector("#rowsInput"),
   resizeGridButton: document.querySelector("#resizeGridButton"),
+  mapSection: document.querySelector(".map-section"),
+  workspace: document.querySelector(".workspace"),
   fieldGrid: document.querySelector("#fieldGrid"),
   summaryText: document.querySelector("#summaryText"),
   cellSelect: document.querySelector("#cellSelect"),
@@ -161,7 +167,8 @@ const elements = {
   exportButton: document.querySelector("#exportButton"),
   importInput: document.querySelector("#importInput"),
   mapFilterSelect: document.querySelector("#mapFilterSelect"),
-  mapSideButtons: document.querySelectorAll(".page-button")
+  mapSideButtons: document.querySelectorAll(".page-button"),
+  mobileNavButtons: document.querySelectorAll(".mobile-nav-button")
 };
 
 const today = currentLocalDate();
@@ -176,8 +183,24 @@ copyCropOptionsToModal();
 renderCropPicker();
 
 document.querySelectorAll(".tab-button").forEach((button) => {
-  button.addEventListener("click", () => activateTab(button.dataset.tab));
+  button.addEventListener("click", () => {
+    activateTab(button.dataset.tab);
+    if (button.dataset.tab === "expenses") {
+      setMobileNavActive("expenses");
+    } else if (button.dataset.tab === "records") {
+      setMobileNavActive("records");
+    } else if (button.dataset.tab === "harvests") {
+      setMobileNavActive("harvest");
+    }
+  });
 });
+
+elements.mobileNavButtons.forEach((button) => {
+  button.addEventListener("click", () => activateMobileView(button.dataset.mobileView));
+});
+
+window.addEventListener("scroll", queueMobileNavScrollSync, { passive: true });
+window.addEventListener("resize", queueMobileNavScrollSync);
 
 elements.mapSideButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -1930,18 +1953,82 @@ function createDetailRecord(date, meta, total) {
   return row;
 }
 
+function activateMobileView(view) {
+  if (view === "harvest") {
+    openHarvestMode();
+    return;
+  }
+
+  mobileNavScrollLockUntil = Date.now() + 700;
+  if (view === "map") {
+    setMobileNavActive("map");
+    elements.mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
+  activateTab(view);
+  setMobileNavActive(view);
+  elements.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function setMobileNavActive(view) {
+  mobileNavView = view;
+  elements.mobileNavButtons.forEach((button) => {
+    const isActive = button.dataset.mobileView === view;
+    button.classList.toggle("active", isActive);
+    if (isActive) {
+      button.setAttribute("aria-current", "page");
+    } else {
+      button.removeAttribute("aria-current");
+    }
+  });
+}
+
+function queueMobileNavScrollSync() {
+  if (mobileNavScrollQueued || window.innerWidth > 640 || Date.now() < mobileNavScrollLockUntil) return;
+  mobileNavScrollQueued = true;
+  window.requestAnimationFrame(() => {
+    mobileNavScrollQueued = false;
+    syncMobileNavFromScroll();
+  });
+}
+
+function syncMobileNavFromScroll() {
+  if (!elements.harvestModeModal.classList.contains("hidden")) return;
+
+  const workspaceTop = elements.workspace.getBoundingClientRect().top;
+  if (workspaceTop > window.innerHeight * 0.55) {
+    setMobileNavActive("map");
+    return;
+  }
+
+  const activePanel = document.querySelector(".tab-panel.active");
+  if (activePanel?.id === "expensesPanel") {
+    setMobileNavActive("expenses");
+  } else if (activePanel?.id === "harvestsPanel") {
+    setMobileNavActive("harvest");
+  } else {
+    setMobileNavActive("records");
+  }
+}
+
 function openHarvestMode() {
+  if (elements.harvestModeModal.classList.contains("hidden")) {
+    mobileNavViewBeforeHarvest = mobileNavView === "harvest" ? "map" : mobileNavView;
+  }
   harvestModeCropFilter = "all";
   lastHarvestModeAction = null;
   renderHarvestMode();
   elements.harvestModeModal.classList.remove("hidden");
   document.body.classList.add("modal-open");
+  setMobileNavActive("harvest");
   elements.closeHarvestModeButton.focus();
 }
 
 function closeHarvestMode() {
   elements.harvestModeModal.classList.add("hidden");
   document.body.classList.remove("modal-open");
+  setMobileNavActive(mobileNavViewBeforeHarvest);
 }
 
 function renderHarvestMode() {

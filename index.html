@@ -293,6 +293,44 @@
       </section>
     </main>
 
+    <nav class="mobile-bottom-nav" aria-label="主要メニュー">
+      <button class="mobile-nav-button active" type="button" data-mobile-view="map" aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z"></path>
+          <path d="M9 3v15"></path>
+          <path d="M15 6v15"></path>
+        </svg>
+        <span>畑</span>
+      </button>
+      <button class="mobile-nav-button harvest" type="button" data-mobile-view="harvest">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 20h10"></path>
+          <path d="M10 20c5-2 6-7 6-12"></path>
+          <path d="M15 8c-3 0-5-2-5-5 3 0 5 2 5 5Z"></path>
+          <path d="M16 13c3 0 5-2 5-5-3 0-5 2-5 5Z"></path>
+        </svg>
+        <span>収穫</span>
+      </button>
+      <button class="mobile-nav-button" type="button" data-mobile-view="expenses">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 2h12v20l-3-2-3 2-3-2-3 2Z"></path>
+          <path d="M9 7h6"></path>
+          <path d="M9 11h6"></path>
+          <path d="M9 15h3"></path>
+        </svg>
+        <span>費用</span>
+      </button>
+      <button class="mobile-nav-button" type="button" data-mobile-view="records">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 19V9"></path>
+          <path d="M10 19V5"></path>
+          <path d="M16 19v-7"></path>
+          <path d="M22 19H2"></path>
+        </svg>
+        <span>集計</span>
+      </button>
+    </nav>
+
     <div id="seedlingModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="seedlingModalTitle">
       <section class="modal-panel">
         <div class="modal-header">
