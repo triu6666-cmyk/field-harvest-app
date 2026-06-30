@@ -91,7 +91,7 @@
       <section class="workspace">
         <nav class="tabs" aria-label="入力メニュー">
           <button class="tab-button hidden" type="button" data-tab="seedlings">苗</button>
-          <button class="tab-button" type="button" data-tab="activities">作業</button>
+          <button class="tab-button" type="button" data-tab="activities">作業<span id="taskTabBadge" class="tab-badge hidden"></span></button>
           <button class="tab-button" type="button" data-tab="harvests">収穫</button>
           <button class="tab-button" type="button" data-tab="expenses">費用</button>
           <button class="tab-button active" type="button" data-tab="records">一覧</button>
@@ -168,7 +168,12 @@
         </div>
 
         <div class="tab-panel" id="activitiesPanel">
-          <form id="activityForm" class="form-grid">
+          <div class="activity-view-tabs" aria-label="作業画面の切り替え">
+            <button id="showActivityRecordsButton" class="activity-view-tab active" type="button">実施記録</button>
+            <button id="showTaskPlannerButton" class="activity-view-tab" type="button">作業予定</button>
+          </div>
+          <div id="activityRecordsView">
+            <form id="activityForm" class="form-grid">
             <label>
               作業日
               <input id="activityDateInput" type="date" required>
@@ -193,15 +198,52 @@
               <input id="activityMemoInput" placeholder="肥料名、薬剤名、作業した範囲など">
             </label>
             <button class="primary-button wide" type="submit">作業を記録</button>
-          </form>
-          <section class="activity-dashboard-section">
-            <h3>作業の記録</h3>
-            <div id="activitySummary" class="activity-summary"></div>
-          </section>
-          <section class="activity-dashboard-section">
-            <h3>最近の作業</h3>
-            <div id="activityList" class="record-list"></div>
-          </section>
+            </form>
+            <section class="activity-dashboard-section">
+              <h3>作業の記録</h3>
+              <div id="activitySummary" class="activity-summary"></div>
+            </section>
+            <section class="activity-dashboard-section">
+              <h3>最近の作業</h3>
+              <div id="activityList" class="record-list"></div>
+            </section>
+          </div>
+          <div id="taskPlannerView" class="hidden">
+            <form id="taskForm" class="form-grid">
+              <label>
+                予定日
+                <input id="taskDateInput" type="date" required>
+              </label>
+              <label>
+                作業内容
+                <select id="taskTypeInput">
+                  <option value="水やり">水やり</option>
+                  <option value="追肥">追肥</option>
+                  <option value="薬剤">薬剤</option>
+                  <option value="整枝・誘引">整枝・誘引</option>
+                  <option value="除草">除草</option>
+                  <option value="その他">その他</option>
+                </select>
+              </label>
+              <label class="wide">
+                対象
+                <select id="taskTargetSelect"></select>
+              </label>
+              <label class="wide">
+                メモ
+                <input id="taskMemoInput" placeholder="肥料を買う、雨の後に確認など">
+              </label>
+              <button class="primary-button wide" type="submit">予定を追加</button>
+            </form>
+            <section class="activity-dashboard-section">
+              <h3>予定の状況</h3>
+              <div id="taskSummary" class="activity-summary"></div>
+            </section>
+            <section class="activity-dashboard-section">
+              <h3>作業予定</h3>
+              <div id="taskList" class="task-list"></div>
+            </section>
+          </div>
         </div>
 
         <div class="tab-panel" id="harvestsPanel">
@@ -353,6 +395,7 @@
           <path d="m8 13 2 2 5-5"></path>
         </svg>
         <span>作業</span>
+        <b id="taskDueBadge" class="mobile-nav-badge hidden"></b>
       </button>
       <button class="mobile-nav-button harvest" type="button" data-mobile-view="harvest">
         <svg viewBox="0 0 24 24" aria-hidden="true">

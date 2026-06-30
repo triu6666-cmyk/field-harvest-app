@@ -6,7 +6,8 @@ const defaultState = {
   seedlings: [],
   harvests: [],
   expenses: [],
-  activities: []
+  activities: [],
+  tasks: []
 };
 
 const CROP_PICKER_ITEMS = [
@@ -73,6 +74,7 @@ let mobileNavView = "map";
 let mobileNavViewBeforeHarvest = "map";
 let mobileNavScrollLockUntil = 0;
 let mobileNavScrollQueued = false;
+let activityViewMode = "records";
 
 const HARVEST_MODE_UNITS = ["個", "本", "玉", "g", "kg"];
 
@@ -147,6 +149,19 @@ const elements = {
   activityForm: document.querySelector("#activityForm"),
   activitySummary: document.querySelector("#activitySummary"),
   activityList: document.querySelector("#activityList"),
+  showActivityRecordsButton: document.querySelector("#showActivityRecordsButton"),
+  showTaskPlannerButton: document.querySelector("#showTaskPlannerButton"),
+  activityRecordsView: document.querySelector("#activityRecordsView"),
+  taskPlannerView: document.querySelector("#taskPlannerView"),
+  taskDateInput: document.querySelector("#taskDateInput"),
+  taskTypeInput: document.querySelector("#taskTypeInput"),
+  taskTargetSelect: document.querySelector("#taskTargetSelect"),
+  taskMemoInput: document.querySelector("#taskMemoInput"),
+  taskForm: document.querySelector("#taskForm"),
+  taskSummary: document.querySelector("#taskSummary"),
+  taskList: document.querySelector("#taskList"),
+  taskDueBadge: document.querySelector("#taskDueBadge"),
+  taskTabBadge: document.querySelector("#taskTabBadge"),
   expenseSeedlingSelect: document.querySelector("#expenseSeedlingSelect"),
   expenseDateInput: document.querySelector("#expenseDateInput"),
   expenseNameInput: document.querySelector("#expenseNameInput"),
@@ -184,6 +199,7 @@ elements.plantedDateInput.value = today;
 elements.modalPlantedDateInput.value = today;
 elements.harvestDateInput.value = today;
 elements.activityDateInput.value = today;
+elements.taskDateInput.value = today;
 elements.expenseDateInput.value = today;
 elements.expenseCategoryInput.value = "その他";
 elements.columnsInput.value = state.grid.columns;
@@ -208,6 +224,16 @@ document.querySelectorAll(".tab-button").forEach((button) => {
 
 elements.mobileNavButtons.forEach((button) => {
   button.addEventListener("click", () => activateMobileView(button.dataset.mobileView));
+});
+
+elements.showActivityRecordsButton.addEventListener("click", () => {
+  activityViewMode = "records";
+  renderActivityView();
+});
+
+elements.showTaskPlannerButton.addEventListener("click", () => {
+  activityViewMode = "tasks";
+  renderActivityView();
 });
 
 window.addEventListener("scroll", queueMobileNavScrollSync, { passive: true });
@@ -552,6 +578,28 @@ elements.activityForm.addEventListener("submit", (event) => {
   activateTab("activities");
 });
 
+elements.taskForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const seedling = findSeedling(elements.taskTargetSelect.value);
+  state.tasks.push({
+    id: createId("task"),
+    date: elements.taskDateInput.value,
+    type: elements.taskTypeInput.value,
+    seedlingId: seedling?.id || "",
+    targetLabel: seedling ? seedlingLabel(seedling) : "畑全体",
+    memo: elements.taskMemoInput.value.trim(),
+    completed: false,
+    completedAt: "",
+    createdAt: new Date().toISOString()
+  });
+  elements.taskForm.reset();
+  elements.taskDateInput.value = today;
+  elements.taskTypeInput.value = "水やり";
+  activityViewMode = "tasks";
+  saveAndRender();
+  activateTab("activities");
+});
+
 elements.expenseForm.addEventListener("submit", (event) => {
   event.preventDefault();
   state.expenses.push({
@@ -615,6 +663,10 @@ function render() {
   renderExpenseManagerList();
   renderActivitySummary();
   renderActivityList();
+  renderTaskSummary();
+  renderTaskList();
+  renderTaskBadges();
+  renderActivityView();
   renderSummary();
   if (!elements.harvestModeModal.classList.contains("hidden")) {
     renderHarvestMode();
@@ -662,23 +714,28 @@ function renderSeedlingOptions() {
 }
 
 function renderActivityTargetOptions() {
-  const selectedValue = elements.activityTargetSelect.value;
-  elements.activityTargetSelect.replaceChildren();
+  populateWorkTargetSelect(elements.activityTargetSelect);
+  populateWorkTargetSelect(elements.taskTargetSelect);
+}
+
+function populateWorkTargetSelect(select) {
+  const selectedValue = select.value;
+  select.replaceChildren();
 
   const fieldOption = document.createElement("option");
   fieldOption.value = "";
   fieldOption.textContent = "畑全体";
-  elements.activityTargetSelect.append(fieldOption);
+  select.append(fieldOption);
 
   state.seedlings.forEach((seedling) => {
     const option = document.createElement("option");
     option.value = seedling.id;
     option.textContent = seedlingLabel(seedling);
-    elements.activityTargetSelect.append(option);
+    select.append(option);
   });
 
-  if ([...elements.activityTargetSelect.options].some((option) => option.value === selectedValue)) {
-    elements.activityTargetSelect.value = selectedValue;
+  if ([...select.options].some((option) => option.value === selectedValue)) {
+    select.value = selectedValue;
   }
 }
 
@@ -1556,6 +1613,143 @@ function activityTypeKey(type) {
   }[type] || "other";
 }
 
+function renderActivityView() {
+  const showTasks = activityViewMode === "tasks";
+  elements.activityRecordsView.classList.toggle("hidden", showTasks);
+  elements.taskPlannerView.classList.toggle("hidden", !showTasks);
+  elements.showActivityRecordsButton.classList.toggle("active", !showTasks);
+  elements.showTaskPlannerButton.classList.toggle("active", showTasks);
+  elements.showActivityRecordsButton.setAttribute("aria-pressed", String(!showTasks));
+  elements.showTaskPlannerButton.setAttribute("aria-pressed", String(showTasks));
+}
+
+function renderTaskSummary() {
+  elements.taskSummary.replaceChildren();
+  const pending = state.tasks.filter((task) => !task.completed);
+  const todayCount = pending.filter((task) => task.date === today).length;
+  const overdueCount = pending.filter((task) => task.date && task.date < today).length;
+  const completedCount = state.tasks.filter((task) => task.completed).length;
+  elements.taskSummary.append(
+    createSummaryCard("今日", `${todayCount}件`),
+    createSummaryCard("期限超過", `${overdueCount}件`),
+    createSummaryCard("完了", `${completedCount}件`)
+  );
+}
+
+function renderTaskList() {
+  elements.taskList.replaceChildren();
+  if (!state.tasks.length) {
+    appendEmptyMessage(elements.taskList, "まだ作業予定がありません。");
+    return;
+  }
+
+  [...state.tasks]
+    .sort((a, b) => {
+      if (a.completed !== b.completed) return Number(a.completed) - Number(b.completed);
+      if (!a.completed) return (a.date || "").localeCompare(b.date || "");
+      return (b.completedAt || "").localeCompare(a.completedAt || "");
+    })
+    .slice(0, 30)
+    .forEach((task) => elements.taskList.append(createTaskItem(task)));
+}
+
+function createTaskItem(task) {
+  const item = document.createElement("article");
+  item.className = "task-item";
+  item.classList.toggle("completed", task.completed);
+  item.classList.toggle("overdue", !task.completed && task.date && task.date < today);
+  item.dataset.activityType = activityTypeKey(task.type);
+
+  const completeButton = document.createElement("button");
+  completeButton.className = "task-complete-button";
+  completeButton.type = "button";
+  completeButton.textContent = task.completed ? "✓" : "";
+  completeButton.setAttribute("aria-label", task.completed ? "完了を取り消す" : "完了にする");
+  completeButton.title = task.completed ? "完了を取り消す" : "完了にする";
+  completeButton.addEventListener("click", () => toggleTaskComplete(task.id));
+
+  const main = document.createElement("div");
+  main.className = "task-main";
+  const title = document.createElement("strong");
+  title.textContent = `${task.type} / ${activityTargetLabel(task)}`;
+  const meta = document.createElement("span");
+  meta.textContent = task.memo || "メモなし";
+  main.append(title, meta);
+
+  const due = document.createElement("div");
+  due.className = "task-due";
+  due.dataset.status = taskDueStatus(task);
+  const dueLabel = document.createElement("span");
+  dueLabel.textContent = taskDueLabel(task);
+  const dueDate = document.createElement("strong");
+  dueDate.textContent = task.date || "日付なし";
+  due.append(dueLabel, dueDate);
+
+  const deleteButton = document.createElement("button");
+  deleteButton.className = "task-delete-button";
+  deleteButton.type = "button";
+  deleteButton.textContent = "削除";
+  deleteButton.addEventListener("click", () => deleteRecord("tasks", task.id));
+
+  item.append(completeButton, main, due, deleteButton);
+  return item;
+}
+
+function taskDueStatus(task) {
+  if (task.completed) return "completed";
+  if (!task.date) return "none";
+  if (task.date < today) return "overdue";
+  if (task.date === today) return "today";
+  return "upcoming";
+}
+
+function taskDueLabel(task) {
+  return {
+    completed: "完了",
+    overdue: "期限超過",
+    today: "今日",
+    upcoming: "予定",
+    none: "日付なし"
+  }[taskDueStatus(task)];
+}
+
+function toggleTaskComplete(taskId) {
+  const task = state.tasks.find((item) => item.id === taskId);
+  if (!task) return;
+
+  if (task.completed) {
+    task.completed = false;
+    task.completedAt = "";
+    state.activities = state.activities.filter((activity) => activity.sourceTaskId !== task.id);
+  } else {
+    task.completed = true;
+    task.completedAt = new Date().toISOString();
+    if (!state.activities.some((activity) => activity.sourceTaskId === task.id)) {
+      state.activities.push({
+        id: createId("activity"),
+        date: currentLocalDate(),
+        type: task.type,
+        seedlingId: task.seedlingId,
+        targetLabel: task.targetLabel,
+        memo: task.memo,
+        sourceTaskId: task.id,
+        createdAt: task.completedAt
+      });
+    }
+  }
+  saveAndRender();
+}
+
+function renderTaskBadges() {
+  const dueCount = state.tasks.filter((task) => !task.completed && task.date && task.date <= today).length;
+  const label = dueCount > 99 ? "99+" : String(dueCount);
+  [elements.taskDueBadge, elements.taskTabBadge].forEach((badge) => {
+    badge.textContent = label;
+    badge.classList.toggle("hidden", dueCount === 0);
+    badge.setAttribute("aria-label", `期限が来ている作業予定 ${dueCount}件`);
+  });
+}
+
 function renderExpenseManagerList() {
   elements.expenseManagerList.replaceChildren();
   if (!state.expenses.length) {
@@ -2011,9 +2205,11 @@ function renderSeedlingDetail(seedling) {
   activityButton.textContent = "作業を記録";
   activityButton.addEventListener("click", () => {
     closeSeedlingDetailModal();
+    activityViewMode = "records";
     activateTab("activities");
     renderActivityTargetOptions();
     elements.activityTargetSelect.value = seedling.id;
+    renderActivityView();
     setMobileNavActive("activities");
     elements.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
   });
@@ -2960,7 +3156,8 @@ function normalizeState(value) {
   const harvests = Array.isArray(value?.harvests) ? value.harvests : [];
   const expenses = Array.isArray(value?.expenses) ? value.expenses : [];
   const activities = Array.isArray(value?.activities) ? value.activities : [];
-  const hasRecords = seedlings.length || harvests.length || expenses.length || activities.length;
+  const tasks = Array.isArray(value?.tasks) ? value.tasks : [];
+  const hasRecords = seedlings.length || harvests.length || expenses.length || activities.length || tasks.length;
   const savedColumns = value?.grid?.columns;
   const savedRows = value?.grid?.rows;
   const isOldLayout = value?.layoutVersion !== defaultState.layoutVersion;
@@ -2980,7 +3177,8 @@ function normalizeState(value) {
     seedlings: repairStaleOverflowCells(seedlings, grid),
     harvests,
     expenses,
-    activities
+    activities,
+    tasks
   };
 }
 
