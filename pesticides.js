@@ -72,12 +72,15 @@ const elements = {
 let selectedCrop = crops[0].name;
 
 function createTemplateRows(cropName) {
-  return ["殺菌剤", "殺虫剤", "その他"].map((purpose) => ({
+  return [
+    { productName: "ダコニール1000（調査待ち）", purpose: "殺菌剤" },
+    { productName: "トレボン乳剤（登録番号確認待ち）", purpose: "殺虫剤" }
+  ].map((product) => ({
     cropName,
-    productName: `${purpose}候補（調査待ち）`,
+    productName: product.productName,
     registrationNumber: "",
     activeIngredients: [],
-    purpose,
+    purpose: product.purpose,
     status: "unverified",
     targets: ["対象病害虫・雑草を入力"],
     useTiming: "使用時期を入力",
