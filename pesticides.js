@@ -20,6 +20,12 @@ const pesticideData = Object.fromEntries(
 const elements = {
   cropSelect: document.querySelector("#cropSelect"),
   cropChips: document.querySelector("#cropChips"),
+  showCropDetailButton: document.querySelector("#showCropDetailButton"),
+  showCropOverviewButton: document.querySelector("#showCropOverviewButton"),
+  detailControls: document.querySelector("#detailControls"),
+  cropDetailView: document.querySelector("#cropDetailView"),
+  cropOverviewView: document.querySelector("#cropOverviewView"),
+  overviewBody: document.querySelector("#pesticideOverviewBody"),
   productSearchInput: document.querySelector("#productSearchInput"),
   purposeFilter: document.querySelector("#purposeFilter"),
   statusFilter: document.querySelector("#statusFilter"),
@@ -35,11 +41,14 @@ const elements = {
 };
 
 let selectedCrop = crops[0].name;
+let viewMode = "detail";
 
 function initialize() {
   renderCropSelect();
   renderCropChips();
   renderTable();
+  renderOverview();
+  renderViewMode();
   loadResearchPrompt();
 
   elements.cropSelect.addEventListener("change", () => {
@@ -52,6 +61,8 @@ function initialize() {
   elements.statusFilter.addEventListener("change", renderTable);
   elements.copyPromptButton.addEventListener("click", copyResearchPrompt);
   elements.printButton.addEventListener("click", () => window.print());
+  elements.showCropDetailButton.addEventListener("click", () => setViewMode("detail"));
+  elements.showCropOverviewButton.addEventListener("click", () => setViewMode("overview"));
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./service-worker.js").catch(() => {});
@@ -71,21 +82,58 @@ function renderCropSelect() {
 
 function renderCropChips() {
   elements.cropChips.replaceChildren();
-  crops.forEach((crop) => {
-    const button = document.createElement("button");
-    button.className = "crop-chip";
-    button.classList.toggle("active", crop.name === selectedCrop);
-    button.type = "button";
-    button.textContent = crop.name;
-    button.setAttribute("aria-pressed", String(crop.name === selectedCrop));
-    button.addEventListener("click", () => {
-      selectedCrop = crop.name;
-      elements.cropSelect.value = crop.name;
-      renderCropChips();
-      renderTable();
+  const categories = [...new Set(crops.map((crop) => crop.category))];
+  categories.forEach((category) => {
+    const group = document.createElement("section");
+    group.className = "crop-picker-group";
+    const title = document.createElement("strong");
+    title.textContent = category;
+    const buttons = document.createElement("div");
+    buttons.className = "crop-picker-buttons";
+
+    crops.filter((crop) => crop.category === category).forEach((crop) => {
+      const button = document.createElement("button");
+      button.className = "crop-chip";
+      button.classList.toggle("active", crop.name === selectedCrop);
+      button.type = "button";
+      button.textContent = crop.name;
+      button.setAttribute("aria-pressed", String(crop.name === selectedCrop));
+      button.addEventListener("click", () => selectCrop(crop.name));
+      buttons.append(button);
     });
-    elements.cropChips.append(button);
+    group.append(title, buttons);
+    elements.cropChips.append(group);
   });
+}
+
+function selectCrop(cropName) {
+  const returnFromOverview = viewMode === "overview";
+  selectedCrop = cropName;
+  elements.cropSelect.value = cropName;
+  renderCropChips();
+  renderTable();
+  setViewMode("detail");
+  if (returnFromOverview) {
+    requestAnimationFrame(() => {
+      elements.cropDetailView.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+}
+
+function setViewMode(mode) {
+  viewMode = mode;
+  renderViewMode();
+}
+
+function renderViewMode() {
+  const showOverview = viewMode === "overview";
+  elements.detailControls.classList.toggle("hidden", showOverview);
+  elements.cropDetailView.classList.toggle("hidden", showOverview);
+  elements.cropOverviewView.classList.toggle("hidden", !showOverview);
+  elements.showCropDetailButton.classList.toggle("active", !showOverview);
+  elements.showCropOverviewButton.classList.toggle("active", showOverview);
+  elements.showCropDetailButton.setAttribute("aria-pressed", String(!showOverview));
+  elements.showCropOverviewButton.setAttribute("aria-pressed", String(showOverview));
 }
 
 function renderTable() {
@@ -146,6 +194,56 @@ function createTableRow(row) {
   );
 
   return tableRow;
+}
+
+function renderOverview() {
+  elements.overviewBody.replaceChildren();
+  PESTICIDE_CROP_DATA.forEach((crop) => {
+    const row = document.createElement("tr");
+    const cropCell = document.createElement("th");
+    cropCell.scope = "row";
+    const cropButton = document.createElement("button");
+    cropButton.className = "overview-crop-button";
+    cropButton.type = "button";
+    cropButton.textContent = crop.name;
+    cropButton.addEventListener("click", () => selectCrop(crop.name));
+    cropCell.append(cropButton);
+
+    const registrationCell = document.createElement("td");
+    registrationCell.textContent = crop.registrationCropName;
+
+    row.append(
+      cropCell,
+      registrationCell,
+      createOverviewProductCell(crop.products[0]),
+      createOverviewProductCell(crop.products[1])
+    );
+    elements.overviewBody.append(row);
+  });
+}
+
+function createOverviewProductCell(product) {
+  const cell = document.createElement("td");
+  cell.className = "overview-product-cell";
+  cell.dataset.status = product.status;
+
+  const badge = document.createElement("span");
+  badge.className = `status-badge ${product.status}`;
+  badge.textContent = statusLabels[product.status] || statusLabels.unverified;
+  cell.append(badge);
+
+  if (product.status === "registered" || product.status === "conditional") {
+    const timing = document.createElement("strong");
+    timing.textContent = product.useTiming || "使用時期を確認";
+    const meta = document.createElement("small");
+    meta.textContent = `${product.maxApplications || "回数確認"} / ${product.dilutionOrRate || "希釈確認"}`;
+    cell.append(timing, meta);
+  } else {
+    const note = document.createElement("small");
+    note.textContent = product.targets.join("・");
+    cell.append(note);
+  }
+  return cell;
 }
 
 function createTextCell(text, placeholder = false) {

@@ -40,7 +40,12 @@
       </section>
 
       <section class="control-band" aria-label="表示する野菜と条件">
-        <div class="control-grid">
+        <div class="view-switch" aria-label="表示方法">
+          <button id="showCropDetailButton" class="view-switch-button active" type="button" aria-pressed="true">野菜別</button>
+          <button id="showCropOverviewButton" class="view-switch-button" type="button" aria-pressed="false">全野菜一覧</button>
+        </div>
+        <div id="detailControls">
+          <div class="control-grid">
           <label>
             野菜
             <select id="cropSelect"></select>
@@ -71,11 +76,16 @@
               <option value="unverified">未確認</option>
             </select>
           </label>
+          </div>
+          <div class="crop-picker-heading">
+            <strong>野菜を一覧から選ぶ</strong>
+            <span>分類ごとに選択できます</span>
+          </div>
+          <div id="cropChips" class="crop-picker" aria-label="野菜の切り替え"></div>
         </div>
-        <div id="cropChips" class="crop-chips" aria-label="野菜の切り替え"></div>
       </section>
 
-      <section class="reference-section" aria-labelledby="referenceTitle">
+      <section id="cropDetailView" class="reference-section" aria-labelledby="referenceTitle">
         <div class="reference-heading">
           <div>
             <p id="cropCategory" class="crop-category"></p>
@@ -113,6 +123,30 @@
           </table>
         </div>
         <p id="emptyTableMessage" class="empty-table-message hidden">条件に一致するデータがありません。</p>
+      </section>
+
+      <section id="cropOverviewView" class="overview-section hidden" aria-labelledby="overviewTitle">
+        <div class="overview-heading">
+          <div>
+            <p class="crop-category">QUICK REFERENCE</p>
+            <h2 id="overviewTitle">全野菜の登録一覧</h2>
+            <p>38野菜について、2製品の登録状況・使用時期・回数をまとめて比較できます。</p>
+          </div>
+          <span class="overview-count">38野菜 / 76件</span>
+        </div>
+        <div class="overview-table-scroll" tabindex="0" aria-label="全野菜の農薬登録一覧。横にスクロールできます">
+          <table class="overview-table">
+            <thead>
+              <tr>
+                <th>野菜</th>
+                <th>登録上の作物名</th>
+                <th>ダコニール1000</th>
+                <th>クミアイトレボン乳剤</th>
+              </tr>
+            </thead>
+            <tbody id="pesticideOverviewBody"></tbody>
+          </table>
+        </div>
       </section>
 
       <section class="safety-band" aria-label="農薬情報の注意事項">
