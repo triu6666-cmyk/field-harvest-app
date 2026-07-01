@@ -193,6 +193,12 @@ a {
   font-weight: 900;
 }
 
+.draft-badge.verified {
+  border-color: rgba(8, 118, 66, 0.24);
+  background: #e9fff0;
+  color: #087642;
+}
+
 .control-band,
 .research-section {
   border: 1px solid var(--line);
@@ -397,6 +403,14 @@ textarea:focus {
 
 .pesticide-table tbody tr:hover td {
   background: #f0fff2;
+}
+
+.pesticide-table tbody tr[data-status="not-registered"] td {
+  background: #fffaf8;
+}
+
+.pesticide-table tbody tr[data-status="unverified"] td {
+  background: #fafbfa;
 }
 
 .pesticide-table .sticky-column {

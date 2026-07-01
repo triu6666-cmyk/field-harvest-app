@@ -1,43 +1,8 @@
-const crops = [
-  { name: "トマト", category: "果菜類" },
-  { name: "ミニトマト", category: "果菜類" },
-  { name: "ナス", category: "果菜類" },
-  { name: "きゅうり", category: "果菜類" },
-  { name: "ゴーヤ", category: "果菜類" },
-  { name: "ズッキーニ", category: "果菜類" },
-  { name: "ピーマン", category: "果菜類" },
-  { name: "パプリカ", category: "果菜類" },
-  { name: "ししとう", category: "果菜類" },
-  { name: "オクラ", category: "果菜類" },
-  { name: "いんげん", category: "豆類" },
-  { name: "枝豆", category: "豆類" },
-  { name: "えんどう", category: "豆類" },
-  { name: "とうもろこし", category: "穀類" },
-  { name: "かぼちゃ", category: "果菜類" },
-  { name: "スイカ", category: "果菜類" },
-  { name: "メロン", category: "果菜類" },
-  { name: "大根", category: "根菜類" },
-  { name: "かぶ", category: "根菜類" },
-  { name: "にんじん", category: "根菜類" },
-  { name: "じゃがいも", category: "いも類" },
-  { name: "さつまいも", category: "いも類" },
-  { name: "さといも", category: "いも類" },
-  { name: "玉ねぎ", category: "鱗茎類" },
-  { name: "にんにく", category: "鱗茎類" },
-  { name: "しょうが", category: "根菜類" },
-  { name: "ねぎ", category: "葉茎菜類" },
-  { name: "レタス", category: "葉菜類" },
-  { name: "キャベツ", category: "葉菜類" },
-  { name: "白菜", category: "葉菜類" },
-  { name: "ブロッコリー", category: "花菜類" },
-  { name: "ほうれん草", category: "葉菜類" },
-  { name: "小松菜", category: "葉菜類" },
-  { name: "春菊", category: "葉菜類" },
-  { name: "パセリ", category: "葉菜類" },
-  { name: "シソ", category: "葉菜類" },
-  { name: "アスパラ", category: "茎菜類" },
-  { name: "いちご", category: "果実的野菜" }
-];
+const crops = PESTICIDE_CROP_DATA.map(({ name, category, registrationCropName }) => ({
+  name,
+  category,
+  registrationCropName
+}));
 
 const statusLabels = {
   registered: "登録あり",
@@ -49,7 +14,7 @@ const statusLabels = {
 };
 
 const pesticideData = Object.fromEntries(
-  crops.map((crop) => [crop.name, createTemplateRows(crop.name)])
+  PESTICIDE_CROP_DATA.map((crop) => [crop.name, crop.products])
 );
 
 const elements = {
@@ -70,29 +35,6 @@ const elements = {
 };
 
 let selectedCrop = crops[0].name;
-
-function createTemplateRows(cropName) {
-  return [
-    { productName: "ダコニール1000（調査待ち）", purpose: "殺菌剤" },
-    { productName: "トレボン乳剤（登録番号確認待ち）", purpose: "殺虫剤" }
-  ].map((product) => ({
-    cropName,
-    productName: product.productName,
-    registrationNumber: "",
-    activeIngredients: [],
-    purpose: product.purpose,
-    status: "unverified",
-    targets: ["対象病害虫・雑草を入力"],
-    useTiming: "使用時期を入力",
-    maxApplications: "回数を入力",
-    dilutionOrRate: "希釈倍率・使用量を入力",
-    method: "使用方法を入力",
-    totalActiveIngredientUses: "総使用回数を入力",
-    mixing: "未確認",
-    verifiedAt: "",
-    sources: []
-  }));
-}
 
 function initialize() {
   renderCropSelect();
@@ -160,7 +102,7 @@ function renderTable() {
 
   elements.cropCategory.textContent = crop.category;
   elements.referenceTitle.textContent = `${crop.name}の農薬対応表`;
-  elements.cropSummary.textContent = `${rows.length}件表示 / 現在は画面確認用の未調査データです`;
+  elements.cropSummary.textContent = `${rows.length}製品を表示 / 登録上の作物名：${crop.registrationCropName} / 2026年6月30日調査`;
   elements.tableBody.replaceChildren();
 
   rows.forEach((row) => elements.tableBody.append(createTableRow(row)));
@@ -169,6 +111,7 @@ function renderTable() {
 
 function createTableRow(row) {
   const tableRow = document.createElement("tr");
+  tableRow.dataset.status = row.status;
 
   const productCell = document.createElement("td");
   productCell.className = "sticky-column";
@@ -177,9 +120,7 @@ function createTableRow(row) {
   const productTitle = document.createElement("strong");
   productTitle.textContent = row.productName;
   const productMeta = document.createElement("small");
-  productMeta.textContent = row.registrationNumber
-    ? `登録番号 ${row.registrationNumber}`
-    : "登録番号・有効成分を調査後に入力";
+  productMeta.textContent = `登録番号 ${row.registrationNumber} / ${row.activeIngredients.join("、")}`;
   product.append(productTitle, productMeta);
   productCell.append(product);
   tableRow.append(productCell);
@@ -194,12 +135,12 @@ function createTableRow(row) {
   tableRow.append(statusCell);
 
   tableRow.append(
-    createTextCell(row.targets.join("・"), true),
-    createTextCell(row.useTiming, true),
-    createTextCell(row.maxApplications, true),
-    createTextCell(row.dilutionOrRate, true),
-    createTextCell(row.method, true),
-    createTextCell(row.totalActiveIngredientUses, true),
+    createTextCell(row.targets.join("・"), row.status !== "registered" && row.status !== "conditional"),
+    createTextCell(row.useTiming, !row.useTiming),
+    createTextCell(row.maxApplications, !row.maxApplications),
+    createTextCell(row.dilutionOrRate, !row.dilutionOrRate),
+    createTextCell(row.method, !row.method),
+    createTextCell(row.totalActiveIngredientUses, Boolean(row.totalActiveIngredientUses)),
     createTextCell(row.mixing, row.mixing === "未確認"),
     createSourceCell(row)
   );
