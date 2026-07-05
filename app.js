@@ -75,6 +75,11 @@ let mobileNavViewBeforeHarvest = "map";
 let mobileNavScrollLockUntil = 0;
 let mobileNavScrollQueued = false;
 let activityViewMode = "records";
+let quickHarvestLocalTimer = null;
+let quickHarvestRenderTimer = null;
+let quickHarvestCloudTimer = null;
+let quickHarvestCloudSaving = false;
+let quickHarvestCloudDirty = false;
 
 const HARVEST_MODE_UNITS = ["個", "本", "玉", "g", "kg"];
 
@@ -238,6 +243,12 @@ elements.showTaskPlannerButton.addEventListener("click", () => {
 
 window.addEventListener("scroll", queueMobileNavScrollSync, { passive: true });
 window.addEventListener("resize", queueMobileNavScrollSync);
+window.addEventListener("pagehide", () => {
+  if (!quickHarvestLocalTimer) return;
+  clearTimeout(quickHarvestLocalTimer);
+  quickHarvestLocalTimer = null;
+  storage.saveLocal(state);
+});
 
 elements.mapSideButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -741,6 +752,13 @@ function populateWorkTargetSelect(select) {
 
 function renderField() {
   elements.fieldGrid.replaceChildren();
+  const seedlingsByCell = new Map(state.seedlings.map((seedling) => [seedling.cell, seedling]));
+  const harvestCountsBySeedling = state.harvests.reduce((counts, harvest) => {
+    if (harvest.unit === "個") {
+      counts.set(harvest.seedlingId, (counts.get(harvest.seedlingId) || 0) + harvest.amount);
+    }
+    return counts;
+  }, new Map());
 
   const title = document.createElement("div");
   title.className = "field-page-title";
@@ -766,7 +784,9 @@ function renderField() {
     cells.style.setProperty("--segments", state.grid.columns);
 
     for (let segment = 1; segment <= state.grid.columns; segment += 1) {
-      cells.append(createFieldCell(cellId(row, activeSide, segment)));
+      const cell = cellId(row, activeSide, segment);
+      const seedling = seedlingsByCell.get(cell);
+      cells.append(createFieldCell(cell, seedling, seedling ? harvestCountsBySeedling.get(seedling.id) || 0 : 0));
     }
 
     fieldRow.append(rowLabel, cells);
@@ -863,8 +883,7 @@ function renderMapFilterOptions() {
   mapFilter = elements.mapFilterSelect.value;
 }
 
-function createFieldCell(cell) {
-  const seedling = state.seedlings.find((item) => item.cell === cell);
+function createFieldCell(cell, seedling, harvestCount) {
   const visibleByFilter = isCellVisibleByFilter(seedling);
   const tile = document.createElement("article");
   tile.className = seedling ? "field-cell planted" : "field-cell";
@@ -882,17 +901,6 @@ function createFieldCell(cell) {
   const content = document.createElement("div");
   if (seedling) {
     content.className = "cell-planted-content";
-    content.tabIndex = 0;
-    content.setAttribute("role", "button");
-    content.setAttribute("aria-label", `${seedlingLabel(seedling)}の詳細を見る`);
-    content.title = "苗の詳細を見る";
-    content.addEventListener("click", () => openSeedlingDetail(seedling.id));
-    content.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        openSeedlingDetail(seedling.id);
-      }
-    });
 
     const name = document.createElement("div");
     name.className = "plant-name";
@@ -912,7 +920,8 @@ function createFieldCell(cell) {
     count.className = "harvest-count";
     const countValue = document.createElement("span");
     countValue.className = "harvest-count-value";
-    countValue.textContent = formatNumber(harvestTotalForSeedlingUnit(seedling.id, "個"));
+    countValue.dataset.harvestCountSeedlingId = seedling.id;
+    countValue.textContent = formatNumber(harvestCount);
 
     const countUnit = document.createElement("span");
     countUnit.className = "harvest-count-unit";
@@ -971,7 +980,11 @@ function createFieldCell(cell) {
     decrementButton.textContent = "-1";
     decrementButton.title = "最新の収穫を1個取り消し";
     decrementButton.addEventListener("click", () => {
-      undoLatestHarvestUnit(seedling.id, "個");
+      undoLatestHarvestUnit(seedling.id, "個", {
+        quick: true,
+        memo: "畑マップから追加",
+        date: today
+      });
     });
 
     const incrementButton = document.createElement("button");
@@ -986,7 +999,7 @@ function createFieldCell(cell) {
         amount: 1,
         unit: "個",
         memo: "畑マップから追加"
-      });
+      }, { quick: true });
     });
     actionRow.append(decrementButton, incrementButton);
     content.append(actionRow);
@@ -1047,7 +1060,7 @@ function createQuickHarvest(seedling) {
       amount,
       unit: "個",
       memo: "畑マップから追加"
-    });
+    }, { quick: true });
   });
 
   wrapper.append(input, button);
@@ -2459,6 +2472,7 @@ function renderHarvestModeFilters() {
 function createHarvestModeCard(seedling) {
   const card = document.createElement("article");
   card.className = "harvest-mode-card";
+  card.dataset.harvestModeSeedlingId = seedling.id;
   applyCropTheme(card, seedling.cropName);
 
   const identity = document.createElement("div");
@@ -2478,9 +2492,11 @@ function createHarvestModeCard(seedling) {
   const countLabel = document.createElement("span");
   countLabel.textContent = `今日・${harvestModeUnit}`;
   const countValue = document.createElement("strong");
+  countValue.className = "harvest-mode-count-value";
   const amount = harvestTotalForSeedlingDateUnit(seedling.id, today, harvestModeUnit);
   countValue.textContent = formatNumber(amount);
   const lifetime = document.createElement("small");
+  lifetime.className = "harvest-mode-lifetime";
   lifetime.textContent = `累計 ${harvestTotalsForSeedling(seedling.id) || "収穫なし"}`;
   todayCount.append(countLabel, countValue, lifetime);
 
@@ -2519,7 +2535,7 @@ function applyHarvestModeDelta(seedlingId, delta) {
     };
     state.harvests.push(harvest);
     lastHarvestModeAction = { type: "add", harvestId: harvest.id };
-    saveAndRender();
+    saveQuickHarvest(seedlingId);
     return;
   }
 
@@ -2533,7 +2549,7 @@ function applyHarvestModeDelta(seedlingId, delta) {
     state.harvests[index] = { ...previous, amount: previous.amount - 1 };
   }
   lastHarvestModeAction = { type: "subtract", previous, index };
-  saveAndRender();
+  saveQuickHarvest(seedlingId);
 }
 
 function findLatestTodayHarvestIndex(seedlingId, unit) {
@@ -2856,20 +2872,54 @@ function renderSummary() {
   elements.summaryText.textContent = `左ページ・右ページ / ${state.grid.rows}段 x ${state.grid.columns}区画 x 2 / ${cells}区画中 ${planted}区画使用 / 費用合計 ${formatNumber(totalExpense)}円`;
 }
 
-function addHarvest(data) {
+function addHarvest(data, { quick = false } = {}) {
   if (!data.seedlingId || !data.amount) return;
-  state.harvests.push({
-    id: createId("harvest"),
-    ...data
-  });
-  saveAndRender();
+  let existingQuickHarvest = null;
+  if (quick) {
+    for (let index = state.harvests.length - 1; index >= 0; index -= 1) {
+      const harvest = state.harvests[index];
+      if (
+        harvest.seedlingId === data.seedlingId
+        && harvest.date === data.date
+        && harvest.unit === data.unit
+        && harvest.memo === data.memo
+      ) {
+        existingQuickHarvest = harvest;
+        break;
+      }
+    }
+  }
+
+  if (existingQuickHarvest) {
+    existingQuickHarvest.amount += data.amount;
+  } else {
+    state.harvests.push({
+      id: createId("harvest"),
+      ...data
+    });
+  }
+
+  if (quick) {
+    saveQuickHarvest(data.seedlingId);
+  } else {
+    saveAndRender();
+  }
 }
 
-function undoLatestHarvestUnit(seedlingId, unit) {
-  const index = [...state.harvests]
-    .map((harvest, originalIndex) => ({ harvest, originalIndex }))
-    .reverse()
-    .find((entry) => entry.harvest.seedlingId === seedlingId && entry.harvest.unit === unit)?.originalIndex;
+function undoLatestHarvestUnit(seedlingId, unit, { quick = false, memo = "", date = "" } = {}) {
+  let index;
+  for (let currentIndex = state.harvests.length - 1; currentIndex >= 0; currentIndex -= 1) {
+    const harvest = state.harvests[currentIndex];
+    if (
+      harvest.seedlingId === seedlingId
+      && harvest.unit === unit
+      && (!memo || harvest.memo === memo)
+      && (!date || harvest.date === date)
+    ) {
+      index = currentIndex;
+      break;
+    }
+  }
 
   if (index === undefined) return;
 
@@ -2879,7 +2929,90 @@ function undoLatestHarvestUnit(seedlingId, unit) {
   } else {
     state.harvests[index] = { ...harvest, amount: harvest.amount - 1 };
   }
-  saveAndRender();
+  if (quick) {
+    saveQuickHarvest(seedlingId);
+  } else {
+    saveAndRender();
+  }
+}
+
+function saveQuickHarvest(seedlingId) {
+  updateQuickHarvestDisplays(seedlingId);
+  scheduleQuickHarvestLocalSave();
+  scheduleQuickHarvestRender();
+  scheduleQuickHarvestCloudSave();
+}
+
+function scheduleQuickHarvestLocalSave() {
+  clearTimeout(quickHarvestLocalTimer);
+  quickHarvestLocalTimer = setTimeout(() => {
+    quickHarvestLocalTimer = null;
+    storage.saveLocal(state);
+  }, 80);
+}
+
+function updateQuickHarvestDisplays(seedlingId) {
+  const mapCount = formatNumber(harvestTotalForSeedlingUnit(seedlingId, "個"));
+  document.querySelectorAll("[data-harvest-count-seedling-id]").forEach((element) => {
+    if (element.dataset.harvestCountSeedlingId === seedlingId) {
+      element.textContent = mapCount;
+    }
+  });
+
+  document.querySelectorAll("[data-harvest-mode-seedling-id]").forEach((card) => {
+    if (card.dataset.harvestModeSeedlingId !== seedlingId) return;
+    const amount = harvestTotalForSeedlingDateUnit(seedlingId, today, harvestModeUnit);
+    const count = card.querySelector(".harvest-mode-count-value");
+    const lifetime = card.querySelector(".harvest-mode-lifetime");
+    const decrement = card.querySelector(".harvest-mode-step.decrement");
+    if (count) count.textContent = formatNumber(amount);
+    if (lifetime) lifetime.textContent = `累計 ${harvestTotalsForSeedling(seedlingId) || "収穫なし"}`;
+    if (decrement) decrement.disabled = amount <= 0;
+  });
+
+  if (!elements.harvestModeModal.classList.contains("hidden")) {
+    elements.harvestModeSummary.textContent = harvestTotalsForPeriod((harvest) => harvest.date === today) || "まだ収穫はありません";
+    elements.undoHarvestModeButton.disabled = !lastHarvestModeAction;
+  }
+}
+
+function scheduleQuickHarvestRender() {
+  clearTimeout(quickHarvestRenderTimer);
+  quickHarvestRenderTimer = setTimeout(() => {
+    quickHarvestRenderTimer = null;
+    renderRecords();
+  }, 600);
+}
+
+function scheduleQuickHarvestCloudSave() {
+  if (!storage.isCloudConfigured()) {
+    renderSyncMiniStatus("ローカル", "idle");
+    return;
+  }
+
+  quickHarvestCloudDirty = true;
+  renderSyncMiniStatus("保存待ち", "syncing");
+  if (quickHarvestCloudTimer || quickHarvestCloudSaving) return;
+
+  quickHarvestCloudTimer = setTimeout(flushQuickHarvestCloudSave, 250);
+}
+
+async function flushQuickHarvestCloudSave() {
+  quickHarvestCloudTimer = null;
+  quickHarvestCloudSaving = true;
+  quickHarvestCloudDirty = false;
+  renderSyncMiniStatus("保存中", "syncing");
+  try {
+    await storage.pushCloud(state);
+    renderSyncMiniStatus("保存済み", "ok");
+  } catch {
+    renderSyncMiniStatus("保存失敗", "error");
+  } finally {
+    quickHarvestCloudSaving = false;
+    if (quickHarvestCloudDirty && !quickHarvestCloudTimer) {
+      quickHarvestCloudTimer = setTimeout(flushQuickHarvestCloudSave, 250);
+    }
+  }
 }
 
 function deleteSeedling(id) {
@@ -3105,6 +3238,13 @@ function appendEmptyMessage(target, message) {
 }
 
 function saveAndRender() {
+  clearTimeout(quickHarvestLocalTimer);
+  quickHarvestLocalTimer = null;
+  clearTimeout(quickHarvestRenderTimer);
+  quickHarvestRenderTimer = null;
+  clearTimeout(quickHarvestCloudTimer);
+  quickHarvestCloudTimer = null;
+  quickHarvestCloudDirty = false;
   const saveResult = storage.save(state);
   render();
   renderSyncMiniStatus(storage.isCloudConfigured() ? "保存中" : "ローカル", storage.isCloudConfigured() ? "syncing" : "idle");
@@ -3177,11 +3317,37 @@ function normalizeState(value) {
     layoutVersion: defaultState.layoutVersion,
     grid,
     seedlings: repairStaleOverflowCells(seedlings, grid),
-    harvests,
+    harvests: compactQuickHarvests(harvests),
     expenses,
     activities,
     tasks
   };
+}
+
+function compactQuickHarvests(harvests) {
+  const compactableMemos = new Set(["畑マップから追加", "収穫モードから追加"]);
+  const compacted = [];
+  const groups = new Map();
+
+  harvests.forEach((harvest) => {
+    if (!compactableMemos.has(harvest.memo)) {
+      compacted.push(harvest);
+      return;
+    }
+
+    const key = [harvest.seedlingId, harvest.date, harvest.unit, harvest.memo].join("\u0000");
+    const existing = groups.get(key);
+    if (existing) {
+      existing.amount += Number(harvest.amount) || 0;
+      return;
+    }
+
+    const entry = { ...harvest, amount: Number(harvest.amount) || 0 };
+    groups.set(key, entry);
+    compacted.push(entry);
+  });
+
+  return compacted;
 }
 
 function repairStaleOverflowCells(seedlings, grid) {
