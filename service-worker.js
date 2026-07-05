@@ -1,4 +1,4 @@
-const CACHE_NAME = "field-harvest-manager-v35";
+const CACHE_NAME = "field-harvest-manager-v36";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -36,6 +36,27 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+
+  const requestUrl = new URL(event.request.url);
+  const isAppAsset = requestUrl.origin === self.location.origin;
+  const isFreshnessCritical = event.request.mode === "navigate"
+    || ["document", "script", "style"].includes(event.request.destination);
+
+  if (isAppAsset && isFreshnessCritical) {
+    event.respondWith(
+      (async () => {
+        try {
+          const response = await fetch(event.request);
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(event.request, response.clone());
+          return response;
+        } catch {
+          return caches.match(event.request);
+        }
+      })()
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => (
