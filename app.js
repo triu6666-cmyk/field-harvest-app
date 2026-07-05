@@ -184,6 +184,8 @@ const elements = {
   seedlingList: document.querySelector("#seedlingList"),
   aggregateByVarietyButton: document.querySelector("#aggregateByVarietyButton"),
   aggregateByCropButton: document.querySelector("#aggregateByCropButton"),
+  recentHarvestDetails: document.querySelector("#recentHarvestDetails"),
+  recentHarvestCount: document.querySelector("#recentHarvestCount"),
   harvestList: document.querySelector("#harvestList"),
   expenseList: document.querySelector("#expenseList"),
   harvestMonthFilter: document.querySelector("#harvestMonthFilter"),
@@ -491,6 +493,14 @@ elements.harvestMonthFilter.addEventListener("change", () => {
 elements.harvestCropFilter.addEventListener("change", () => {
   harvestHistoryCropFilter = elements.harvestCropFilter.value;
   renderHarvestList();
+});
+
+elements.recentHarvestDetails.addEventListener("toggle", () => {
+  if (elements.recentHarvestDetails.open) {
+    renderHarvestList();
+  } else {
+    elements.harvestList.replaceChildren();
+  }
 });
 
 elements.expenseMonthFilter.addEventListener("change", () => {
@@ -1072,7 +1082,8 @@ function renderRecords() {
   renderAggregateTabs();
   renderSeedlingList();
   renderHistoryFilterOptions();
-  renderHarvestList();
+  elements.recentHarvestCount.textContent = `${state.harvests.length}件`;
+  if (elements.recentHarvestDetails.open) renderHarvestList();
   renderExpenseList();
 }
 

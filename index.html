@@ -18,7 +18,7 @@
       <div class="app-title-block">
         <p class="eyebrow">畑の記録</p>
         <h1>収穫量管理</h1>
-        <time class="app-updated" data-app-updated datetime="2026-07-05T20:04:00+09:00">最終更新 2026/07/05 20:04</time>
+        <time class="app-updated" data-app-updated datetime="2026-07-05T20:17:00+09:00">最終更新 2026/07/05 20:17</time>
       </div>
       <div class="header-actions">
         <a class="icon-button" href="pesticides.html" title="農薬対応表" aria-label="農薬対応表を開く">
@@ -347,20 +347,25 @@
             <div id="seedlingList" class="record-list"></div>
           </section>
           <div class="record-columns">
-            <section>
-              <h3>最近の収穫</h3>
-              <div class="history-filter-row" aria-label="収穫履歴の絞り込み">
-                <label>
-                  月
-                  <select id="harvestMonthFilter"></select>
-                </label>
-                <label>
-                  野菜
-                  <select id="harvestCropFilter"></select>
-                </label>
+            <details id="recentHarvestDetails" class="record-collapsible">
+              <summary>
+                <span>最近の収穫</span>
+                <span id="recentHarvestCount" class="record-collapsible-count">0件</span>
+              </summary>
+              <div class="record-collapsible-content">
+                <div class="history-filter-row" aria-label="収穫履歴の絞り込み">
+                  <label>
+                    月
+                    <select id="harvestMonthFilter"></select>
+                  </label>
+                  <label>
+                    野菜
+                    <select id="harvestCropFilter"></select>
+                  </label>
+                </div>
+                <div id="harvestList" class="record-list"></div>
               </div>
-              <div id="harvestList" class="record-list"></div>
-            </section>
+            </details>
             <section>
               <h3>費用</h3>
               <div class="history-filter-row" aria-label="費用履歴の絞り込み">
