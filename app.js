@@ -928,6 +928,8 @@ function createFieldCell(cell) {
   if (seedling) {
     const actionRow = document.createElement("div");
     actionRow.className = "harvest-actions";
+    actionRow.addEventListener("click", (event) => event.stopPropagation());
+    actionRow.addEventListener("keydown", (event) => event.stopPropagation());
 
     const copyButton = document.createElement("button");
     copyButton.className = "cell-copy-button";

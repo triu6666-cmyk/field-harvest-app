@@ -30,6 +30,7 @@ const elements = {
   purposeFilter: document.querySelector("#purposeFilter"),
   statusFilter: document.querySelector("#statusFilter"),
   cropCategory: document.querySelector("#cropCategory"),
+  referenceCropIcon: document.querySelector("#referenceCropIcon"),
   referenceTitle: document.querySelector("#referenceTitle"),
   cropSummary: document.querySelector("#cropSummary"),
   tableBody: document.querySelector("#pesticideTableBody"),
@@ -96,7 +97,10 @@ function renderCropChips() {
       button.className = "crop-chip";
       button.classList.toggle("active", crop.name === selectedCrop);
       button.type = "button";
-      button.textContent = crop.name;
+      const icon = createCropIcon(crop.name, "crop-chip-icon");
+      const label = document.createElement("span");
+      label.textContent = crop.name;
+      button.append(icon, label);
       button.setAttribute("aria-pressed", String(crop.name === selectedCrop));
       button.addEventListener("click", () => selectCrop(crop.name));
       buttons.append(button);
@@ -149,6 +153,7 @@ function renderTable() {
   });
 
   elements.cropCategory.textContent = crop.category;
+  elements.referenceCropIcon.innerHTML = window.fieldHarvestCropIconSvg(crop.name);
   elements.referenceTitle.textContent = `${crop.name}の農薬対応表`;
   elements.cropSummary.textContent = `${rows.length}製品を表示 / 登録上の作物名：${crop.registrationCropName} / 2026年6月30日調査`;
   elements.tableBody.replaceChildren();
@@ -205,7 +210,10 @@ function renderOverview() {
     const cropButton = document.createElement("button");
     cropButton.className = "overview-crop-button";
     cropButton.type = "button";
-    cropButton.textContent = crop.name;
+    const icon = createCropIcon(crop.name, "overview-crop-icon");
+    const label = document.createElement("span");
+    label.textContent = crop.name;
+    cropButton.append(icon, label);
     cropButton.addEventListener("click", () => selectCrop(crop.name));
     cropCell.append(cropButton);
 
@@ -244,6 +252,14 @@ function createOverviewProductCell(product) {
     cell.append(note);
   }
   return cell;
+}
+
+function createCropIcon(cropName, className) {
+  const icon = document.createElement("span");
+  icon.className = className;
+  icon.setAttribute("aria-hidden", "true");
+  icon.innerHTML = window.fieldHarvestCropIconSvg(cropName);
+  return icon;
 }
 
 function createTextCell(text, placeholder = false) {
