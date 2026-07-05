@@ -95,6 +95,16 @@ a {
   gap: 8px;
 }
 
+.pesticide-updated {
+  margin: 2px 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 .icon-command,
 .back-link {
   display: inline-grid;
@@ -921,6 +931,11 @@ textarea:focus {
 
   .pesticide-brand strong {
     font-size: 16px;
+  }
+
+  .pesticide-updated {
+    margin-top: 1px;
+    font-size: 8px;
   }
 
   .back-link {

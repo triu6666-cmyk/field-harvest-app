@@ -87,6 +87,21 @@ h3 {
   text-shadow: 0 3px 12px rgba(0, 54, 38, 0.32);
 }
 
+.app-title-block {
+  min-width: 0;
+}
+
+.app-updated {
+  display: block;
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 .eyebrow {
   color: #fff4b0;
   font-size: 13px;
@@ -2326,6 +2341,15 @@ select:focus {
   .app-header h1 {
     font-size: 22px;
     line-height: 1.15;
+  }
+
+  .app-title-block {
+    align-self: flex-start;
+  }
+
+  .app-updated {
+    margin-top: 3px;
+    font-size: 9px;
   }
 
   .eyebrow {
