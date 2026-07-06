@@ -62,6 +62,7 @@ let pendingReceiptImage = "";
 let receiptAmountCandidates = [];
 let activeSide = "L";
 let mapFilter = "all";
+let mapPesticideRegistrationNumber = "";
 let aggregateMode = "variety";
 let harvestHistoryMonthFilter = "all";
 let harvestHistoryCropFilter = "all";
@@ -83,6 +84,12 @@ let quickHarvestCloudSaving = false;
 let quickHarvestCloudDirty = false;
 
 const HARVEST_MODE_UNITS = ["個", "本", "玉", "g", "kg"];
+const PESTICIDE_CROP_ALIASES = {
+  赤パプリカ: "パプリカ",
+  黄パプリカ: "パプリカ",
+  アスパラ: "アスパラガス"
+};
+const PESTICIDE_REFERENCE_CROPS = typeof PESTICIDE_CROP_DATA === "undefined" ? [] : PESTICIDE_CROP_DATA;
 
 const elements = {
   columnsInput: document.querySelector("#columnsInput"),
@@ -198,6 +205,14 @@ const elements = {
   exportButton: document.querySelector("#exportButton"),
   importInput: document.querySelector("#importInput"),
   mapFilterSelect: document.querySelector("#mapFilterSelect"),
+  mapPesticideSelect: document.querySelector("#mapPesticideSelect"),
+  pesticideMapBar: document.querySelector("#pesticideMapBar"),
+  pesticideMapLegend: document.querySelector("#pesticideMapLegend"),
+  pesticideMapProductName: document.querySelector("#pesticideMapProductName"),
+  pesticideOkCount: document.querySelector("#pesticideOkCount"),
+  pesticideCautionCount: document.querySelector("#pesticideCautionCount"),
+  pesticideNgCount: document.querySelector("#pesticideNgCount"),
+  pesticideUnknownCount: document.querySelector("#pesticideUnknownCount"),
   mapSideButtons: document.querySelectorAll(".page-button"),
   mobileNavButtons: document.querySelectorAll(".mobile-nav-button")
 };
@@ -474,6 +489,11 @@ elements.mapFilterSelect.addEventListener("change", () => {
   renderField();
 });
 
+elements.mapPesticideSelect.addEventListener("change", () => {
+  mapPesticideRegistrationNumber = elements.mapPesticideSelect.value;
+  renderField();
+});
+
 elements.aggregateByVarietyButton.addEventListener("click", () => {
   aggregateMode = "variety";
   renderSeedlingList();
@@ -674,6 +694,7 @@ function render() {
   elements.columnsInput.value = state.grid.columns;
   elements.rowsInput.value = state.grid.rows;
   renderMapFilterOptions();
+  renderMapPesticideOptions();
   renderCellOptions();
   renderModalCellOptions();
   renderSeedlingOptions();
@@ -763,6 +784,7 @@ function populateWorkTargetSelect(select) {
 
 function renderField() {
   elements.fieldGrid.replaceChildren();
+  renderMapPesticideSummary();
   const seedlingsByCell = new Map(state.seedlings.map((seedling) => [seedling.cell, seedling]));
   const harvestCountsBySeedling = state.harvests.reduce((counts, harvest) => {
     if (harvest.unit === "個") {
@@ -894,6 +916,91 @@ function renderMapFilterOptions() {
   mapFilter = elements.mapFilterSelect.value;
 }
 
+function mapPesticideProducts() {
+  const products = new Map();
+  PESTICIDE_REFERENCE_CROPS.forEach((crop) => {
+    crop.products.forEach((product) => {
+      if (!products.has(product.registrationNumber)) {
+        products.set(product.registrationNumber, product.productName);
+      }
+    });
+  });
+  return [...products.entries()].map(([registrationNumber, productName]) => ({
+    registrationNumber,
+    productName
+  }));
+}
+
+function renderMapPesticideOptions() {
+  const selectedValue = mapPesticideRegistrationNumber;
+  elements.mapPesticideSelect.replaceChildren();
+  const offOption = document.createElement("option");
+  offOption.value = "";
+  offOption.textContent = "表示しない";
+  elements.mapPesticideSelect.append(offOption);
+  mapPesticideProducts().forEach((product) => {
+    const option = document.createElement("option");
+    option.value = product.registrationNumber;
+    option.textContent = product.productName;
+    elements.mapPesticideSelect.append(option);
+  });
+  elements.mapPesticideSelect.value = mapPesticideProducts()
+    .some((product) => product.registrationNumber === selectedValue) ? selectedValue : "";
+  mapPesticideRegistrationNumber = elements.mapPesticideSelect.value;
+}
+
+function pesticideCompatibilityForCrop(cropName) {
+  if (!mapPesticideRegistrationNumber) return null;
+  const referenceName = PESTICIDE_CROP_ALIASES[cropName] || cropName;
+  const crop = PESTICIDE_REFERENCE_CROPS.find((item) => item.name === referenceName);
+  const product = crop?.products.find((item) => item.registrationNumber === mapPesticideRegistrationNumber);
+  if (!product) {
+    return { status: "unknown", label: "未確認", detail: "対応表に作物情報がありません" };
+  }
+  if (product.status === "registered") {
+    return { status: "ok", label: "OK", detail: product.useTiming || "登録あり", product };
+  }
+  if (product.status === "conditional") {
+    return { status: "caution", label: "確認", detail: product.useTiming || "条件付き", product };
+  }
+  if (["not-registered", "expired", "prohibited"].includes(product.status)) {
+    return { status: "ng", label: "NG", detail: product.statusDetail || "登録なし", product };
+  }
+  return { status: "unknown", label: "未確認", detail: product.statusDetail || "登録状況未確認", product };
+}
+
+function renderMapPesticideSummary() {
+  const active = Boolean(mapPesticideRegistrationNumber);
+  elements.pesticideMapBar.classList.toggle("active", active);
+  elements.pesticideMapLegend.classList.toggle("hidden", !active);
+  if (!active) return;
+
+  const selectedProduct = mapPesticideProducts()
+    .find((product) => product.registrationNumber === mapPesticideRegistrationNumber);
+  const counts = { ok: 0, caution: 0, ng: 0, unknown: 0 };
+  state.seedlings.forEach((seedling) => {
+    const compatibility = pesticideCompatibilityForCrop(seedling.cropName);
+    counts[compatibility?.status || "unknown"] += 1;
+  });
+  elements.pesticideMapProductName.textContent = selectedProduct?.productName || "農薬";
+  elements.pesticideOkCount.textContent = counts.ok;
+  elements.pesticideCautionCount.textContent = counts.caution;
+  elements.pesticideNgCount.textContent = counts.ng;
+  elements.pesticideUnknownCount.textContent = counts.unknown;
+}
+
+function applyPesticideCompatibilityToCell(tile, seedling) {
+  const compatibility = pesticideCompatibilityForCrop(seedling.cropName);
+  if (!compatibility) return;
+  tile.classList.add("pesticide-mode", `pesticide-status-${compatibility.status}`);
+  tile.title = `${seedlingLabel(seedling)} / 農薬判定 ${compatibility.label}：${compatibility.detail}`;
+  const badge = document.createElement("span");
+  badge.className = `pesticide-cell-badge ${compatibility.status}`;
+  badge.textContent = compatibility.label;
+  badge.title = compatibility.detail;
+  tile.append(badge);
+}
+
 function createFieldCell(cell, seedling, harvestCount) {
   const visibleByFilter = isCellVisibleByFilter(seedling);
   const tile = document.createElement("article");
@@ -902,6 +1009,7 @@ function createFieldCell(cell, seedling, harvestCount) {
   tile.classList.toggle("filtered-out", !visibleByFilter);
   if (seedling) {
     applyCropTheme(tile, seedling.cropName);
+    applyPesticideCompatibilityToCell(tile, seedling);
   }
 
   const code = document.createElement("div");

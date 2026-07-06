@@ -248,6 +248,96 @@ h3 {
   min-width: 180px;
 }
 
+.pesticide-map-bar {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(8, 118, 66, 0.14);
+  border-left: 4px solid #9aa7a0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 9px 10px;
+  box-shadow: 0 8px 18px rgba(22, 63, 46, 0.06);
+}
+
+.pesticide-map-bar.active {
+  border-left-color: var(--primary);
+  background: linear-gradient(100deg, rgba(239, 255, 242, 0.96), rgba(238, 250, 255, 0.94));
+}
+
+.pesticide-map-control {
+  flex: 0 0 min(300px, 35vw);
+  min-width: 230px;
+}
+
+.pesticide-map-legend {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 42px;
+}
+
+.pesticide-map-legend > strong {
+  margin-right: 3px;
+  color: #063f2a;
+  font-size: 12px;
+}
+
+.pesticide-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.pesticide-legend-item b {
+  font-size: 12px;
+}
+
+.pesticide-legend-item.ok {
+  background: #e5fff0;
+  color: #087642;
+}
+
+.pesticide-legend-item.caution {
+  background: #fff8d7;
+  color: #7a5800;
+}
+
+.pesticide-legend-item.ng {
+  background: #fff0ec;
+  color: #b4341b;
+}
+
+.pesticide-legend-item.unknown {
+  background: #f0f3f1;
+  color: #65736b;
+}
+
+.pesticide-map-link {
+  display: inline-grid;
+  flex: 0 0 auto;
+  min-height: 40px;
+  place-items: center;
+  border: 1px solid rgba(8, 118, 66, 0.18);
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--primary-dark);
+  padding: 7px 11px;
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
 .map-pages {
   display: grid;
   grid-template-columns: repeat(2, minmax(86px, 1fr));
@@ -454,6 +544,55 @@ select:focus {
   background: linear-gradient(180deg, var(--crop-start, #f0ffd9) 0%, var(--crop-end, #55d768) 100%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.46), 0 8px 18px rgba(18, 201, 106, 0.18);
   padding-top: 20px;
+}
+
+.field-cell.pesticide-mode {
+  --pesticide-status-color: #7f8b84;
+  border-color: var(--pesticide-status-color);
+  box-shadow:
+    inset 0 0 0 3px var(--pesticide-status-color),
+    0 8px 18px color-mix(in srgb, var(--pesticide-status-color) 22%, transparent);
+}
+
+.field-cell.pesticide-status-ok {
+  --pesticide-status-color: #079447;
+}
+
+.field-cell.pesticide-status-caution {
+  --pesticide-status-color: #e2a900;
+}
+
+.field-cell.pesticide-status-ng {
+  --pesticide-status-color: #e23f2a;
+}
+
+.field-cell.pesticide-status-unknown {
+  --pesticide-status-color: #7f8b84;
+}
+
+.pesticide-cell-badge {
+  position: absolute;
+  top: 21px;
+  left: 3px;
+  z-index: 3;
+  display: grid;
+  min-width: 26px;
+  min-height: 18px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  border-radius: 5px;
+  background: var(--pesticide-status-color);
+  color: #ffffff;
+  padding: 1px 4px;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 3px 8px rgba(22, 63, 46, 0.18);
+}
+
+.field-cell.pesticide-mode .plant-name {
+  margin-left: 30px;
+  margin-right: 3px;
 }
 
 .field-cell.copy-target {
@@ -2453,6 +2592,30 @@ select:focus {
     gap: 8px;
   }
 
+  .pesticide-map-bar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .pesticide-map-control {
+    flex-basis: auto;
+    min-width: 0;
+  }
+
+  .pesticide-map-legend {
+    min-height: 0;
+  }
+
+  .pesticide-map-legend > strong {
+    width: 100%;
+  }
+
+  .pesticide-map-link {
+    width: 100%;
+  }
+
   .harvest-mode-launch {
     display: none;
   }
@@ -2700,6 +2863,17 @@ select:focus {
   .field-cell.planted {
     min-height: 78px;
     padding-top: 23px;
+  }
+
+  .pesticide-cell-badge {
+    top: 24px;
+    min-width: 28px;
+    min-height: 20px;
+    font-size: 9px;
+  }
+
+  .field-cell.pesticide-mode .plant-name {
+    margin-left: 33px;
   }
 
   .cell-planted-content {

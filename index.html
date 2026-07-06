@@ -21,7 +21,7 @@
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">収穫量管理</strong>
-          <time class="app-updated site-updated" data-app-updated datetime="2026-07-06T20:57:00+09:00">最終更新 2026/07/06 20:57</time>
+          <time class="app-updated site-updated" data-app-updated datetime="2026-07-06T21:08:00+09:00">最終更新 2026/07/06 21:08</time>
         </span>
       </a>
       <div class="header-actions site-header-actions">
@@ -93,6 +93,22 @@
               </select>
             </label>
           </div>
+        </div>
+        <div id="pesticideMapBar" class="pesticide-map-bar">
+          <label class="pesticide-map-control">
+            農薬の適用表示
+            <select id="mapPesticideSelect">
+              <option value="">表示しない</option>
+            </select>
+          </label>
+          <div id="pesticideMapLegend" class="pesticide-map-legend hidden" aria-live="polite">
+            <strong id="pesticideMapProductName"></strong>
+            <span class="pesticide-legend-item ok">OK <b id="pesticideOkCount">0</b></span>
+            <span class="pesticide-legend-item caution">要確認 <b id="pesticideCautionCount">0</b></span>
+            <span class="pesticide-legend-item ng">NG <b id="pesticideNgCount">0</b></span>
+            <span class="pesticide-legend-item unknown">未確認 <b id="pesticideUnknownCount">0</b></span>
+          </div>
+          <a class="pesticide-map-link" href="pesticides.html">農薬対応表を見る</a>
         </div>
         <div id="fieldGrid" class="field-grid" aria-label="畑のマス"></div>
       </section>
@@ -572,6 +588,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="app-version.js"></script>
     <script src="storage.js"></script>
+    <script src="pesticide-data.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
