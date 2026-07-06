@@ -7,7 +7,8 @@ const defaultState = {
   harvests: [],
   expenses: [],
   activities: [],
-  tasks: []
+  tasks: [],
+  pesticideApplications: []
 };
 
 const CROP_PICKER_ITEMS = [
@@ -3310,7 +3311,8 @@ function normalizeState(value) {
   const expenses = Array.isArray(value?.expenses) ? value.expenses : [];
   const activities = Array.isArray(value?.activities) ? value.activities : [];
   const tasks = Array.isArray(value?.tasks) ? value.tasks : [];
-  const hasRecords = seedlings.length || harvests.length || expenses.length || activities.length || tasks.length;
+  const pesticideApplications = Array.isArray(value?.pesticideApplications) ? value.pesticideApplications : [];
+  const hasRecords = seedlings.length || harvests.length || expenses.length || activities.length || tasks.length || pesticideApplications.length;
   const savedColumns = value?.grid?.columns;
   const savedRows = value?.grid?.rows;
   const isOldLayout = value?.layoutVersion !== defaultState.layoutVersion;
@@ -3331,7 +3333,8 @@ function normalizeState(value) {
     harvests: compactQuickHarvests(harvests),
     expenses,
     activities,
-    tasks
+    tasks,
+    pesticideApplications
   };
 }
 

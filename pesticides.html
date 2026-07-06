@@ -16,7 +16,7 @@
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">農薬対応表</strong>
-          <time class="app-updated pesticide-updated site-updated" data-app-updated datetime="2026-07-06T20:12:00+09:00">最終更新 2026/07/06 20:12</time>
+          <time class="app-updated pesticide-updated site-updated" data-app-updated datetime="2026-07-06T20:35:00+09:00">最終更新 2026/07/06 20:35</time>
         </span>
       </a>
       <div class="header-commands site-header-actions">
@@ -159,6 +159,36 @@
         </div>
       </section>
 
+      <section class="application-history-section" aria-labelledby="applicationHistoryTitle">
+        <div class="application-history-heading">
+          <div>
+            <p class="crop-category">APPLICATION LOG</p>
+            <h2 id="applicationHistoryTitle">農薬散布記録</h2>
+            <p>実際に使用した内容を日付順に保存します。</p>
+          </div>
+          <button id="openApplicationFormButton" class="application-primary-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5v14"></path>
+              <path d="M5 12h14"></path>
+            </svg>
+            <span>使用を記録</span>
+          </button>
+        </div>
+        <div id="applicationSummary" class="application-summary"></div>
+        <div class="application-filter-row">
+          <label>
+            月
+            <select id="applicationMonthFilter"></select>
+          </label>
+          <label>
+            野菜
+            <select id="applicationCropFilter"></select>
+          </label>
+          <span id="applicationSaveStatus" class="application-save-status" aria-live="polite"></span>
+        </div>
+        <div id="applicationHistoryList" class="application-history-list"></div>
+      </section>
+
       <section class="safety-band" aria-label="農薬情報の注意事項">
         <article>
           <strong>ラベルを最優先</strong>
@@ -196,7 +226,57 @@
       </section>
     </main>
 
+    <div id="applicationModal" class="application-modal hidden" role="dialog" aria-modal="true" aria-labelledby="applicationModalTitle">
+      <div class="application-modal-card">
+        <div class="application-modal-header">
+          <div>
+            <p class="crop-category">APPLICATION LOG</p>
+            <h2 id="applicationModalTitle">農薬の使用を記録</h2>
+          </div>
+          <button id="closeApplicationModalButton" class="application-modal-close" type="button" aria-label="閉じる"></button>
+        </div>
+        <form id="applicationForm" class="application-form">
+          <label>
+            使用日
+            <input id="applicationDateInput" type="date" required>
+          </label>
+          <label>
+            野菜
+            <select id="applicationCropInput" required></select>
+          </label>
+          <label class="application-wide">
+            農薬
+            <select id="applicationProductInput" required></select>
+          </label>
+          <label>
+            実際の希釈・使用量
+            <input id="applicationDilutionInput" placeholder="例：1,000倍" required>
+          </label>
+          <div class="application-amount-field">
+            <label>
+              散布量
+              <input id="applicationAmountInput" type="number" min="0.01" step="0.01" inputmode="decimal" required>
+            </label>
+            <label>
+              単位
+              <select id="applicationUnitInput">
+                <option value="L">L</option>
+                <option value="mL">mL</option>
+              </select>
+            </label>
+          </div>
+          <label class="application-wide">
+            メモ
+            <input id="applicationMemoInput" placeholder="散布した区画、天候、対象病害虫など">
+          </label>
+          <div id="applicationRulePreview" class="application-rule-preview application-wide"></div>
+          <button id="applicationSubmitButton" class="application-submit-button application-wide" type="submit">散布記録を保存</button>
+        </form>
+      </div>
+    </div>
+
     <script src="app-version.js"></script>
+    <script src="storage.js"></script>
     <script src="crop-icons.js"></script>
     <script src="pesticide-data.js"></script>
     <script src="pesticides.js"></script>
