@@ -7,26 +7,32 @@
     <title>野菜別 農薬対応表</title>
     <link rel="icon" href="app-icon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="pesticides.css">
+    <link rel="stylesheet" href="shared-header.css">
   </head>
   <body>
-    <header class="pesticide-header">
-      <a class="pesticide-brand" href="index.html">
-        <img src="app-icon.svg" alt="">
-        <span>
-          <small>畑の記録</small>
-          <strong>農薬対応表</strong>
-          <time class="app-updated pesticide-updated" data-app-updated datetime="2026-07-05T20:36:00+09:00">最終更新 2026/07/05 20:36</time>
+    <header class="pesticide-header site-header site-header--pesticide">
+      <a class="pesticide-brand site-brand" href="index.html" aria-label="収穫量管理へ戻る">
+        <img class="site-brand-mark" src="app-icon.svg" alt="">
+        <span class="site-brand-copy">
+          <small class="site-brand-kicker">畑の記録</small>
+          <strong class="site-brand-title">農薬対応表</strong>
+          <time class="app-updated pesticide-updated site-updated" data-app-updated datetime="2026-07-06T20:12:00+09:00">最終更新 2026/07/06 20:12</time>
         </span>
       </a>
-      <div class="header-commands">
-        <button id="printButton" class="icon-command" type="button" title="印刷" aria-label="印刷">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
+      <div class="header-commands site-header-actions">
+        <button id="printButton" class="icon-command site-header-button" type="button" title="印刷" aria-label="印刷">
+          <svg class="site-header-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M6 9V2h12v7"></path>
             <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
             <path d="M6 14h12v8H6Z"></path>
           </svg>
         </button>
-        <a class="back-link" href="index.html">収穫管理へ戻る</a>
+        <a class="back-link site-header-button" href="index.html" title="収穫管理へ戻る" aria-label="収穫管理へ戻る">
+          <svg class="site-header-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m15 18-6-6 6-6"></path>
+            <path d="M9 12h10"></path>
+          </svg>
+        </a>
       </div>
     </header>
 

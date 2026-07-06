@@ -12,32 +12,40 @@
     <link rel="icon" href="app-icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="app-icon.svg">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="shared-header.css">
   </head>
   <body>
-    <header class="app-header">
-      <div class="app-title-block">
-        <p class="eyebrow">畑の記録</p>
-        <h1>収穫量管理</h1>
-        <time class="app-updated" data-app-updated datetime="2026-07-05T20:36:00+09:00">最終更新 2026/07/05 20:36</time>
-      </div>
-      <div class="header-actions">
-        <a class="icon-button" href="pesticides.html" title="農薬対応表" aria-label="農薬対応表を開く">
-          <svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true">
+    <header class="app-header site-header site-header--harvest">
+      <a class="app-title-block site-brand" href="index.html" aria-label="収穫量管理のホーム">
+        <img class="site-brand-mark" src="app-icon.svg" alt="">
+        <span class="site-brand-copy">
+          <small class="site-brand-kicker">畑の記録</small>
+          <strong class="site-brand-title">収穫量管理</strong>
+          <time class="app-updated site-updated" data-app-updated datetime="2026-07-06T20:12:00+09:00">最終更新 2026/07/06 20:12</time>
+        </span>
+      </a>
+      <div class="header-actions site-header-actions">
+        <a class="icon-button site-header-button" href="pesticides.html" title="農薬対応表" aria-label="農薬対応表を開く">
+          <svg class="header-icon site-header-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
             <path d="m9 12 2 2 4-4"></path>
           </svg>
         </a>
-        <button class="icon-button" id="syncSettingsButton" type="button" title="クラウド同期を設定" aria-label="クラウド同期を設定">☁</button>
+        <button class="icon-button site-header-button" id="syncSettingsButton" type="button" title="クラウド同期を設定" aria-label="クラウド同期を設定">
+          <svg class="header-icon site-header-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 0 1 0 9Z"></path>
+          </svg>
+        </button>
         <span id="syncMiniStatus" class="sync-mini-status">ローカル</span>
-        <button class="icon-button" id="exportButton" type="button" title="データを書き出す" aria-label="データを書き出す">
-          <svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <button class="icon-button site-header-button" id="exportButton" type="button" title="データを書き出す" aria-label="データを書き出す">
+          <svg class="header-icon site-header-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v11"></path>
             <path d="m7 10 5 5 5-5"></path>
             <path d="M5 19h14"></path>
           </svg>
         </button>
-        <label class="icon-button file-button" title="データを読み込む" aria-label="データを読み込む">
-          <svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <label class="icon-button file-button site-header-button" title="データを読み込む" aria-label="データを読み込む">
+          <svg class="header-icon site-header-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 15V4"></path>
             <path d="m7 8 5-5 5 5"></path>
             <path d="M5 19h14"></path>
