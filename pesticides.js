@@ -51,8 +51,11 @@ const elements = {
   closeApplicationModalButton: document.querySelector("#closeApplicationModalButton"),
   applicationForm: document.querySelector("#applicationForm"),
   applicationDateInput: document.querySelector("#applicationDateInput"),
-  applicationCropInput: document.querySelector("#applicationCropInput"),
   applicationProductInput: document.querySelector("#applicationProductInput"),
+  applicationCropPicker: document.querySelector("#applicationCropPicker"),
+  applicationCropSelectionCount: document.querySelector("#applicationCropSelectionCount"),
+  selectAllApplicableCropsButton: document.querySelector("#selectAllApplicableCropsButton"),
+  clearApplicationCropsButton: document.querySelector("#clearApplicationCropsButton"),
   applicationDilutionInput: document.querySelector("#applicationDilutionInput"),
   applicationAmountInput: document.querySelector("#applicationAmountInput"),
   applicationUnitInput: document.querySelector("#applicationUnitInput"),
@@ -65,6 +68,7 @@ let selectedCrop = crops[0].name;
 let viewMode = "detail";
 let applicationMonthFilter = "all";
 let applicationCropFilter = "all";
+let selectedApplicationCrops = new Set();
 
 function initialize() {
   renderCropSelect();
@@ -72,9 +76,8 @@ function initialize() {
   renderTable();
   renderOverview();
   renderViewMode();
-  renderApplicationCropOptions();
   elements.applicationDateInput.value = currentLocalDate();
-  updateApplicationProductOptions();
+  renderApplicationProductOptions();
   renderApplicationRecords();
   loadResearchPrompt();
 
@@ -95,8 +98,13 @@ function initialize() {
   elements.applicationModal.addEventListener("click", (event) => {
     if (event.target === elements.applicationModal) closeApplicationModal();
   });
-  elements.applicationCropInput.addEventListener("change", () => updateApplicationProductOptions());
-  elements.applicationProductInput.addEventListener("change", applySelectedProductDefaults);
+  elements.applicationProductInput.addEventListener("change", () => {
+    selectedApplicationCrops = new Set();
+    renderApplicationCropPicker(selectedCrop);
+    applySelectedProductDefaults();
+  });
+  elements.selectAllApplicableCropsButton.addEventListener("click", selectAllApplicableCrops);
+  elements.clearApplicationCropsButton.addEventListener("click", clearApplicationCrops);
   elements.applicationForm.addEventListener("submit", saveApplicationRecord);
   elements.applicationMonthFilter.addEventListener("change", () => {
     applicationMonthFilter = elements.applicationMonthFilter.value;
@@ -367,22 +375,14 @@ function currentLocalDate() {
   return local.toISOString().slice(0, 10);
 }
 
-function renderApplicationCropOptions() {
-  elements.applicationCropInput.replaceChildren();
-  crops.forEach((crop) => {
-    const option = document.createElement("option");
-    option.value = crop.name;
-    option.textContent = crop.name;
-    elements.applicationCropInput.append(option);
-  });
-}
-
 function openApplicationModal(cropName = selectedCrop, registrationNumber = "") {
   elements.applicationForm.reset();
   elements.applicationDateInput.value = currentLocalDate();
-  elements.applicationCropInput.value = crops.some((crop) => crop.name === cropName) ? cropName : crops[0].name;
   elements.applicationUnitInput.value = "L";
-  updateApplicationProductOptions(registrationNumber);
+  selectedApplicationCrops = new Set();
+  renderApplicationProductOptions(registrationNumber, cropName);
+  renderApplicationCropPicker(cropName);
+  applySelectedProductDefaults();
   elements.applicationModal.classList.remove("hidden");
   document.body.classList.add("application-modal-open");
   requestAnimationFrame(() => elements.applicationDateInput.focus());
@@ -393,23 +393,26 @@ function closeApplicationModal() {
   document.body.classList.remove("application-modal-open");
 }
 
-function updateApplicationProductOptions(preferredRegistrationNumber = "") {
-  const cropName = elements.applicationCropInput.value || selectedCrop;
-  const products = (pesticideData[cropName] || []).filter(isRecordableProduct);
-  const previousValue = preferredRegistrationNumber || elements.applicationProductInput.value;
+function recordableApplicationProducts() {
+  const productsByRegistration = new Map();
+  PESTICIDE_CROP_DATA.forEach((crop) => {
+    crop.products.filter(isRecordableProduct).forEach((product) => {
+      if (!productsByRegistration.has(product.registrationNumber)) {
+        productsByRegistration.set(product.registrationNumber, product);
+      }
+    });
+  });
+  return [...productsByRegistration.values()];
+}
+
+function renderApplicationProductOptions(preferredRegistrationNumber = "", preferredCropName = selectedCrop) {
+  const products = recordableApplicationProducts();
+  const cropProducts = (pesticideData[preferredCropName] || []).filter(isRecordableProduct);
+  const previousValue = preferredRegistrationNumber
+    || cropProducts[0]?.registrationNumber
+    || elements.applicationProductInput.value
+    || "";
   elements.applicationProductInput.replaceChildren();
-
-  if (!products.length) {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = "記録できる登録農薬がありません";
-    elements.applicationProductInput.append(option);
-    elements.applicationSubmitButton.disabled = true;
-    elements.applicationDilutionInput.value = "";
-    renderApplicationRulePreview();
-    return;
-  }
-
   products.forEach((product) => {
     const option = document.createElement("option");
     option.value = product.registrationNumber;
@@ -419,61 +422,169 @@ function updateApplicationProductOptions(preferredRegistrationNumber = "") {
   elements.applicationProductInput.value = products.some((product) => product.registrationNumber === previousValue)
     ? previousValue
     : products[0].registrationNumber;
-  elements.applicationSubmitButton.disabled = false;
+}
+
+function applicationRowsForSelectedProduct() {
+  const registrationNumber = elements.applicationProductInput.value;
+  return PESTICIDE_CROP_DATA.flatMap((crop) => {
+    const product = crop.products.find((item) => (
+      item.registrationNumber === registrationNumber && isRecordableProduct(item)
+    ));
+    return product ? [{ crop, product }] : [];
+  });
+}
+
+function renderApplicationCropPicker(preferredCropName = "") {
+  const applicableRows = applicationRowsForSelectedProduct();
+  const applicableNames = new Set(applicableRows.map(({ crop }) => crop.name));
+  selectedApplicationCrops = new Set(
+    [...selectedApplicationCrops].filter((cropName) => applicableNames.has(cropName))
+  );
+  if (!selectedApplicationCrops.size && applicableNames.has(preferredCropName)) {
+    selectedApplicationCrops.add(preferredCropName);
+  }
+
+  elements.applicationCropPicker.replaceChildren();
+  applicableRows.forEach(({ crop, product }) => {
+    const button = document.createElement("button");
+    button.className = "application-crop-choice";
+    button.type = "button";
+    button.dataset.cropName = crop.name;
+    button.classList.toggle("selected", selectedApplicationCrops.has(crop.name));
+    button.setAttribute("aria-pressed", String(selectedApplicationCrops.has(crop.name)));
+    const icon = createCropIcon(crop.name, "application-crop-choice-icon");
+    const copy = document.createElement("span");
+    const name = document.createElement("strong");
+    name.textContent = crop.name;
+    const status = document.createElement("small");
+    status.textContent = product.status === "conditional" ? "条件付き" : "適用可能";
+    copy.append(name, status);
+    button.append(icon, copy);
+    button.addEventListener("click", () => toggleApplicationCrop(crop.name));
+    elements.applicationCropPicker.append(button);
+  });
+  updateApplicationCropSelectionState();
+}
+
+function toggleApplicationCrop(cropName) {
+  if (selectedApplicationCrops.has(cropName)) {
+    selectedApplicationCrops.delete(cropName);
+  } else {
+    selectedApplicationCrops.add(cropName);
+  }
+  updateApplicationCropSelectionState();
+  renderApplicationRulePreview();
+}
+
+function selectAllApplicableCrops() {
+  selectedApplicationCrops = new Set(applicationRowsForSelectedProduct().map(({ crop }) => crop.name));
+  updateApplicationCropSelectionState();
   applySelectedProductDefaults();
 }
 
+function clearApplicationCrops() {
+  selectedApplicationCrops = new Set();
+  updateApplicationCropSelectionState();
+  renderApplicationRulePreview();
+}
+
+function updateApplicationCropSelectionState() {
+  elements.applicationCropPicker.querySelectorAll(".application-crop-choice").forEach((button) => {
+    const selected = selectedApplicationCrops.has(button.dataset.cropName);
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+  elements.applicationCropSelectionCount.textContent = `${selectedApplicationCrops.size}件選択`;
+  elements.applicationSubmitButton.disabled = selectedApplicationCrops.size === 0;
+}
+
+function selectedApplicationRows() {
+  return applicationRowsForSelectedProduct()
+    .filter(({ crop }) => selectedApplicationCrops.has(crop.name));
+}
+
 function selectedApplicationProduct() {
-  return (pesticideData[elements.applicationCropInput.value] || [])
-    .find((product) => product.registrationNumber === elements.applicationProductInput.value);
+  return applicationRowsForSelectedProduct()[0]?.product;
 }
 
 function applySelectedProductDefaults() {
-  const product = selectedApplicationProduct();
-  elements.applicationDilutionInput.value = product?.dilutionOrRate || "";
-  renderApplicationRulePreview(product);
+  const rows = selectedApplicationRows();
+  const dilutionValues = uniqueApplicationRuleValues(rows, "dilutionOrRate");
+  elements.applicationDilutionInput.value = dilutionValues.length === 1 ? dilutionValues[0] : "";
+  elements.applicationDilutionInput.placeholder = dilutionValues.length > 1
+    ? "作物ごとに条件が異なるため実際の希釈を入力"
+    : "例：1,000倍";
+  renderApplicationRulePreview();
 }
 
-function renderApplicationRulePreview(product = selectedApplicationProduct()) {
+function uniqueApplicationRuleValues(rows, key) {
+  return [...new Set(rows.map(({ product }) => product[key]).filter(Boolean))];
+}
+
+function summarizeApplicationRule(rows, key) {
+  const values = uniqueApplicationRuleValues(rows, key);
+  if (!values.length) return "要確認";
+  if (values.length === 1) return values[0];
+  return `${values.length}種類（作物ごとに確認）`;
+}
+
+function renderApplicationRulePreview() {
   elements.applicationRulePreview.replaceChildren();
-  if (!product) {
-    elements.applicationRulePreview.textContent = "登録内容を確認できる農薬がありません。";
+  const rows = selectedApplicationRows();
+  if (!rows.length) {
+    elements.applicationRulePreview.textContent = "散布した野菜を1つ以上選択してください。";
     return;
   }
 
   const title = document.createElement("strong");
-  title.textContent = "登録内容の確認";
+  title.textContent = `${rows.length}野菜の登録内容を確認`;
   const details = document.createElement("span");
   details.textContent = [
-    `使用時期：${product.useTiming || "要確認"}`,
-    `本剤回数：${product.maxApplications || "要確認"}`,
-    `方法：${product.method || "要確認"}`
+    `使用時期：${summarizeApplicationRule(rows, "useTiming")}`,
+    `本剤回数：${summarizeApplicationRule(rows, "maxApplications")}`,
+    `希釈・使用量：${summarizeApplicationRule(rows, "dilutionOrRate")}`
   ].join(" / ");
   const note = document.createElement("small");
-  note.textContent = "保存前に、手元の製品ラベルと最新の登録内容を必ず確認してください。";
+  note.textContent = rows.length > 1
+    ? "作物ごとに使用条件が異なる場合があります。各作物の製品ラベルと最新登録を確認してください。"
+    : "保存前に、手元の製品ラベルと最新の登録内容を必ず確認してください。";
   elements.applicationRulePreview.append(title, details, note);
 }
 
 function saveApplicationRecord(event) {
   event.preventDefault();
   const product = selectedApplicationProduct();
+  const selectedRows = selectedApplicationRows();
   const amount = Number(elements.applicationAmountInput.value);
-  if (!product || !elements.applicationDateInput.value || !Number.isFinite(amount) || amount <= 0) return;
+  if (!product || !selectedRows.length || !elements.applicationDateInput.value || !Number.isFinite(amount) || amount <= 0) return;
 
-  const crop = crops.find((item) => item.name === elements.applicationCropInput.value);
+  const cropNames = selectedRows.map(({ crop }) => crop.name);
+  const cropRules = selectedRows.map(({ crop, product: cropProduct }) => ({
+    cropName: crop.name,
+    registrationCropName: crop.registrationCropName,
+    status: cropProduct.status,
+    useTiming: cropProduct.useTiming || "",
+    maxApplications: cropProduct.maxApplications || "",
+    dilutionOrRate: cropProduct.dilutionOrRate || "",
+    method: cropProduct.method || "",
+    activeIngredients: [...cropProduct.activeIngredients]
+  }));
   appState.pesticideApplications.push({
     id: createApplicationId(),
     date: elements.applicationDateInput.value,
-    cropName: elements.applicationCropInput.value,
-    registrationCropName: crop?.registrationCropName || elements.applicationCropInput.value,
+    cropName: cropNames[0],
+    cropNames,
+    registrationCropName: cropRules[0].registrationCropName,
+    registrationCropNames: cropRules.map((rule) => rule.registrationCropName),
+    cropRules,
     productName: product.productName,
     registrationNumber: product.registrationNumber,
     dilution: elements.applicationDilutionInput.value.trim(),
     amount,
     unit: elements.applicationUnitInput.value,
-    method: product.method || "",
-    useTiming: product.useTiming || "",
-    maxApplications: product.maxApplications || "",
+    method: summarizeApplicationRule(selectedRows, "method"),
+    useTiming: summarizeApplicationRule(selectedRows, "useTiming"),
+    maxApplications: summarizeApplicationRule(selectedRows, "maxApplications"),
     activeIngredients: [...product.activeIngredients],
     memo: elements.applicationMemoInput.value.trim(),
     createdAt: new Date().toISOString()
@@ -526,7 +637,7 @@ function renderApplicationFilterOptions() {
   const records = appState.pesticideApplications;
   const months = [...new Set(records.map((record) => record.date?.slice(0, 7)).filter(Boolean))]
     .sort((a, b) => b.localeCompare(a));
-  const cropNames = [...new Set(records.map((record) => record.cropName).filter(Boolean))]
+  const cropNames = [...new Set(records.flatMap(recordCropNames).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, "ja"));
   applicationMonthFilter = replaceApplicationFilterOptions(
     elements.applicationMonthFilter,
@@ -579,7 +690,7 @@ function renderApplicationHistory() {
   elements.applicationHistoryList.replaceChildren();
   const records = appState.pesticideApplications
     .filter((record) => applicationMonthFilter === "all" || record.date?.startsWith(applicationMonthFilter))
-    .filter((record) => applicationCropFilter === "all" || record.cropName === applicationCropFilter)
+    .filter((record) => applicationCropFilter === "all" || recordCropNames(record).includes(applicationCropFilter))
     .sort(compareApplicationRecords);
 
   if (!records.length) {
@@ -601,12 +712,19 @@ function compareApplicationRecords(a, b) {
 function createApplicationHistoryItem(record) {
   const item = document.createElement("article");
   item.className = "application-history-item";
-  const icon = createCropIcon(record.cropName, "application-crop-icon");
+  const cropNames = recordCropNames(record);
+  const icon = createCropIcon(cropNames[0] || "", "application-crop-icon");
+  if (cropNames.length > 1) {
+    const cropCount = document.createElement("b");
+    cropCount.className = "application-crop-count";
+    cropCount.textContent = `+${cropNames.length - 1}`;
+    icon.append(cropCount);
+  }
   const body = document.createElement("div");
   const heading = document.createElement("div");
   heading.className = "application-history-item-heading";
   const title = document.createElement("strong");
-  title.textContent = `${record.cropName} / ${record.productName}`;
+  title.textContent = `${formatApplicationCropNames(cropNames)} / ${record.productName}`;
   const date = document.createElement("time");
   date.dateTime = record.date || "";
   date.textContent = formatApplicationDate(record.date);
@@ -623,6 +741,16 @@ function createApplicationHistoryItem(record) {
   deleteButton.addEventListener("click", () => deleteApplicationRecord(record.id));
   item.append(icon, body, deleteButton);
   return item;
+}
+
+function recordCropNames(record) {
+  if (Array.isArray(record?.cropNames) && record.cropNames.length) return record.cropNames;
+  return record?.cropName ? [record.cropName] : [];
+}
+
+function formatApplicationCropNames(cropNames) {
+  if (cropNames.length <= 3) return cropNames.join("・") || "野菜未設定";
+  return `${cropNames.slice(0, 3).join("・")} ほか${cropNames.length - 3}件`;
 }
 
 function deleteApplicationRecord(recordId) {

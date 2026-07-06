@@ -947,12 +947,30 @@ textarea:focus {
 }
 
 .application-crop-icon {
+  position: relative;
   display: grid;
   width: 38px;
   height: 38px;
   place-items: center;
   border-radius: 7px;
   background: #edfff1;
+}
+
+.application-crop-count {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  display: grid;
+  min-width: 20px;
+  height: 18px;
+  place-items: center;
+  border: 2px solid #ffffff;
+  border-radius: 9px;
+  background: var(--green);
+  color: #ffffff;
+  padding: 0 4px;
+  font-size: 8px;
+  line-height: 1;
 }
 
 .application-crop-icon svg {
@@ -1114,6 +1132,139 @@ textarea:focus {
 
 .application-wide {
   grid-column: 1 / -1;
+}
+
+.application-crop-selection {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.application-crop-selection-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.application-crop-selection-heading > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.application-crop-selection-heading strong {
+  color: #315841;
+  font-size: 11px;
+}
+
+.application-crop-selection-heading span {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.application-selection-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.application-selection-actions button {
+  min-height: 32px;
+  border: 1px solid rgba(8, 118, 66, 0.2);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--green);
+  padding: 5px 9px;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.application-selection-actions button:first-child {
+  border-color: rgba(18, 201, 106, 0.32);
+  background: #e8fff0;
+}
+
+.application-crop-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 6px;
+  max-height: 252px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(8, 118, 66, 0.14);
+  border-radius: 7px;
+  background: #f7fbf8;
+  padding: 7px;
+}
+
+.application-crop-choice {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 48px;
+  border: 1px solid rgba(8, 118, 66, 0.14);
+  border-radius: 7px;
+  background: #ffffff;
+  color: #315841;
+  padding: 5px 7px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.application-crop-choice:hover,
+.application-crop-choice:focus-visible {
+  border-color: var(--green-bright);
+  outline: none;
+}
+
+.application-crop-choice.selected {
+  border-color: transparent;
+  background: linear-gradient(135deg, #087642, #12c96a);
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(8, 118, 66, 0.18);
+}
+
+.application-crop-choice-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 6px;
+  background: #edfff1;
+}
+
+.application-crop-choice-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.application-crop-choice > span:last-child,
+.application-crop-choice strong,
+.application-crop-choice small {
+  display: block;
+  min-width: 0;
+}
+
+.application-crop-choice strong {
+  overflow: hidden;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.application-crop-choice small {
+  margin-top: 2px;
+  color: #718077;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.application-crop-choice.selected small {
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .application-amount-field {
@@ -1382,6 +1533,29 @@ textarea:focus {
 
   .application-wide {
     grid-column: auto;
+  }
+
+  .application-crop-selection-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .application-selection-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .application-selection-actions button {
+    min-height: 40px;
+  }
+
+  .application-crop-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 320px;
+  }
+
+  .application-crop-choice {
+    min-height: 54px;
   }
 
   .view-switch {

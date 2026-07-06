@@ -16,7 +16,7 @@
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">農薬対応表</strong>
-          <time class="app-updated pesticide-updated site-updated" data-app-updated datetime="2026-07-06T20:35:00+09:00">最終更新 2026/07/06 20:35</time>
+          <time class="app-updated pesticide-updated site-updated" data-app-updated datetime="2026-07-06T20:57:00+09:00">最終更新 2026/07/06 20:57</time>
         </span>
       </a>
       <div class="header-commands site-header-actions">
@@ -241,20 +241,29 @@
             <input id="applicationDateInput" type="date" required>
           </label>
           <label>
-            野菜
-            <select id="applicationCropInput" required></select>
-          </label>
-          <label class="application-wide">
             農薬
             <select id="applicationProductInput" required></select>
           </label>
+          <div class="application-crop-selection application-wide">
+            <div class="application-crop-selection-heading">
+              <div>
+                <strong>散布した野菜</strong>
+                <span id="applicationCropSelectionCount">0件選択</span>
+              </div>
+              <div class="application-selection-actions">
+                <button id="selectAllApplicableCropsButton" type="button">適用可能を全選択</button>
+                <button id="clearApplicationCropsButton" type="button">選択解除</button>
+              </div>
+            </div>
+            <div id="applicationCropPicker" class="application-crop-picker" role="group" aria-label="散布した野菜を複数選択"></div>
+          </div>
           <label>
             実際の希釈・使用量
             <input id="applicationDilutionInput" placeholder="例：1,000倍" required>
           </label>
           <div class="application-amount-field">
             <label>
-              散布量
+              散布量（合計）
               <input id="applicationAmountInput" type="number" min="0.01" step="0.01" inputmode="decimal" required>
             </label>
             <label>
