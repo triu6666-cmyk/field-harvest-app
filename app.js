@@ -64,6 +64,7 @@ let activeSide = "L";
 let mapFilter = "all";
 let mapPesticideRegistrationNumber = "";
 let aggregateMode = "variety";
+let costPerformancePeriod = "month";
 let harvestHistoryMonthFilter = "all";
 let harvestHistoryCropFilter = "all";
 let expenseHistoryMonthFilter = "all";
@@ -195,6 +196,8 @@ const elements = {
   seedlingList: document.querySelector("#seedlingList"),
   aggregateByVarietyButton: document.querySelector("#aggregateByVarietyButton"),
   aggregateByCropButton: document.querySelector("#aggregateByCropButton"),
+  costPeriodMonthButton: document.querySelector("#costPeriodMonthButton"),
+  costPeriodAllButton: document.querySelector("#costPeriodAllButton"),
   recentHarvestDetails: document.querySelector("#recentHarvestDetails"),
   recentHarvestCount: document.querySelector("#recentHarvestCount"),
   harvestList: document.querySelector("#harvestList"),
@@ -509,6 +512,16 @@ elements.aggregateByCropButton.addEventListener("click", () => {
   aggregateMode = "crop";
   renderSeedlingList();
   renderAggregateTabs();
+});
+
+elements.costPeriodMonthButton.addEventListener("click", () => {
+  costPerformancePeriod = "month";
+  renderCostPerformanceSummary();
+});
+
+elements.costPeriodAllButton.addEventListener("click", () => {
+  costPerformancePeriod = "all";
+  renderCostPerformanceSummary();
 });
 
 elements.harvestMonthFilter.addEventListener("change", () => {
@@ -1395,32 +1408,51 @@ function renderHarvestSummary() {
 function renderCostPerformanceSummary() {
   elements.costPerformanceSummary.replaceChildren();
 
-  const totalExpense = expenseTotalForPeriod(() => true);
-  const rows = costPerformanceRows();
+  renderCostPerformanceTabs();
+  const periodPredicate = costPerformancePeriodPredicate();
+  const periodLabel = costPerformancePeriod === "month" ? "今月" : "全期間";
+  const totalExpense = expenseTotalForPeriod(periodPredicate);
+  const rows = costPerformanceRows(periodPredicate);
   if (!rows.length && !totalExpense) {
-    appendEmptyMessage(elements.costPerformanceSummary, "収穫と費用が入ると比較できます。");
+    appendEmptyMessage(elements.costPerformanceSummary, `${periodLabel}の収穫と費用が入ると比較できます。`);
     return;
   }
 
   const totalPieces = rows.reduce((sum, row) => sum + row.amount, 0);
   elements.costPerformanceSummary.append(
-    createSummaryCard("費用合計", `${formatNumber(totalExpense)}円`),
-    createSummaryCard("個数収穫", totalPieces ? `${formatNumber(totalPieces)}個` : "記録なし"),
+    createSummaryCard(`${periodLabel}の費用`, `${formatNumber(totalExpense)}円`),
+    createSummaryCard(`${periodLabel}の個数収穫`, totalPieces ? `${formatNumber(totalPieces)}個` : "記録なし"),
     createSummaryCard("1個あたり目安", totalPieces ? `${formatNumber(totalExpense / totalPieces)}円` : "計算なし")
   );
 
   if (!rows.length) {
-    appendEmptyMessage(elements.costPerformanceSummary, "個数での収穫記録が入ると、野菜別の目安コストを表示します。");
+    appendEmptyMessage(elements.costPerformanceSummary, `${periodLabel}に個数での収穫記録が入ると、野菜別の目安コストを表示します。`);
     return;
   }
 
   elements.costPerformanceSummary.append(createCostPerformanceTable(rows, totalExpense, totalPieces));
 }
 
-function costPerformanceRows() {
+function renderCostPerformanceTabs() {
+  elements.costPeriodMonthButton.classList.toggle("active", costPerformancePeriod === "month");
+  elements.costPeriodAllButton.classList.toggle("active", costPerformancePeriod === "all");
+  elements.costPeriodMonthButton.setAttribute("aria-pressed", String(costPerformancePeriod === "month"));
+  elements.costPeriodAllButton.setAttribute("aria-pressed", String(costPerformancePeriod === "all"));
+}
+
+function costPerformancePeriodPredicate() {
+  const currentMonth = today.slice(0, 7);
+  if (costPerformancePeriod === "month") {
+    return (record) => record.date?.startsWith(currentMonth);
+  }
+  return () => true;
+}
+
+function costPerformanceRows(predicate) {
   const groups = new Map();
   state.harvests
     .filter((harvest) => harvest.unit === "個")
+    .filter(predicate)
     .forEach((harvest) => {
       const seedling = findSeedling(harvest.seedlingId);
       const cropName = seedling?.cropName || "削除済み";
