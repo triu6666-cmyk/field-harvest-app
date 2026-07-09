@@ -18,6 +18,11 @@ const pesticideData = Object.fromEntries(
 );
 const storage = window.fieldHarvestStorage;
 let appState = normalizeApplicationState(storage.load());
+const PESTICIDE_CROP_ALIASES = {
+  赤パプリカ: "パプリカ",
+  黄パプリカ: "パプリカ",
+  アスパラ: "アスパラガス"
+};
 
 const elements = {
   cropSelect: document.querySelector("#cropSelect"),
@@ -363,6 +368,7 @@ function isRecordableProduct(product) {
 
 function normalizeApplicationState(value) {
   const normalized = value && typeof value === "object" ? { ...value } : {};
+  normalized.seedlings = Array.isArray(normalized.seedlings) ? [...normalized.seedlings] : [];
   normalized.pesticideApplications = Array.isArray(normalized.pesticideApplications)
     ? [...normalized.pesticideApplications]
     : [];
@@ -395,7 +401,7 @@ function closeApplicationModal() {
 
 function recordableApplicationProducts() {
   const productsByRegistration = new Map();
-  PESTICIDE_CROP_DATA.forEach((crop) => {
+  plantedPesticideCrops().forEach((crop) => {
     crop.products.filter(isRecordableProduct).forEach((product) => {
       if (!productsByRegistration.has(product.registrationNumber)) {
         productsByRegistration.set(product.registrationNumber, product);
@@ -407,12 +413,24 @@ function recordableApplicationProducts() {
 
 function renderApplicationProductOptions(preferredRegistrationNumber = "", preferredCropName = selectedCrop) {
   const products = recordableApplicationProducts();
-  const cropProducts = (pesticideData[preferredCropName] || []).filter(isRecordableProduct);
+  const normalizedPreferredCrop = normalizePesticideCropName(preferredCropName);
+  const cropProducts = (pesticideData[normalizedPreferredCrop] || [])
+    .filter((product) => products.some((item) => item.registrationNumber === product.registrationNumber))
+    .filter(isRecordableProduct);
   const previousValue = preferredRegistrationNumber
     || cropProducts[0]?.registrationNumber
     || elements.applicationProductInput.value
     || "";
   elements.applicationProductInput.replaceChildren();
+  if (!products.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "現在植えている野菜に使える農薬なし";
+    elements.applicationProductInput.append(option);
+    elements.applicationProductInput.disabled = true;
+    return;
+  }
+  elements.applicationProductInput.disabled = false;
   products.forEach((product) => {
     const option = document.createElement("option");
     option.value = product.registrationNumber;
@@ -426,7 +444,8 @@ function renderApplicationProductOptions(preferredRegistrationNumber = "", prefe
 
 function applicationRowsForSelectedProduct() {
   const registrationNumber = elements.applicationProductInput.value;
-  return PESTICIDE_CROP_DATA.flatMap((crop) => {
+  if (!registrationNumber) return [];
+  return plantedPesticideCrops().flatMap((crop) => {
     const product = crop.products.find((item) => (
       item.registrationNumber === registrationNumber && isRecordableProduct(item)
     ));
@@ -437,15 +456,29 @@ function applicationRowsForSelectedProduct() {
 function renderApplicationCropPicker(preferredCropName = "") {
   const applicableRows = applicationRowsForSelectedProduct();
   const applicableNames = new Set(applicableRows.map(({ crop }) => crop.name));
+  const normalizedPreferredCrop = normalizePesticideCropName(preferredCropName);
   selectedApplicationCrops = new Set(
     [...selectedApplicationCrops].filter((cropName) => applicableNames.has(cropName))
   );
-  if (!selectedApplicationCrops.size && applicableNames.has(preferredCropName)) {
-    selectedApplicationCrops.add(preferredCropName);
+  if (!selectedApplicationCrops.size && applicableNames.has(normalizedPreferredCrop)) {
+    selectedApplicationCrops.add(normalizedPreferredCrop);
   }
 
   elements.applicationCropPicker.replaceChildren();
+  if (!applicableRows.length) {
+    const empty = document.createElement("p");
+    empty.className = "application-crop-empty";
+    empty.textContent = plantedPesticideCropEntries().length
+      ? "選択中の農薬を使える、現在植えている野菜がありません。"
+      : "現在植えている苗がありません。先に収穫管理画面で苗を登録してください。";
+    elements.applicationCropPicker.append(empty);
+    updateApplicationCropSelectionState();
+    renderApplicationRulePreview();
+    return;
+  }
+
   applicableRows.forEach(({ crop, product }) => {
+    const plantedLabel = plantedCropLabel(crop.name);
     const button = document.createElement("button");
     button.className = "application-crop-choice";
     button.type = "button";
@@ -457,7 +490,7 @@ function renderApplicationCropPicker(preferredCropName = "") {
     const name = document.createElement("strong");
     name.textContent = crop.name;
     const status = document.createElement("small");
-    status.textContent = product.status === "conditional" ? "条件付き" : "適用可能";
+    status.textContent = product.status === "conditional" ? `条件付き / ${plantedLabel}` : `適用可能 / ${plantedLabel}`;
     copy.append(name, status);
     button.append(icon, copy);
     button.addEventListener("click", () => toggleApplicationCrop(crop.name));
@@ -505,6 +538,37 @@ function selectedApplicationRows() {
 
 function selectedApplicationProduct() {
   return applicationRowsForSelectedProduct()[0]?.product;
+}
+
+function plantedPesticideCropEntries() {
+  const entries = new Map();
+  (appState.seedlings || []).forEach((seedling) => {
+    if (!seedling?.cropName) return;
+    const name = normalizePesticideCropName(seedling.cropName);
+    const crop = PESTICIDE_CROP_DATA.find((item) => item.name === name);
+    if (!crop) return;
+    const entry = entries.get(name) || { crop, plantedNames: new Set(), count: 0 };
+    entry.plantedNames.add(seedling.cropName);
+    entry.count += 1;
+    entries.set(name, entry);
+  });
+  return [...entries.values()].sort((a, b) => a.crop.name.localeCompare(b.crop.name, "ja"));
+}
+
+function plantedPesticideCrops() {
+  return plantedPesticideCropEntries().map((entry) => entry.crop);
+}
+
+function plantedCropLabel(cropName) {
+  const entry = plantedPesticideCropEntries().find((item) => item.crop.name === cropName);
+  if (!entry) return "植え付け中";
+  const names = [...entry.plantedNames].sort((a, b) => a.localeCompare(b, "ja"));
+  const nameText = names.length === 1 ? names[0] : names.join("・");
+  return `${nameText} ${entry.count}区画`;
+}
+
+function normalizePesticideCropName(cropName) {
+  return PESTICIDE_CROP_ALIASES[cropName] || cropName;
 }
 
 function applySelectedProductDefaults() {

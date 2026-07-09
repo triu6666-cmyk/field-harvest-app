@@ -1267,6 +1267,19 @@ textarea:focus {
   color: rgba(255, 255, 255, 0.78);
 }
 
+.application-crop-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  border: 1px dashed rgba(8, 118, 66, 0.22);
+  border-radius: 7px;
+  background: #ffffff;
+  color: #66746b;
+  padding: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
 .application-amount-field {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 90px;
