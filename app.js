@@ -2564,6 +2564,10 @@ function renderSeedlingDetail(seedling) {
   const activities = state.activities
     .filter((activity) => activity.seedlingId === seedling.id)
     .sort((a, b) => b.date.localeCompare(a.date));
+  const pesticideRecords = state.pesticideApplications
+    .filter((record) => pesticideApplicationMatchesSeedling(record, seedling))
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+  const pesticideSafety = pesticideSafetyForSeedling(seedling);
 
   const hero = document.createElement("section");
   hero.className = "seedling-detail-hero";
@@ -2613,7 +2617,8 @@ function renderSeedlingDetail(seedling) {
     createDetailStat("収穫合計", harvestTotalsForSeedling(seedling.id) || "収穫なし"),
     createDetailStat("収穫回数", `${harvests.length}回`),
     createDetailStat("植えた日", seedling.plantedDate || "未入力"),
-    createDetailStat("費用", expenses.length ? `${formatNumber(expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0))}円` : "記録なし")
+    createDetailStat("費用", expenses.length ? `${formatNumber(expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0))}円` : "記録なし"),
+    createDetailStat("農薬注意", pesticideSafetySummaryText(pesticideSafety), pesticideSafety?.status === "wait" ? "warning" : "")
   );
 
   const memo = document.createElement("section");
@@ -2652,12 +2657,43 @@ function renderSeedlingDetail(seedling) {
   }
   activityList.append(activityRecordList);
 
-  elements.seedlingDetailBody.append(hero, stats, memo, activityList, harvestList);
+  const pesticideList = document.createElement("section");
+  pesticideList.className = "seedling-detail-section";
+  pesticideList.append(createDetailSectionTitle("最近の農薬散布"));
+  const pesticideRecordList = document.createElement("div");
+  pesticideRecordList.className = "detail-record-list";
+  if (pesticideRecords.length) {
+    pesticideRecords.slice(0, 8).forEach((record) => {
+      pesticideRecordList.append(createPesticideDetailRecord(record, seedling));
+    });
+  } else {
+    appendEmptyMessage(pesticideRecordList, "この苗に関係する農薬散布記録はありません。");
+  }
+  pesticideList.append(pesticideRecordList);
+
+  elements.seedlingDetailBody.append(hero, stats, memo, pesticideList, activityList, harvestList);
 }
 
-function createDetailStat(label, value) {
+function pesticideSafetySummaryText(safety) {
+  if (!safety) return "記録なし";
+  if (safety.status === "wait") return `収穫待ち\n${formatMonthDay(safety.availableDate)}から`;
+  return "散布記録あり\n制限経過目安";
+}
+
+function createPesticideDetailRecord(record, seedling) {
+  const rule = pesticideApplicationRuleForSeedling(record, seedling);
+  const details = [
+    record.dilution,
+    record.amount ? `${formatNumber(record.amount)}${record.unit || "L"}` : "",
+    record.memo
+  ].filter(Boolean).join(" / ");
+  return createDetailRecord(record.date || "日付なし", details, rule?.useTiming || record.useTiming || "要確認");
+}
+
+function createDetailStat(label, value, modifier = "") {
   const card = document.createElement("article");
   card.className = "detail-stat-card";
+  if (modifier) card.classList.add(`detail-stat-card-${modifier}`);
   const labelElement = document.createElement("span");
   labelElement.textContent = label;
   const valueElement = document.createElement("strong");
