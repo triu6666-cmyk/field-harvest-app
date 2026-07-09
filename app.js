@@ -161,6 +161,7 @@ const elements = {
   activityMemoInput: document.querySelector("#activityMemoInput"),
   activityForm: document.querySelector("#activityForm"),
   activitySummary: document.querySelector("#activitySummary"),
+  activityFocusList: document.querySelector("#activityFocusList"),
   activityList: document.querySelector("#activityList"),
   showActivityRecordsButton: document.querySelector("#showActivityRecordsButton"),
   showTaskPlannerButton: document.querySelector("#showTaskPlannerButton"),
@@ -706,6 +707,7 @@ function render() {
   renderExpenseDashboard();
   renderExpenseManagerList();
   renderActivitySummary();
+  renderActivityFocusList();
   renderActivityList();
   renderTaskSummary();
   renderTaskList();
@@ -1851,6 +1853,101 @@ function renderActivitySummary() {
     createSummaryCard("今月", `${monthCount}件`),
     createSummaryCard("累計", `${state.activities.length}件`)
   );
+}
+
+function renderActivityFocusList() {
+  elements.activityFocusList.replaceChildren();
+
+  const dueTasks = state.tasks
+    .filter((task) => !task.completed && task.date && task.date <= today)
+    .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+  dueTasks.slice(0, 4).forEach((task) => {
+    elements.activityFocusList.append(createActivityFocusItem({
+      type: task.type,
+      title: `${task.type} / ${activityTargetLabel(task)}`,
+      meta: `${taskDueLabel(task)} ${task.date}${task.memo ? ` / ${task.memo}` : ""}`,
+      actionLabel: "完了",
+      onAction: () => toggleTaskComplete(task.id)
+    }));
+  });
+
+  const availableSlots = Math.max(0, 5 - Math.min(dueTasks.length, 4));
+  staleSeedlingRows()
+    .slice(0, availableSlots)
+    .forEach((row) => {
+      elements.activityFocusList.append(createActivityFocusItem({
+        type: "その他",
+        title: row.seedling ? seedlingLabel(row.seedling) : "苗",
+        meta: row.lastDate ? `最後の作業 ${formatMonthDay(row.lastDate)} / ${row.daysSince}日前` : "作業記録なし",
+        actionLabel: "記録",
+        onAction: () => prepareActivityForSeedling(row.seedling)
+      }));
+    });
+
+  if (!elements.activityFocusList.children.length) {
+    appendEmptyMessage(elements.activityFocusList, "期限が来ている予定や、しばらく作業していない苗はありません。");
+  }
+}
+
+function staleSeedlingRows() {
+  return state.seedlings
+    .map((seedling) => {
+      const lastDate = latestActivityDateForSeedling(seedling.id);
+      const daysSince = lastDate ? daysBetweenDates(lastDate, today) : null;
+      return { seedling, lastDate, daysSince };
+    })
+    .filter((row) => row.daysSince === null || row.daysSince >= 14)
+    .sort((a, b) => {
+      if (a.daysSince === null && b.daysSince !== null) return -1;
+      if (a.daysSince !== null && b.daysSince === null) return 1;
+      return (b.daysSince || 0) - (a.daysSince || 0);
+    });
+}
+
+function latestActivityDateForSeedling(seedlingId) {
+  return state.activities
+    .filter((activity) => activity.seedlingId === seedlingId && activity.date)
+    .map((activity) => activity.date)
+    .sort((a, b) => b.localeCompare(a))[0] || "";
+}
+
+function createActivityFocusItem({ type, title, meta, actionLabel, onAction }) {
+  const item = document.createElement("article");
+  item.className = "activity-focus-item";
+  item.dataset.activityType = activityTypeKey(type);
+
+  const icon = document.createElement("span");
+  icon.className = "activity-focus-icon";
+  icon.textContent = activityTypeIcon(type);
+
+  const body = document.createElement("div");
+  body.className = "activity-focus-body";
+  const titleElement = document.createElement("strong");
+  titleElement.textContent = title;
+  const metaElement = document.createElement("span");
+  metaElement.textContent = meta;
+  body.append(titleElement, metaElement);
+
+  const button = document.createElement("button");
+  button.className = "activity-focus-action";
+  button.type = "button";
+  button.textContent = actionLabel;
+  button.addEventListener("click", onAction);
+
+  item.append(icon, body, button);
+  return item;
+}
+
+function prepareActivityForSeedling(seedling) {
+  if (!seedling) return;
+  activityViewMode = "records";
+  renderActivityView();
+  elements.activityDateInput.value = today;
+  elements.activityTypeInput.value = "水やり";
+  elements.activityTargetSelect.value = seedling.id;
+  elements.activityMemoInput.focus();
+  elements.activityForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderActivityList() {

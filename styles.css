@@ -1391,6 +1391,86 @@ select:focus {
   gap: 8px;
 }
 
+.activity-focus-list {
+  display: grid;
+  gap: 8px;
+}
+
+.activity-focus-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 60px;
+  border: 1px solid rgba(32, 115, 74, 0.14);
+  border-left: 5px solid #0bb3e8;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(242, 255, 247, 0.96));
+  padding: 9px 10px;
+  box-shadow: 0 7px 18px rgba(22, 63, 46, 0.07);
+}
+
+.activity-focus-item[data-activity-type="fertilizer"] {
+  border-left-color: #e9ad05;
+}
+
+.activity-focus-item[data-activity-type="spray"] {
+  border-left-color: #e85935;
+}
+
+.activity-focus-item[data-activity-type="training"],
+.activity-focus-item[data-activity-type="weeding"] {
+  border-left-color: #12a35b;
+}
+
+.activity-focus-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 8px;
+  background: #e9fff1;
+  color: #075638;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.activity-focus-body {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.activity-focus-body strong {
+  overflow: hidden;
+  color: #073f29;
+  font-size: 13px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-focus-body span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-focus-action {
+  min-height: 34px;
+  border: 1px solid rgba(8, 118, 66, 0.22);
+  border-radius: 7px;
+  background: #ffffff;
+  color: #087642;
+  padding: 0 11px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
 .task-list {
   display: grid;
   gap: 8px;
