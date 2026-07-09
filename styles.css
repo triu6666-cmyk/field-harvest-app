@@ -1617,6 +1617,55 @@ select:focus {
   gap: 8px;
 }
 
+.cost-performance-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cost-performance-table-wrap {
+  grid-column: 1 / -1;
+  overflow-x: auto;
+  border: 1px solid rgba(32, 115, 74, 0.14);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.cost-performance-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+}
+
+.cost-performance-table th,
+.cost-performance-table td {
+  border-bottom: 1px solid rgba(32, 115, 74, 0.12);
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.cost-performance-table th {
+  background: #edf9ef;
+  color: #315841;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.cost-performance-table td {
+  color: #173b27;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.cost-performance-note {
+  margin: 0;
+  padding: 8px 10px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
 .expense-summary .daily-history {
   grid-column: 1 / -1;
 }

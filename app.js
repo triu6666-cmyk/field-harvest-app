@@ -204,6 +204,7 @@ const elements = {
   expenseMonthFilter: document.querySelector("#expenseMonthFilter"),
   expenseCategoryFilter: document.querySelector("#expenseCategoryFilter"),
   harvestSummary: document.querySelector("#harvestSummary"),
+  costPerformanceSummary: document.querySelector("#costPerformanceSummary"),
   emptyStateTemplate: document.querySelector("#emptyStateTemplate"),
   exportButton: document.querySelector("#exportButton"),
   importInput: document.querySelector("#importInput"),
@@ -1348,6 +1349,7 @@ function createQuickHarvest(seedling) {
 
 function renderRecords() {
   renderHarvestSummary();
+  renderCostPerformanceSummary();
   renderAggregateTabs();
   renderSeedlingList();
   renderHistoryFilterOptions();
@@ -1388,6 +1390,106 @@ function renderHarvestSummary() {
       "日別の収穫記録がありません"
     )
   );
+}
+
+function renderCostPerformanceSummary() {
+  elements.costPerformanceSummary.replaceChildren();
+
+  const totalExpense = expenseTotalForPeriod(() => true);
+  const rows = costPerformanceRows();
+  if (!rows.length && !totalExpense) {
+    appendEmptyMessage(elements.costPerformanceSummary, "収穫と費用が入ると比較できます。");
+    return;
+  }
+
+  const totalPieces = rows.reduce((sum, row) => sum + row.amount, 0);
+  elements.costPerformanceSummary.append(
+    createSummaryCard("費用合計", `${formatNumber(totalExpense)}円`),
+    createSummaryCard("個数収穫", totalPieces ? `${formatNumber(totalPieces)}個` : "記録なし"),
+    createSummaryCard("1個あたり目安", totalPieces ? `${formatNumber(totalExpense / totalPieces)}円` : "計算なし")
+  );
+
+  if (!rows.length) {
+    appendEmptyMessage(elements.costPerformanceSummary, "個数での収穫記録が入ると、野菜別の目安コストを表示します。");
+    return;
+  }
+
+  elements.costPerformanceSummary.append(createCostPerformanceTable(rows, totalExpense, totalPieces));
+}
+
+function costPerformanceRows() {
+  const groups = new Map();
+  state.harvests
+    .filter((harvest) => harvest.unit === "個")
+    .forEach((harvest) => {
+      const seedling = findSeedling(harvest.seedlingId);
+      const cropName = seedling?.cropName || "削除済み";
+      const group = groups.get(cropName) || { cropName, amount: 0, seedlingIds: new Set() };
+      group.amount += Number(harvest.amount || 0);
+      if (seedling?.id) group.seedlingIds.add(seedling.id);
+      groups.set(cropName, group);
+    });
+
+  return [...groups.values()]
+    .filter((row) => row.amount > 0)
+    .sort((a, b) => b.amount - a.amount || a.cropName.localeCompare(b.cropName, "ja"));
+}
+
+function createCostPerformanceTable(rows, totalExpense, totalPieces) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "cost-performance-table-wrap";
+  const table = document.createElement("table");
+  table.className = "cost-performance-table";
+
+  const thead = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+  ["野菜", "収穫数", "目安費用", "1個あたり"].forEach((label) => {
+    const th = document.createElement("th");
+    th.textContent = label;
+    headerRow.append(th);
+  });
+  thead.append(headerRow);
+
+  const tbody = document.createElement("tbody");
+  rows.slice(0, 12).forEach((row) => {
+    const estimatedExpense = totalPieces ? totalExpense * (row.amount / totalPieces) : 0;
+    const tr = document.createElement("tr");
+    applyCropTheme(tr, row.cropName);
+
+    const cropCell = document.createElement("td");
+    cropCell.className = "aggregate-crop-cell";
+    const cropContent = document.createElement("div");
+    cropContent.className = "aggregate-crop-content";
+    const cropName = document.createElement("span");
+    cropName.className = "aggregate-crop-name";
+    cropName.textContent = row.cropName;
+    cropContent.append(createCropIllustration(row.cropName), cropName);
+    cropCell.append(cropContent);
+
+    const amountCell = document.createElement("td");
+    amountCell.className = "number-cell";
+    amountCell.textContent = `${formatNumber(row.amount)}個`;
+
+    const expenseCell = document.createElement("td");
+    expenseCell.className = "number-cell";
+    expenseCell.textContent = `${formatNumber(estimatedExpense)}円`;
+
+    const unitCostCell = document.createElement("td");
+    unitCostCell.className = "total-cell";
+    unitCostCell.textContent = `${formatNumber(estimatedExpense / row.amount)}円`;
+
+    tr.append(cropCell, amountCell, expenseCell, unitCostCell);
+    tbody.append(tr);
+  });
+
+  table.append(thead, tbody);
+  wrapper.append(table);
+
+  const note = document.createElement("p");
+  note.className = "cost-performance-note";
+  note.textContent = "目安費用は、畑全体の費用を個数収穫の比率で按分した参考値です。";
+  wrapper.append(note);
+  return wrapper;
 }
 
 function createSummaryCard(label, value) {
