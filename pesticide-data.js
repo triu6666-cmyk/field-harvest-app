@@ -1,4 +1,4 @@
-// Generated from the 2026-06-30 Deep Research table; product identities rechecked with MAFF on 2026-07-01.
+// Generated from the 2026-06-30 Deep Research table; product identities and crop classifications rechecked on 2026-07-06.
 const PESTICIDE_CROP_DATA = [
   {
     "name": "トマト",
@@ -453,7 +453,7 @@ const PESTICIDE_CROP_DATA = [
   {
     "name": "パプリカ",
     "category": "果菜類",
-    "registrationCropName": "個別名未確認。ﾋﾟｰﾏﾝ扱い可否は未確認",
+    "registrationCropName": "ﾋﾟｰﾏﾝ（カラーピーマン・オランダパプリカを含む）",
     "products": [
       {
         "productName": "ダコニール１０００",
@@ -462,23 +462,29 @@ const PESTICIDE_CROP_DATA = [
           "TPN 40.0%"
         ],
         "purpose": "殺菌剤",
-        "status": "unverified",
-        "statusDetail": "未確認",
+        "status": "registered",
+        "statusDetail": "登録あり（ﾋﾟｰﾏﾝ登録に含まれる）",
         "targets": [
-          "ﾋﾟｰﾏﾝ登録はあるが",
-          "パプリカ個別名は未確認"
+          "斑点病",
+          "うどんこ病",
+          "黒枯病",
+          "炭疽病"
         ],
-        "useTiming": "未確認",
-        "maxApplications": "未確認",
-        "dilutionOrRate": "未確認",
-        "method": "未確認",
-        "totalActiveIngredientUses": null,
+        "useTiming": "収穫前日まで",
+        "maxApplications": "3回以内",
+        "dilutionOrRate": "1000倍 100～300L/10a；常温煙霧50倍 10L/10a",
+        "method": "散布；常温煙霧",
+        "totalActiveIngredientUses": "公式ラベル確認",
         "mixing": "未確認",
-        "verifiedAt": "2026-06-30",
+        "verifiedAt": "2026-07-06",
         "sources": [
           {
             "title": "農薬登録情報提供システム：ダコニール１０００",
             "url": "https://pesticide.maff.go.jp/agricultural-chemicals/details/16823"
+          },
+          {
+            "title": "FAMIC：適用農作物等の名称（ピーマンにカラーピーマン・オランダパプリカを含む）",
+            "url": "https://www.acis.famic.go.jp/shinsei/6281_20240401.pdf"
           }
         ]
       },
@@ -489,23 +495,26 @@ const PESTICIDE_CROP_DATA = [
           "エトフェンプロックス 20.0%"
         ],
         "purpose": "殺虫剤",
-        "status": "unverified",
-        "statusDetail": "未確認",
+        "status": "registered",
+        "statusDetail": "登録あり（ﾋﾟｰﾏﾝ登録に含まれる）",
         "targets": [
-          "ﾋﾟｰﾏﾝ登録はあるが",
-          "パプリカ個別名は未確認"
+          "アブラムシ類"
         ],
-        "useTiming": "未確認",
-        "maxApplications": "未確認",
-        "dilutionOrRate": "未確認",
-        "method": "未確認",
-        "totalActiveIngredientUses": null,
+        "useTiming": "収穫前日まで",
+        "maxApplications": "3回以内",
+        "dilutionOrRate": "1000倍 100～300L/10a",
+        "method": "散布",
+        "totalActiveIngredientUses": "公式ラベル確認",
         "mixing": "未確認",
-        "verifiedAt": "2026-06-30",
+        "verifiedAt": "2026-07-06",
         "sources": [
           {
             "title": "農薬登録情報提供システム：クミアイトレボン乳剤",
             "url": "https://pesticide.maff.go.jp/agricultural-chemicals/details/17168"
+          },
+          {
+            "title": "FAMIC：適用農作物等の名称（ピーマンにカラーピーマン・オランダパプリカを含む）",
+            "url": "https://www.acis.famic.go.jp/shinsei/6281_20240401.pdf"
           }
         ]
       }
@@ -514,7 +523,7 @@ const PESTICIDE_CROP_DATA = [
   {
     "name": "ししとう",
     "category": "果菜類",
-    "registrationCropName": "個別名未確認。ﾋﾟｰﾏﾝ扱い可否は未確認",
+    "registrationCropName": "ししとう（ﾋﾟｰﾏﾝとは別の個別作物）",
     "products": [
       {
         "productName": "ダコニール１０００",
@@ -523,23 +532,26 @@ const PESTICIDE_CROP_DATA = [
           "TPN 40.0%"
         ],
         "purpose": "殺菌剤",
-        "status": "unverified",
-        "statusDetail": "未確認",
+        "status": "not-registered",
+        "statusDetail": "登録なし確認",
         "targets": [
-          "ﾋﾟｰﾏﾝ登録はあるが",
-          "ししとう個別名は未確認"
+          "対象作物として確認できず"
         ],
-        "useTiming": "未確認",
-        "maxApplications": "未確認",
-        "dilutionOrRate": "未確認",
-        "method": "未確認",
+        "useTiming": null,
+        "maxApplications": null,
+        "dilutionOrRate": null,
+        "method": null,
         "totalActiveIngredientUses": null,
         "mixing": "未確認",
-        "verifiedAt": "2026-06-30",
+        "verifiedAt": "2026-07-06",
         "sources": [
           {
             "title": "農薬登録情報提供システム：ダコニール１０００",
             "url": "https://pesticide.maff.go.jp/agricultural-chemicals/details/16823"
+          },
+          {
+            "title": "FAMIC：適用農作物等の名称（ししとうは独立した個別作物）",
+            "url": "https://www.acis.famic.go.jp/shinsei/6281_20240401.pdf"
           }
         ]
       },
@@ -550,23 +562,26 @@ const PESTICIDE_CROP_DATA = [
           "エトフェンプロックス 20.0%"
         ],
         "purpose": "殺虫剤",
-        "status": "unverified",
-        "statusDetail": "未確認",
+        "status": "not-registered",
+        "statusDetail": "登録なし確認",
         "targets": [
-          "ﾋﾟｰﾏﾝ登録はあるが",
-          "ししとう個別名は未確認"
+          "対象作物として確認できず"
         ],
-        "useTiming": "未確認",
-        "maxApplications": "未確認",
-        "dilutionOrRate": "未確認",
-        "method": "未確認",
+        "useTiming": null,
+        "maxApplications": null,
+        "dilutionOrRate": null,
+        "method": null,
         "totalActiveIngredientUses": null,
         "mixing": "未確認",
-        "verifiedAt": "2026-06-30",
+        "verifiedAt": "2026-07-06",
         "sources": [
           {
             "title": "農薬登録情報提供システム：クミアイトレボン乳剤",
             "url": "https://pesticide.maff.go.jp/agricultural-chemicals/details/17168"
+          },
+          {
+            "title": "FAMIC：適用農作物等の名称（ししとうは独立した個別作物）",
+            "url": "https://www.acis.famic.go.jp/shinsei/6281_20240401.pdf"
           }
         ]
       }

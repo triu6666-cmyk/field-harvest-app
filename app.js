@@ -213,6 +213,7 @@ const elements = {
   pesticideCautionCount: document.querySelector("#pesticideCautionCount"),
   pesticideNgCount: document.querySelector("#pesticideNgCount"),
   pesticideUnknownCount: document.querySelector("#pesticideUnknownCount"),
+  pesticideSafetySummary: document.querySelector("#pesticideSafetySummary"),
   mapSideButtons: document.querySelectorAll(".page-button"),
   mobileNavButtons: document.querySelectorAll(".mobile-nav-button")
 };
@@ -785,6 +786,7 @@ function populateWorkTargetSelect(select) {
 function renderField() {
   elements.fieldGrid.replaceChildren();
   renderMapPesticideSummary();
+  renderPesticideSafetySummary();
   const seedlingsByCell = new Map(state.seedlings.map((seedling) => [seedling.cell, seedling]));
   const harvestCountsBySeedling = state.harvests.reduce((counts, harvest) => {
     if (harvest.unit === "個") {
@@ -951,7 +953,7 @@ function renderMapPesticideOptions() {
 
 function pesticideCompatibilityForCrop(cropName) {
   if (!mapPesticideRegistrationNumber) return null;
-  const referenceName = PESTICIDE_CROP_ALIASES[cropName] || cropName;
+  const referenceName = pesticideReferenceCropName(cropName);
   const crop = PESTICIDE_REFERENCE_CROPS.find((item) => item.name === referenceName);
   const product = crop?.products.find((item) => item.registrationNumber === mapPesticideRegistrationNumber);
   if (!product) {
@@ -1001,6 +1003,159 @@ function applyPesticideCompatibilityToCell(tile, seedling) {
   tile.append(badge);
 }
 
+function renderPesticideSafetySummary() {
+  if (!elements.pesticideSafetySummary) return;
+
+  const summaries = state.seedlings
+    .map((seedling) => ({ seedling, safety: pesticideSafetyForSeedling(seedling) }))
+    .filter((item) => item.safety);
+  const waiting = summaries.filter((item) => item.safety.status === "wait");
+  const recent = summaries.filter((item) => item.safety.status === "done");
+
+  elements.pesticideSafetySummary.classList.toggle("hidden", !summaries.length);
+  elements.pesticideSafetySummary.classList.toggle("alert", Boolean(waiting.length));
+  if (!summaries.length) {
+    elements.pesticideSafetySummary.textContent = "";
+    return;
+  }
+
+  if (waiting.length) {
+    const examples = waiting.slice(0, 2)
+      .map(({ seedling, safety }) => `${compactCropName(seedling.cropName)} ${formatMonthDay(safety.availableDate)}から`)
+      .join(" / ");
+    elements.pesticideSafetySummary.textContent = `収穫注意 ${waiting.length}区画：${examples}`;
+    return;
+  }
+
+  elements.pesticideSafetySummary.textContent = `最近の散布 ${recent.length}区画：収穫制限は経過目安`;
+}
+
+function applyPesticideSafetyToCell(tile, seedling) {
+  const safety = pesticideSafetyForSeedling(seedling);
+  if (!safety) return;
+
+  tile.classList.add("pesticide-safety-marked", `pesticide-safety-${safety.status}`);
+  tile.title = [tile.title, safety.detail].filter(Boolean).join(" / ");
+
+  const badge = document.createElement("span");
+  badge.className = `pesticide-safety-cell-badge ${safety.status}`;
+  badge.textContent = safety.label;
+  badge.title = safety.detail;
+  tile.append(badge);
+}
+
+function pesticideSafetyForSeedling(seedling) {
+  const entries = state.pesticideApplications
+    .filter((record) => pesticideApplicationMatchesSeedling(record, seedling))
+    .map((record) => pesticideSafetyEntryForRecord(record, seedling))
+    .filter(Boolean)
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+
+  if (!entries.length) return null;
+
+  const waiting = entries
+    .filter((entry) => entry.remainingDays > 0)
+    .sort((a, b) => b.remainingDays - a.remainingDays || String(b.date || "").localeCompare(String(a.date || "")))[0];
+  if (waiting) {
+    return {
+      status: "wait",
+      label: "待",
+      availableDate: waiting.availableDate,
+      detail: `${waiting.productName}を${formatMonthDay(waiting.date)}散布。${formatMonthDay(waiting.availableDate)}から収穫目安`
+    };
+  }
+
+  const latest = entries[0];
+  if (latest.daysSince > 45) return null;
+  return {
+    status: "done",
+    label: "薬",
+    availableDate: latest.availableDate,
+    detail: `${latest.productName}を${formatMonthDay(latest.date)}散布。収穫制限は経過目安`
+  };
+}
+
+function pesticideApplicationMatchesSeedling(record, seedling) {
+  const referenceName = pesticideReferenceCropName(seedling.cropName);
+  return pesticideApplicationCropNames(record)
+    .some((cropName) => pesticideReferenceCropName(cropName) === referenceName);
+}
+
+function pesticideSafetyEntryForRecord(record, seedling) {
+  const rule = pesticideApplicationRuleForSeedling(record, seedling);
+  const waitDays = parsePreHarvestWaitDays(rule?.useTiming || record.useTiming);
+  if (waitDays === null || !record.date) return null;
+
+  const daysSince = daysBetweenDates(record.date, today);
+  if (daysSince === null) return null;
+  const availableDate = addDaysToDate(record.date, waitDays);
+  return {
+    date: record.date,
+    productName: record.productName || "農薬",
+    waitDays,
+    daysSince,
+    remainingDays: waitDays - daysSince,
+    availableDate
+  };
+}
+
+function pesticideApplicationRuleForSeedling(record, seedling) {
+  const referenceName = pesticideReferenceCropName(seedling.cropName);
+  return (Array.isArray(record.cropRules) ? record.cropRules : [])
+    .find((rule) => pesticideReferenceCropName(rule.cropName) === referenceName);
+}
+
+function pesticideApplicationCropNames(record) {
+  if (Array.isArray(record?.cropNames) && record.cropNames.length) return record.cropNames;
+  return record?.cropName ? [record.cropName] : [];
+}
+
+function pesticideReferenceCropName(cropName) {
+  return PESTICIDE_CROP_ALIASES[cropName] || cropName;
+}
+
+function parsePreHarvestWaitDays(useTiming) {
+  const text = String(useTiming || "");
+  if (!text) return null;
+  if (text.includes("収穫当日まで") || text.includes("当日まで")) return 0;
+  if (text.includes("収穫前日まで") || text.includes("前日まで")) return 1;
+  const match = text.match(/(\d+)\s*日前まで/);
+  return match ? Number(match[1]) : null;
+}
+
+function daysBetweenDates(startDate, endDate) {
+  const start = localDateToUtcMs(startDate);
+  const end = localDateToUtcMs(endDate);
+  if (start === null || end === null) return null;
+  return Math.floor((end - start) / 86400000);
+}
+
+function addDaysToDate(dateString, days) {
+  const date = parseLocalDateParts(dateString);
+  if (!date) return dateString;
+  const utcDate = new Date(Date.UTC(date.year, date.month - 1, date.day + days));
+  return [
+    utcDate.getUTCFullYear(),
+    String(utcDate.getUTCMonth() + 1).padStart(2, "0"),
+    String(utcDate.getUTCDate()).padStart(2, "0")
+  ].join("-");
+}
+
+function localDateToUtcMs(dateString) {
+  const date = parseLocalDateParts(dateString);
+  return date ? Date.UTC(date.year, date.month - 1, date.day) : null;
+}
+
+function parseLocalDateParts(dateString) {
+  const match = String(dateString || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  return {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3])
+  };
+}
+
 function createFieldCell(cell, seedling, harvestCount) {
   const visibleByFilter = isCellVisibleByFilter(seedling);
   const tile = document.createElement("article");
@@ -1010,6 +1165,7 @@ function createFieldCell(cell, seedling, harvestCount) {
   if (seedling) {
     applyCropTheme(tile, seedling.cropName);
     applyPesticideCompatibilityToCell(tile, seedling);
+    applyPesticideSafetyToCell(tile, seedling);
   }
 
   const code = document.createElement("div");

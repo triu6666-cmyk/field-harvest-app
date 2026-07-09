@@ -338,6 +338,27 @@ h3 {
   text-decoration: none;
 }
 
+.pesticide-safety-summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  max-width: 280px;
+  border: 1px solid rgba(8, 118, 66, 0.2);
+  border-radius: 8px;
+  background: #ecfff4;
+  color: #075638;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.pesticide-safety-summary.alert {
+  border-color: rgba(226, 63, 42, 0.36);
+  background: #fff0ec;
+  color: #9e2b16;
+}
+
 .map-pages {
   display: grid;
   grid-template-columns: repeat(2, minmax(86px, 1fr));
@@ -593,6 +614,32 @@ select:focus {
 .field-cell.pesticide-mode .plant-name {
   margin-left: 30px;
   margin-right: 3px;
+}
+
+.pesticide-safety-cell-badge {
+  position: absolute;
+  right: 22px;
+  top: 2px;
+  z-index: 3;
+  display: grid;
+  min-width: 18px;
+  min-height: 18px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 3px 8px rgba(22, 63, 46, 0.18);
+}
+
+.pesticide-safety-cell-badge.wait {
+  background: #e23f2a;
+}
+
+.pesticide-safety-cell-badge.done {
+  background: #087642;
 }
 
 .field-cell.copy-target {
@@ -2606,6 +2653,11 @@ select:focus {
 
   .pesticide-map-legend {
     min-height: 0;
+  }
+
+  .pesticide-safety-summary {
+    width: 100%;
+    max-width: none;
   }
 
   .pesticide-map-legend > strong {
