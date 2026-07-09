@@ -2397,6 +2397,31 @@ select:focus {
   scrollbar-width: thin;
 }
 
+.harvest-mode-status-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  padding: 10px 16px 0;
+  background: #f1fff3;
+}
+
+.harvest-mode-status-filter {
+  min-height: 36px;
+  border: 1px solid rgba(8, 118, 66, 0.18);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #29563c;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.harvest-mode-status-filter.active {
+  border-color: transparent;
+  background: linear-gradient(135deg, #087642, #12c96a);
+  color: #ffffff;
+}
+
 .harvest-mode-filter {
   flex: 0 0 auto;
   min-height: 34px;
@@ -2427,6 +2452,11 @@ select:focus {
     linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7)),
     linear-gradient(135deg, var(--crop-start, #f0ffd9), var(--crop-end, #55d768));
   box-shadow: 0 9px 20px rgba(22, 63, 46, 0.09);
+}
+
+.harvest-mode-card.harvested-today {
+  border-color: #087642;
+  box-shadow: inset 0 0 0 2px rgba(8, 118, 66, 0.22), 0 9px 20px rgba(22, 63, 46, 0.09);
 }
 
 .harvest-mode-identity {
@@ -2463,6 +2493,20 @@ select:focus {
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.harvest-mode-done-badge {
+  display: inline-grid;
+  width: fit-content;
+  margin-top: 3px;
+  border-radius: 999px;
+  background: #087642;
+  color: #ffffff;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1.25;
 }
 
 .harvest-mode-count {
