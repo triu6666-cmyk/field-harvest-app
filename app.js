@@ -1388,14 +1388,16 @@ function renderHarvestSummary() {
   const todayTotals = harvestTotalsForPeriod((harvest) => harvest.date === today);
   const monthTotals = harvestTotalsForPeriod((harvest) => harvest.date?.startsWith(currentMonth));
   const allTotals = harvestTotalsForPeriod(() => true);
+  const monthlyCropRows = harvestCropChartRows((harvest) => harvest.date?.startsWith(currentMonth));
 
   elements.harvestSummary.append(
+    createHarvestDashboardHero(currentMonth, monthlyCropRows, todayTotals),
     createSummaryCard("今日", todayTotals || "収穫なし"),
     createSummaryCard("今月", monthTotals || "収穫なし"),
     createSummaryCard("累計", allTotals || "収穫なし"),
     createHarvestChartPanel(
       "今月の野菜別ランキング",
-      harvestCropChartRows((harvest) => harvest.date?.startsWith(currentMonth))
+      monthlyCropRows
     ),
     createHarvestChartPanel(
       "直近7日の推移",
@@ -1403,6 +1405,105 @@ function renderHarvestSummary() {
       "日別の収穫記録がありません"
     )
   );
+}
+
+function createHarvestDashboardHero(currentMonth, monthlyCropRows, todayTotals) {
+  const monthHarvests = state.harvests.filter((harvest) => harvest.date?.startsWith(currentMonth));
+  const todayHarvests = state.harvests.filter((harvest) => harvest.date === today);
+  const topCrop = monthlyCropRows[0];
+  const activeSeedlingCount = new Set(monthHarvests.map((harvest) => harvest.seedlingId).filter(Boolean)).size;
+  const latestHarvest = [...state.harvests]
+    .filter((harvest) => harvest.date)
+    .sort((a, b) => `${b.date}${b.createdAt || ""}`.localeCompare(`${a.date}${a.createdAt || ""}`))[0];
+  const heroCropName = topCrop?.cropName || "収穫";
+
+  const card = document.createElement("article");
+  card.className = "harvest-hero-card";
+  if (topCrop?.cropName) applyCropTheme(card, topCrop.cropName);
+
+  const main = document.createElement("div");
+  main.className = "harvest-hero-main";
+
+  const kicker = document.createElement("span");
+  kicker.className = "harvest-hero-kicker";
+  kicker.textContent = "HARVEST DASHBOARD";
+
+  const title = document.createElement("strong");
+  title.className = "harvest-hero-title";
+  title.textContent = topCrop
+    ? `今月の主役は ${topCrop.cropName}`
+    : "収穫の流れを見える化";
+
+  const lead = document.createElement("p");
+  lead.className = "harvest-hero-lead";
+  lead.textContent = topCrop
+    ? `${formatNumber(topCrop.amount)}${topCrop.axisUnit}を記録。今日の収穫や直近の動きもここで追えます。`
+    : "収穫を入れると、野菜ごとの勢いと日ごとの波が見えるようになります。";
+
+  main.append(kicker, title, lead);
+
+  const visual = document.createElement("div");
+  visual.className = "harvest-hero-visual";
+  const iconWrap = document.createElement("div");
+  iconWrap.className = "harvest-hero-icon";
+  if (topCrop?.cropName) {
+    iconWrap.append(createCropIllustration(topCrop.cropName));
+  } else {
+    iconWrap.textContent = "収";
+  }
+
+  const cropText = document.createElement("div");
+  cropText.className = "harvest-hero-crop";
+  const cropLabel = document.createElement("span");
+  cropLabel.textContent = heroCropName;
+  const cropValue = document.createElement("strong");
+  cropValue.textContent = topCrop ? topCrop.totalText : "記録待ち";
+  cropText.append(cropLabel, cropValue);
+  visual.append(iconWrap, cropText);
+
+  const stats = document.createElement("div");
+  stats.className = "harvest-hero-stats";
+  stats.append(
+    createHarvestHeroStat("今日", todayHarvests.length ? `${todayHarvests.length}回` : "なし", todayTotals || "収穫なし"),
+    createHarvestHeroStat("今月", `${monthHarvests.length}回`, `${activeSeedlingCount || 0}株から記録`),
+    createHarvestHeroStat("直近", latestHarvest ? formatMonthDay(latestHarvest.date) : "なし", latestHarvest ? seedlingLabel(findSeedling(latestHarvest.seedlingId) || { cell: "", cropName: "削除済み", variety: "" }) : "記録なし")
+  );
+
+  const chips = document.createElement("div");
+  chips.className = "harvest-hero-chips";
+  monthlyCropRows.slice(0, 4).forEach((row) => chips.append(createHarvestHeroChip(row)));
+  if (!chips.children.length) {
+    const emptyChip = document.createElement("span");
+    emptyChip.className = "harvest-hero-chip";
+    emptyChip.textContent = "今月の収穫待ち";
+    chips.append(emptyChip);
+  }
+
+  card.append(main, visual, stats, chips);
+  return card;
+}
+
+function createHarvestHeroStat(label, value, meta) {
+  const item = document.createElement("div");
+  item.className = "harvest-hero-stat";
+
+  const labelElement = document.createElement("span");
+  labelElement.textContent = label;
+  const valueElement = document.createElement("strong");
+  valueElement.textContent = value;
+  const metaElement = document.createElement("small");
+  metaElement.textContent = meta;
+
+  item.append(labelElement, valueElement, metaElement);
+  return item;
+}
+
+function createHarvestHeroChip(row) {
+  const chip = document.createElement("span");
+  chip.className = "harvest-hero-chip";
+  applyCropTheme(chip, row.cropName);
+  chip.append(createCropIllustration(row.cropName), document.createTextNode(`${row.cropName} ${row.totalText}`));
+  return chip;
 }
 
 function renderCostPerformanceSummary() {
