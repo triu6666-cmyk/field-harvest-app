@@ -21,7 +21,7 @@
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">収穫量管理</strong>
-          <time class="app-updated site-updated" data-app-updated datetime="2026-07-10T17:45:00+09:00">最終更新 2026/07/10 17:45</time>
+          <time class="app-updated site-updated" data-app-updated datetime="2026-07-10T18:02:00+09:00">最終更新 2026/07/10 18:02</time>
         </span>
       </a>
       <div class="header-actions site-header-actions">
@@ -385,6 +385,15 @@
             </div>
             <div id="seedlingList" class="record-list"></div>
           </section>
+          <details id="archivedSeedlingDetails" class="record-collapsible archive-collapsible">
+            <summary>
+              <span>過去の栽培</span>
+              <span id="archivedSeedlingCount" class="record-collapsible-count">0件</span>
+            </summary>
+            <div class="record-collapsible-content">
+              <div id="archivedSeedlingList" class="archive-grid"></div>
+            </div>
+          </details>
           <div class="record-columns">
             <details id="recentHarvestDetails" class="record-collapsible">
               <summary>
@@ -505,7 +514,8 @@
             メモ
             <input id="modalSeedlingMemoInput" placeholder="支柱あり、日当たり良好など">
           </label>
-          <div class="form-actions wide">
+          <div class="form-actions modal-seedling-actions wide">
+            <button id="endSeedlingButton" class="danger-button hidden" type="button">今日で栽培終了</button>
             <button id="modalSeedlingSubmitButton" class="primary-button" type="submit">苗を登録</button>
             <button id="cancelModalSeedlingButton" class="secondary-button" type="button">キャンセル</button>
           </div>

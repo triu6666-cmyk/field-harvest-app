@@ -4,6 +4,7 @@ const defaultState = {
   layoutVersion: 2,
   grid: { columns: 20, rows: 5 },
   seedlings: [],
+  archivedSeedlings: [],
   harvests: [],
   expenses: [],
   activities: [],
@@ -119,6 +120,7 @@ const elements = {
   modalCellSelect: document.querySelector("#modalCellSelect"),
   modalSeedlingMemoInput: document.querySelector("#modalSeedlingMemoInput"),
   modalSeedlingSubmitButton: document.querySelector("#modalSeedlingSubmitButton"),
+  endSeedlingButton: document.querySelector("#endSeedlingButton"),
   pasteSeedlingButton: document.querySelector("#pasteSeedlingButton"),
   closeSeedlingModalButton: document.querySelector("#closeSeedlingModalButton"),
   cancelModalSeedlingButton: document.querySelector("#cancelModalSeedlingButton"),
@@ -194,6 +196,9 @@ const elements = {
   expenseSummary: document.querySelector("#expenseSummary"),
   expenseManagerList: document.querySelector("#expenseManagerList"),
   seedlingList: document.querySelector("#seedlingList"),
+  archivedSeedlingDetails: document.querySelector("#archivedSeedlingDetails"),
+  archivedSeedlingCount: document.querySelector("#archivedSeedlingCount"),
+  archivedSeedlingList: document.querySelector("#archivedSeedlingList"),
   aggregateByVarietyButton: document.querySelector("#aggregateByVarietyButton"),
   aggregateByCropButton: document.querySelector("#aggregateByCropButton"),
   costPeriodMonthButton: document.querySelector("#costPeriodMonthButton"),
@@ -366,6 +371,16 @@ elements.modalSeedlingForm.addEventListener("submit", (event) => {
   copiedSeedlingTemplate = createSeedlingTemplate(seedlingData);
   closeSeedlingModal();
   saveAndRender();
+});
+
+elements.endSeedlingButton.addEventListener("click", () => {
+  const seedling = state.seedlings.find((item) => item.id === modalSeedlingId);
+  if (!seedling) return;
+  const harvestCount = state.harvests.filter((harvest) => harvest.seedlingId === seedling.id).length;
+  if (!confirm(`${seedlingLabel(seedling)}を今日で栽培終了にしますか？\n区画は空きますが、収穫などの記録${harvestCount ? ` ${harvestCount}件` : ""}は保存されます。`)) return;
+  const seedlingId = seedling.id;
+  closeSeedlingModal();
+  archiveSeedling(seedlingId);
 });
 
 elements.closeSeedlingModalButton.addEventListener("click", closeSeedlingModal);
@@ -1365,6 +1380,7 @@ function renderRecords() {
   renderCostPerformanceSummary();
   renderAggregateTabs();
   renderSeedlingList();
+  renderArchivedSeedlingList();
   renderHistoryFilterOptions();
   elements.recentHarvestCount.textContent = `${state.harvests.length}件`;
   if (elements.recentHarvestDetails.open) renderHarvestList();
@@ -1849,6 +1865,79 @@ function renderSeedlingList() {
   }
 
   elements.seedlingList.append(createHarvestAggregateTable());
+}
+
+function renderArchivedSeedlingList() {
+  const archivedSeedlings = [...state.archivedSeedlings]
+    .sort((a, b) => String(b.endedDate || b.archivedAt || "").localeCompare(String(a.endedDate || a.archivedAt || "")));
+  elements.archivedSeedlingCount.textContent = `${archivedSeedlings.length}件`;
+  elements.archivedSeedlingList.replaceChildren();
+
+  if (!archivedSeedlings.length) {
+    appendEmpty(elements.archivedSeedlingList);
+    return;
+  }
+
+  archivedSeedlings.forEach((seedling) => {
+    elements.archivedSeedlingList.append(createArchivedSeedlingCard(seedling));
+  });
+}
+
+function createArchivedSeedlingCard(seedling) {
+  const card = document.createElement("article");
+  card.className = "archive-card";
+  applyCropTheme(card, seedling.cropName);
+
+  const heading = document.createElement("div");
+  heading.className = "archive-card-heading";
+  heading.append(createCropIllustration(seedling.cropName));
+
+  const title = document.createElement("div");
+  title.className = "archive-card-title";
+  const crop = document.createElement("strong");
+  crop.textContent = seedling.cropName;
+  const variety = document.createElement("span");
+  variety.textContent = seedling.variety || "品種なし";
+  title.append(crop, variety);
+
+  const status = document.createElement("span");
+  status.className = "archive-status";
+  status.textContent = "栽培終了";
+  heading.append(title, status);
+
+  const period = document.createElement("p");
+  period.className = "archive-period";
+  period.textContent = `${formatArchiveDate(seedling.plantedDate) || "植付日なし"} → ${formatArchiveDate(seedling.endedDate) || "終了日なし"}`;
+
+  const stats = document.createElement("div");
+  stats.className = "archive-stats";
+  stats.append(
+    createArchiveStat("元の区画", cellDisplayName(seedling.cell)),
+    createArchiveStat("収穫合計", harvestTotalsForSeedling(seedling.id) || "収穫なし")
+  );
+
+  const restoreButton = document.createElement("button");
+  restoreButton.className = "secondary-button archive-restore-button";
+  restoreButton.type = "button";
+  restoreButton.textContent = "畑マップに戻す";
+  restoreButton.addEventListener("click", () => restoreArchivedSeedling(seedling.id));
+
+  card.append(heading, period, stats, restoreButton);
+  return card;
+}
+
+function createArchiveStat(label, value) {
+  const stat = document.createElement("div");
+  const labelElement = document.createElement("span");
+  labelElement.textContent = label;
+  const valueElement = document.createElement("strong");
+  valueElement.textContent = value;
+  stat.append(labelElement, valueElement);
+  return stat;
+}
+
+function formatArchiveDate(dateString) {
+  return String(dateString || "").replaceAll("-", "/");
 }
 
 function createHarvestAggregateTable() {
@@ -2841,6 +2930,7 @@ function openSeedlingModal({ cell = "", seedling = null, template = null } = {})
   renderModalCellOptions();
   elements.seedlingModalTitle.textContent = seedling ? "苗を編集" : template ? "苗をコピー登録" : "苗を登録";
   elements.modalSeedlingSubmitButton.textContent = seedling ? "苗を更新" : "苗を登録";
+  elements.endSeedlingButton.classList.toggle("hidden", !seedling);
   elements.modalCropNameInput.value = source?.cropName || "";
   elements.modalVarietyInput.value = source?.variety || "";
   elements.modalPlantedDateInput.value = source?.plantedDate || today;
@@ -2856,6 +2946,7 @@ function openSeedlingModal({ cell = "", seedling = null, template = null } = {})
 
 function closeSeedlingModal() {
   modalSeedlingId = "";
+  elements.endSeedlingButton.classList.add("hidden");
   elements.modalSeedlingForm.reset();
   elements.modalPlantedDateInput.value = today;
   renderCropPicker();
@@ -3842,6 +3933,44 @@ function deleteSeedling(id) {
   saveAndRender();
 }
 
+function archiveSeedling(id) {
+  const seedling = state.seedlings.find((item) => item.id === id);
+  if (!seedling) return;
+
+  state.seedlings = state.seedlings.filter((item) => item.id !== id);
+  state.archivedSeedlings = state.archivedSeedlings.filter((item) => item.id !== id);
+  state.archivedSeedlings.push({
+    ...seedling,
+    endedDate: today,
+    archivedAt: new Date().toISOString()
+  });
+  saveAndRender();
+}
+
+function restoreArchivedSeedling(id) {
+  const archived = state.archivedSeedlings.find((item) => item.id === id);
+  if (!archived) return;
+
+  const cells = getCells();
+  const occupiedCells = new Set(state.seedlings.map((seedling) => seedling.cell));
+  const preferredCell = cells.includes(archived.cell) && !occupiedCells.has(archived.cell) ? archived.cell : "";
+  const restoreCell = preferredCell || nextAvailableCell(archived.cell);
+  if (!restoreCell) {
+    alert("空いている区画がないため復元できません。区画を空けてからもう一度お試しください。");
+    return;
+  }
+
+  const { endedDate, archivedAt, ...restoredSeedling } = archived;
+  restoredSeedling.cell = restoreCell;
+  state.archivedSeedlings = state.archivedSeedlings.filter((item) => item.id !== id);
+  state.seedlings.push(restoredSeedling);
+  saveAndRender();
+
+  if (restoreCell !== archived.cell) {
+    alert(`元の区画が使用中のため、${cellDisplayName(restoreCell)}に復元しました。`);
+  }
+}
+
 function deleteRecord(collection, id) {
   state[collection] = state[collection].filter((item) => item.id !== id);
   saveAndRender();
@@ -4025,7 +4154,8 @@ function renderSideButtons() {
 }
 
 function findSeedling(id) {
-  return state.seedlings.find((seedling) => seedling.id === id);
+  return state.seedlings.find((seedling) => seedling.id === id)
+    || state.archivedSeedlings.find((seedling) => seedling.id === id);
 }
 
 function activateTab(tabName) {
@@ -4106,12 +4236,13 @@ function renderSyncMiniStatus(message, status = "idle") {
 
 function normalizeState(value) {
   const seedlings = Array.isArray(value?.seedlings) ? value.seedlings : [];
+  const archivedSeedlings = Array.isArray(value?.archivedSeedlings) ? value.archivedSeedlings : [];
   const harvests = Array.isArray(value?.harvests) ? value.harvests : [];
   const expenses = Array.isArray(value?.expenses) ? value.expenses : [];
   const activities = Array.isArray(value?.activities) ? value.activities : [];
   const tasks = Array.isArray(value?.tasks) ? value.tasks : [];
   const pesticideApplications = Array.isArray(value?.pesticideApplications) ? value.pesticideApplications : [];
-  const hasRecords = seedlings.length || harvests.length || expenses.length || activities.length || tasks.length || pesticideApplications.length;
+  const hasRecords = seedlings.length || archivedSeedlings.length || harvests.length || expenses.length || activities.length || tasks.length || pesticideApplications.length;
   const savedColumns = value?.grid?.columns;
   const savedRows = value?.grid?.rows;
   const isOldLayout = value?.layoutVersion !== defaultState.layoutVersion;
@@ -4129,6 +4260,7 @@ function normalizeState(value) {
     layoutVersion: defaultState.layoutVersion,
     grid,
     seedlings: repairStaleOverflowCells(seedlings, grid),
+    archivedSeedlings,
     harvests: compactQuickHarvests(harvests),
     expenses,
     activities,

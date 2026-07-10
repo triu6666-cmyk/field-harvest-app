@@ -1031,6 +1031,10 @@ select:focus {
   gap: 10px;
 }
 
+.modal-seedling-actions {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
 .primary-button,
 .secondary-button,
 .danger-button {
@@ -1134,6 +1138,108 @@ select:focus {
 
 .record-collapsible-content {
   padding: 0 10px 10px;
+}
+
+.archive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 8px;
+}
+
+.archive-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--crop-end, #55d768) 34%, rgba(32, 115, 74, 0.16));
+  border-radius: 8px;
+  padding: 10px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--crop-start, #f0ffd9) 42%, #ffffff), #ffffff 68%);
+}
+
+.archive-card-heading {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.archive-card-heading .crop-illustration {
+  width: 34px;
+  height: 34px;
+}
+
+.archive-card-title {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.archive-card-title strong,
+.archive-card-title span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archive-card-title strong {
+  color: var(--crop-ink, #064428);
+  font-size: 14px;
+}
+
+.archive-card-title span,
+.archive-period {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.archive-status {
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: #eaf1ec;
+  color: #52645a;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.archive-period {
+  margin: 0;
+}
+
+.archive-stats {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 8px;
+  padding: 7px 0;
+  border-top: 1px solid rgba(32, 115, 74, 0.12);
+  border-bottom: 1px solid rgba(32, 115, 74, 0.12);
+}
+
+.archive-stats > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.archive-stats span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.archive-stats strong {
+  overflow: hidden;
+  color: #063f2a;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archive-restore-button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 12px;
 }
 
 .history-filter-row {
@@ -3050,6 +3156,7 @@ select:focus {
   }
 
   #recordsPanel > .harvest-summary-section:first-child,
+  #recordsPanel > .archive-collapsible,
   #recordsPanel > .record-columns {
     grid-column: 1 / -1;
   }
