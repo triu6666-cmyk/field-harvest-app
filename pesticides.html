@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#087642">
     <title>野菜別 農薬対応表</title>
-    <link rel="icon" href="app-icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="pesticides.css">
-    <link rel="stylesheet" href="shared-header.css">
+    <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/pesticides.css">
+    <link rel="stylesheet" href="css/shared-header.css">
   </head>
   <body>
     <header class="pesticide-header site-header site-header--pesticide">
       <a class="pesticide-brand site-brand" href="index.html" aria-label="収穫量管理へ戻る">
-        <img class="site-brand-mark" src="app-icon.svg" alt="">
+        <img class="site-brand-mark" src="assets/app-icon.svg" alt="">
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">農薬対応表</strong>
-          <time class="app-updated pesticide-updated site-updated" data-app-updated datetime="2026-07-10T17:05:00+09:00">最終更新 2026/07/10 17:05</time>
+          <time class="app-updated pesticide-updated site-updated" data-app-updated datetime="2026-07-10T17:27:00+09:00">最終更新 2026/07/10 17:27</time>
         </span>
       </a>
       <div class="header-commands site-header-actions">
@@ -211,7 +211,7 @@
             <h2 id="researchTitle">調査用プロンプト</h2>
           </div>
           <div class="research-actions">
-            <a class="prompt-file-link" href="pesticide-deep-research-prompt.md" target="_blank" rel="noreferrer">全文を開く</a>
+            <a class="prompt-file-link" href="docs/pesticide-deep-research-prompt.md" target="_blank" rel="noreferrer">全文を開く</a>
             <button id="copyPromptButton" class="copy-prompt-button" type="button">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="9" y="9" width="13" height="13" rx="2"></rect>
@@ -284,10 +284,10 @@
       </div>
     </div>
 
-    <script src="app-version.js"></script>
-    <script src="storage.js"></script>
-    <script src="crop-icons.js"></script>
-    <script src="pesticide-data.js"></script>
-    <script src="pesticides.js"></script>
+    <script src="js/app-version.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/crop-icons.js"></script>
+    <script src="js/pesticide-data.js"></script>
+    <script src="js/pesticides.js"></script>
   </body>
 </html>

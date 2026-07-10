@@ -13,7 +13,7 @@ Supabaseの画面操作はあなたのアカウントで行う必要がありま
 
 1. Supabaseアカウントを作る、またはログインする
 2. 新しいProjectを作る
-3. SQL Editorで`supabase-schema.sql`を実行する
+3. SQL Editorで`docs/supabase-schema.sql`を実行する
 4. Project URLをコピーする
 5. publishable key、またはanon public keyをコピーする
 6. アプリの`☁`設定に入力する
@@ -44,7 +44,7 @@ SupabaseのProject画面で:
 
 1. 左メニューの`SQL Editor`を開く
 2. `New query`を押す
-3. このフォルダの`supabase-schema.sql`の中身を貼り付ける
+3. `docs/supabase-schema.sql`の中身を貼り付ける
 4. `Run`を押す
 
 作成されるテーブル:

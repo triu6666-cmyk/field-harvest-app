@@ -840,11 +840,11 @@ function formatApplicationAmount(amount) {
 
 async function loadResearchPrompt() {
   try {
-    const response = await fetch("./pesticide-deep-research-prompt.md");
+    const response = await fetch("./docs/pesticide-deep-research-prompt.md");
     if (!response.ok) throw new Error("Prompt load failed");
     elements.researchPrompt.value = await response.text();
   } catch {
-    elements.researchPrompt.value = "pesticide-deep-research-prompt.md を開いて使用してください。";
+    elements.researchPrompt.value = "docs/pesticide-deep-research-prompt.md を開いて使用してください。";
   }
 }
 

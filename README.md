@@ -21,12 +21,22 @@
 公開に必要な主なファイル:
 
 - `index.html`
-- `styles.css`
-- `app.js`
-- `storage.js`
+- `css/styles.css`
+- `js/app.js`
+- `js/storage.js`
 - `manifest.webmanifest`
 - `service-worker.js`
-- `app-icon.svg`
+- `assets/app-icon.svg`
+
+## フォルダ構成
+
+```text
+assets/  画像・アプリアイコン
+css/     画面デザイン
+js/      アプリの処理・データ定義
+docs/    公開・接続手順、調査用資料、SQL
+tools/   ローカル確認用サーバー
+```
 
 ## データ保存
 
@@ -45,13 +55,13 @@ PCとスマホで同じデータを使うには、アプリ右上のクラウド
 Supabase側には以下のSQLを実行してください。
 
 ```text
-supabase-schema.sql
+docs/supabase-schema.sql
 ```
 
 詳しい手順:
 
 ```text
-Supabase 接続手順.md
+docs/Supabase 接続手順.md
 ```
 
 その後、アプリの`☁`ボタンから以下を設定します。
@@ -65,11 +75,11 @@ Supabase 接続手順.md
 同じWi-Fi内でスマホから確認する場合は、PCで以下を起動します。
 
 ```text
-start-mobile-server.cmd
+tools/start-mobile-server.cmd
 ```
 
 詳しい手順は以下を参照してください。
 
 ```text
-スマホで開く手順.md
+docs/スマホで開く手順.md
 ```

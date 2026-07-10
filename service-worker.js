@@ -1,20 +1,20 @@
-const CACHE_NAME = "field-harvest-manager-v54";
+const CACHE_NAME = "field-harvest-manager-v55";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./shared-header.css",
-  "./app-version.js",
-  "./storage.js",
-  "./app.js",
+  "./css/styles.css",
+  "./css/shared-header.css",
+  "./js/app-version.js",
+  "./js/storage.js",
+  "./js/app.js",
   "./pesticides.html",
-  "./pesticides.css",
-  "./crop-icons.js",
-  "./pesticide-data.js",
-  "./pesticides.js",
-  "./pesticide-deep-research-prompt.md",
+  "./css/pesticides.css",
+  "./js/crop-icons.js",
+  "./js/pesticide-data.js",
+  "./js/pesticides.js",
+  "./docs/pesticide-deep-research-prompt.md",
   "./manifest.webmanifest",
-  "./app-icon.svg"
+  "./assets/app-icon.svg"
 ];
 
 self.addEventListener("install", (event) => {
