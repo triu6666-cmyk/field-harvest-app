@@ -1572,7 +1572,8 @@ function createHarvestChartPanel(title, rows, emptyText = "収穫記録があり
 
     const bar = document.createElement("span");
     bar.className = "harvest-chart-bar";
-    bar.style.setProperty("--bar-size", `${Math.max(7, Math.round((row.amount / maxAmount) * 100))}%`);
+    const barSize = row.amount > 0 ? Math.max(7, Math.round((row.amount / maxAmount) * 100)) : 0;
+    bar.style.setProperty("--bar-size", `${barSize}%`);
     barWrap.append(bar);
 
     const total = document.createElement("strong");
@@ -1610,18 +1611,37 @@ function harvestCropChartRows(predicate) {
 }
 
 function harvestDailyChartRows(limit) {
-  return Object.entries(harvestTotalsByDate())
-    .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
-    .slice(0, limit)
-    .map(([date, totals]) => {
-      const entries = Object.values(totals);
-      const amount = entries.reduce((sum, item) => sum + item.amount, 0);
-      return {
-        label: formatMonthDay(date),
-        amount,
-        totalText: formatHarvestTotals(totals)
-      };
+  const totalsByDate = harvestTotalsByDate();
+  const dates = [];
+  for (let offset = limit - 1; offset >= 0; offset -= 1) {
+    dates.push(addDaysToDate(today, -offset));
+  }
+
+  const unitTotals = {};
+  dates.forEach((date) => {
+    Object.values(totalsByDate[date] || {}).forEach((item) => {
+      unitTotals[item.unit] = (unitTotals[item.unit] || 0) + Number(item.amount || 0);
     });
+  });
+
+  const units = Object.entries(unitTotals).filter(([, amount]) => amount > 0);
+  if (!units.length) return [];
+
+  const chartUnit = unitTotals["個"] > 0
+    ? "個"
+    : units.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ja"))[0][0];
+
+  return dates.map((date) => {
+    const totals = totalsByDate[date] || {};
+    const amount = Object.values(totals)
+      .filter((item) => item.unit === chartUnit)
+      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    return {
+      label: formatMonthDay(date),
+      amount,
+      totalText: formatHarvestTotals(totals) || `0${chartUnit}`
+    };
+  });
 }
 
 function renderSeedlingList() {
