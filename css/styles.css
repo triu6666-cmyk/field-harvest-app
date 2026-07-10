@@ -618,8 +618,8 @@ select:focus {
 
 .pesticide-safety-cell-badge {
   position: absolute;
-  right: 22px;
-  top: 2px;
+  right: 3px;
+  top: 21px;
   z-index: 3;
   display: grid;
   min-width: 18px;
@@ -640,6 +640,10 @@ select:focus {
 
 .pesticide-safety-cell-badge.done {
   background: #087642;
+}
+
+.field-cell.pesticide-safety-marked .plant-name {
+  margin-right: 22px;
 }
 
 .field-cell.copy-target {
