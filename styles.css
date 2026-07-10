@@ -1268,7 +1268,7 @@ select:focus {
 
 .harvest-chart-row {
   display: grid;
-  grid-template-columns: minmax(72px, 0.8fr) minmax(100px, 2fr) minmax(72px, auto);
+  grid-template-columns: 58px minmax(160px, 1fr) 82px;
   gap: 8px;
   align-items: center;
   min-height: 28px;
@@ -1288,8 +1288,12 @@ select:focus {
 .harvest-chart-bar-wrap {
   height: 12px;
   border-radius: 999px;
-  background: rgba(8, 118, 66, 0.1);
+  background: rgba(8, 118, 66, 0.08);
   overflow: hidden;
+}
+
+.harvest-chart-row.is-zero .harvest-chart-bar-wrap {
+  background: rgba(8, 118, 66, 0.035);
 }
 
 .harvest-chart-bar {
@@ -1306,7 +1310,7 @@ select:focus {
   font-size: 12px;
   line-height: 1.25;
   text-align: right;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .chart-empty {
@@ -3018,7 +3022,7 @@ select:focus {
   }
 
   .harvest-chart-row {
-    grid-template-columns: minmax(56px, 0.72fr) minmax(92px, 1fr) minmax(68px, auto);
+    grid-template-columns: 46px minmax(82px, 1fr) 70px;
   }
 
   .expense-summary {

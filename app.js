@@ -1561,6 +1561,8 @@ function createHarvestChartPanel(title, rows, emptyText = "収穫記録があり
   rows.forEach((row) => {
     const item = document.createElement("div");
     item.className = "harvest-chart-row";
+    item.classList.toggle("is-zero", row.amount <= 0);
+    if (row.detailText) item.title = row.detailText;
     if (row.cropName) applyCropTheme(item, row.cropName);
 
     const label = document.createElement("span");
@@ -1579,6 +1581,7 @@ function createHarvestChartPanel(title, rows, emptyText = "収穫記録があり
     const total = document.createElement("strong");
     total.className = "harvest-chart-total";
     total.textContent = row.totalText;
+    if (row.detailText) total.title = row.detailText;
 
     item.append(label, barWrap, total);
     panel.append(item);
@@ -1636,10 +1639,12 @@ function harvestDailyChartRows(limit) {
     const amount = Object.values(totals)
       .filter((item) => item.unit === chartUnit)
       .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const detailText = formatHarvestTotals(totals);
     return {
       label: formatMonthDay(date),
       amount,
-      totalText: formatHarvestTotals(totals) || `0${chartUnit}`
+      totalText: `${formatNumber(amount)}${chartUnit}`,
+      detailText
     };
   });
 }
