@@ -1636,6 +1636,7 @@ function createSummaryCard(label, value) {
   const valueElement = document.createElement("strong");
   valueElement.className = "summary-value";
   valueElement.textContent = String(value).replaceAll(" / ", "\n");
+  valueElement.title = String(value);
 
   card.append(labelElement, valueElement);
   return card;
@@ -1679,6 +1680,9 @@ function createMetricChartPanel({ title, rows, emptyText = "記録がありま�
   chart.className = "metric-chart";
   chart.style.setProperty("--chart-step", `${100 / Math.max(scale.ticks.length - 1, 1)}%`);
 
+  const rowList = document.createElement("div");
+  rowList.className = "metric-chart-rows";
+
   rows.forEach((row) => {
     const item = document.createElement("div");
     item.className = "metric-chart-row harvest-chart-row";
@@ -1705,10 +1709,10 @@ function createMetricChartPanel({ title, rows, emptyText = "記録がありま�
     if (row.detailText) total.title = row.detailText;
 
     item.append(label, barWrap, total);
-    chart.append(item);
+    rowList.append(item);
   });
 
-  chart.append(createChartAxis(scale, axisUnit));
+  chart.append(rowList, createChartAxis(scale, axisUnit));
   panel.append(chart);
   return panel;
 }
