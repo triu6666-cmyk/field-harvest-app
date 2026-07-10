@@ -1735,6 +1735,132 @@ select:focus {
   white-space: nowrap;
 }
 
+.metric-chart-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  overflow: hidden;
+}
+
+.metric-chart-title {
+  margin: 0;
+  color: #063f2a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.metric-chart {
+  display: grid;
+  gap: 8px;
+}
+
+.metric-chart-row,
+.metric-chart-axis {
+  display: grid;
+  grid-template-columns: minmax(88px, 0.42fr) minmax(180px, 1fr) minmax(82px, max-content);
+  gap: 10px;
+  align-items: center;
+}
+
+.metric-chart-row {
+  min-height: 34px;
+}
+
+.metric-chart-label {
+  min-width: 0;
+  color: var(--crop-ink, #274c35);
+  font-size: 12px;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric-chart-plot {
+  position: relative;
+  height: 22px;
+  min-width: 0;
+  border-left: 1px solid rgba(6, 68, 40, 0.22);
+  border-bottom: 1px solid rgba(6, 68, 40, 0.16);
+  border-radius: 6px;
+  background:
+    linear-gradient(to right, rgba(6, 68, 40, 0.16) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(235, 250, 239, 0.78));
+  background-size: var(--chart-step, 25%) 100%, 100% 100%;
+  overflow: hidden;
+}
+
+.metric-chart-row.is-zero .metric-chart-plot {
+  background:
+    linear-gradient(to right, rgba(6, 68, 40, 0.08) 1px, transparent 1px),
+    rgba(238, 248, 241, 0.55);
+  background-size: var(--chart-step, 25%) 100%, 100% 100%;
+}
+
+.metric-chart-bar {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  display: block;
+  width: var(--bar-size);
+  height: 12px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(90deg, var(--crop-start, var(--primary)), var(--crop-end, var(--cyan)));
+  box-shadow: 0 5px 14px rgba(18, 201, 106, 0.22);
+  transform: translateY(-50%);
+}
+
+.metric-chart-value {
+  color: #064428;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.metric-chart-axis {
+  margin-top: 2px;
+  align-items: start;
+  color: #56705f;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.metric-chart-axis-label,
+.metric-chart-axis-max {
+  padding-top: 8px;
+  white-space: nowrap;
+}
+
+.metric-chart-axis-max {
+  text-align: right;
+}
+
+.metric-chart-axis-ticks {
+  position: relative;
+  height: 24px;
+  border-top: 1px solid rgba(6, 68, 40, 0.28);
+}
+
+.metric-chart-tick {
+  position: absolute;
+  top: 7px;
+  color: #456550;
+  font-size: 10px;
+  font-weight: 900;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.metric-chart-tick:first-child {
+  transform: translateX(0);
+}
+
+.metric-chart-tick:last-child {
+  transform: translateX(-100%);
+}
+
 .receipt-field input {
   padding: 8px;
 }
@@ -3036,6 +3162,34 @@ select:focus {
 
   .expense-chart-row {
     grid-template-columns: minmax(62px, 0.7fr) minmax(76px, 1fr) minmax(70px, auto);
+  }
+
+  .metric-chart-panel {
+    padding: 12px;
+  }
+
+  .metric-chart-row,
+  .metric-chart-axis {
+    grid-template-columns: 54px minmax(116px, 1fr) 64px;
+    gap: 7px;
+  }
+
+  .metric-chart-label,
+  .metric-chart-value {
+    font-size: 11px;
+  }
+
+  .metric-chart-plot {
+    height: 24px;
+  }
+
+  .metric-chart-axis-label,
+  .metric-chart-axis-max {
+    font-size: 9px;
+  }
+
+  .metric-chart-tick {
+    font-size: 9px;
   }
 
   .daily-history {

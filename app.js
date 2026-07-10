@@ -1541,11 +1541,25 @@ function createSummaryCard(label, value) {
 }
 
 function createHarvestChartPanel(title, rows, emptyText = "収穫記録がありません") {
+  return createMetricChartPanel({
+    title,
+    rows: rows.map((row) => ({
+      ...row,
+      value: Number(row.amount || 0),
+      valueText: row.totalText,
+      axisUnit: row.axisUnit || ""
+    })),
+    emptyText,
+    panelClass: "harvest-chart-panel"
+  });
+}
+
+function createMetricChartPanel({ title, rows, emptyText = "記録がありません", panelClass = "" }) {
   const panel = document.createElement("article");
-  panel.className = "harvest-chart-panel";
+  panel.className = ["metric-chart-panel", panelClass].filter(Boolean).join(" ");
 
   const titleElement = document.createElement("p");
-  titleElement.className = "harvest-chart-title";
+  titleElement.className = "metric-chart-title harvest-chart-title";
   titleElement.textContent = title;
   panel.append(titleElement);
 
@@ -1557,37 +1571,108 @@ function createHarvestChartPanel(title, rows, emptyText = "収穫記録があり
     return panel;
   }
 
-  const maxAmount = Math.max(...rows.map((row) => row.amount), 1);
+  const maxAmount = Math.max(...rows.map((row) => row.value), 1);
+  const scale = createChartScale(maxAmount);
+  const axisUnit = rows.find((row) => row.axisUnit)?.axisUnit || "";
+  const chart = document.createElement("div");
+  chart.className = "metric-chart";
+  chart.style.setProperty("--chart-step", `${100 / Math.max(scale.ticks.length - 1, 1)}%`);
+
   rows.forEach((row) => {
     const item = document.createElement("div");
-    item.className = "harvest-chart-row";
-    item.classList.toggle("is-zero", row.amount <= 0);
+    item.className = "metric-chart-row harvest-chart-row";
+    item.classList.toggle("is-zero", row.value <= 0);
     if (row.detailText) item.title = row.detailText;
     if (row.cropName) applyCropTheme(item, row.cropName);
 
     const label = document.createElement("span");
-    label.className = "harvest-chart-label";
+    label.className = "metric-chart-label harvest-chart-label";
     label.textContent = row.label;
 
     const barWrap = document.createElement("div");
-    barWrap.className = "harvest-chart-bar-wrap";
+    barWrap.className = "metric-chart-plot harvest-chart-bar-wrap";
 
     const bar = document.createElement("span");
-    bar.className = "harvest-chart-bar";
-    const barSize = row.amount > 0 ? Math.max(7, Math.round((row.amount / maxAmount) * 100)) : 0;
+    bar.className = "metric-chart-bar harvest-chart-bar";
+    const barSize = row.value > 0 ? Math.max(3, (row.value / scale.max) * 100) : 0;
     bar.style.setProperty("--bar-size", `${barSize}%`);
     barWrap.append(bar);
 
     const total = document.createElement("strong");
-    total.className = "harvest-chart-total";
-    total.textContent = row.totalText;
+    total.className = "metric-chart-value harvest-chart-total";
+    total.textContent = row.valueText;
     if (row.detailText) total.title = row.detailText;
 
     item.append(label, barWrap, total);
-    panel.append(item);
+    chart.append(item);
   });
 
+  chart.append(createChartAxis(scale, axisUnit));
+  panel.append(chart);
   return panel;
+}
+
+function createChartAxis(scale, axisUnit) {
+  const axis = document.createElement("div");
+  axis.className = "metric-chart-axis";
+
+  const label = document.createElement("span");
+  label.className = "metric-chart-axis-label";
+  label.textContent = axisUnit ? `単位: ${axisUnit}` : "単位";
+
+  const ticks = document.createElement("div");
+  ticks.className = "metric-chart-axis-ticks";
+  scale.ticks.forEach((tick) => {
+    const tickElement = document.createElement("span");
+    tickElement.className = "metric-chart-tick";
+    tickElement.style.left = `${tick.percent}%`;
+    tickElement.textContent = formatChartTick(tick.value, axisUnit);
+    ticks.append(tickElement);
+  });
+
+  const maxLabel = document.createElement("span");
+  maxLabel.className = "metric-chart-axis-max";
+  maxLabel.textContent = "実数";
+
+  axis.append(label, ticks, maxLabel);
+  return axis;
+}
+
+function createChartScale(maxValue) {
+  const cleanMax = Math.max(Number(maxValue) || 0, 1);
+  const step = niceChartStep(cleanMax / 4);
+  const max = step * Math.ceil(cleanMax / step);
+  const ticks = [];
+  for (let value = 0; value <= max + step / 2; value += step) {
+    const roundedValue = Number(value.toFixed(6));
+    ticks.push({
+      value: roundedValue,
+      percent: max ? (roundedValue / max) * 100 : 0
+    });
+  }
+  return { max, ticks };
+}
+
+function niceChartStep(value) {
+  const power = Math.pow(10, Math.floor(Math.log10(Math.max(value, 1))));
+  const normalized = value / power;
+  const factor = normalized <= 1
+    ? 1
+    : normalized <= 2
+      ? 2
+      : normalized <= 2.5
+        ? 2.5
+        : normalized <= 5
+          ? 5
+          : 10;
+  return factor * power;
+}
+
+function formatChartTick(value, axisUnit) {
+  if (axisUnit === "円" && value >= 10000) {
+    return `${formatNumber(value / 10000)}万`;
+  }
+  return formatNumber(value);
 }
 
 function harvestCropChartRows(predicate) {
@@ -1609,6 +1694,7 @@ function harvestCropChartRows(predicate) {
       label: row.cropName,
       cropName: row.cropName,
       amount: row.amount,
+      axisUnit: row.unit,
       totalText: `${formatNumber(row.amount)}${row.unit}`
     }));
 }
@@ -1643,6 +1729,7 @@ function harvestDailyChartRows(limit) {
     return {
       label: formatMonthDay(date),
       amount,
+      axisUnit: chartUnit,
       totalText: `${formatNumber(amount)}${chartUnit}`,
       detailText
     };
@@ -1968,40 +2055,17 @@ function renderExpenseDashboard() {
 }
 
 function createExpenseChartPanel(title, rows, labelFormatter = (label) => label) {
-  const panel = document.createElement("article");
-  panel.className = "expense-chart-panel";
-
-  const titleElement = document.createElement("p");
-  titleElement.className = "expense-chart-title";
-  titleElement.textContent = title;
-  panel.append(titleElement);
-
-  const maxTotal = Math.max(...rows.map((row) => row.total), 1);
-  rows.forEach((row) => {
-    const item = document.createElement("div");
-    item.className = "expense-chart-row";
-
-    const label = document.createElement("span");
-    label.className = "expense-chart-label";
-    label.textContent = labelFormatter(row.label);
-
-    const barWrap = document.createElement("div");
-    barWrap.className = "expense-chart-bar-wrap";
-
-    const bar = document.createElement("span");
-    bar.className = "expense-chart-bar";
-    bar.style.setProperty("--bar-size", `${Math.max(4, Math.round((row.total / maxTotal) * 100))}%`);
-    barWrap.append(bar);
-
-    const total = document.createElement("strong");
-    total.className = "expense-chart-total";
-    total.textContent = `${formatNumber(row.total)}円`;
-
-    item.append(label, barWrap, total);
-    panel.append(item);
+  return createMetricChartPanel({
+    title,
+    rows: rows.map((row) => ({
+      label: labelFormatter(row.label),
+      value: Number(row.total || 0),
+      valueText: `${formatNumber(row.total)}円`,
+      axisUnit: "円"
+    })),
+    emptyText: "費用記録がありません",
+    panelClass: "expense-chart-panel"
   });
-
-  return panel;
 }
 
 function renderActivitySummary() {
