@@ -1,4 +1,4 @@
-const CACHE_NAME = "field-harvest-manager-v62";
+const CACHE_NAME = "field-harvest-manager-v63";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -13,6 +13,8 @@ const APP_SHELL = [
   "./js/pesticide-data.js",
   "./js/pesticides.js",
   "./docs/pesticide-deep-research-prompt.md",
+  "./docs/manual.html",
+  "./docs/manual.css",
   "./manifest.webmanifest",
   "./assets/app-icon.svg"
 ];

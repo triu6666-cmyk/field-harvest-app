@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#087e48">
+    <title>畑管理アプリ 仕様・利用マニュアル</title>
+    <link rel="icon" href="../assets/app-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="manual.css">
+  </head>
+  <body>
+    <header class="manual-header">
+      <div class="header-inner">
+        <nav class="header-nav" aria-label="ページ移動">
+          <a class="brand" href="../index.html"><img src="../assets/app-icon.svg" alt="">畑管理アプリ</a>
+          <a class="back-link" href="../index.html">アプリを開く</a>
+        </nav>
+        <div class="header-copy">
+          <p class="eyebrow">SPECIFICATION AND USER GUIDE</p>
+          <h1>畑の記録を、毎日の判断に使える形へ。</h1>
+          <p>区画ごとの栽培、収穫、費用、作業、農薬、バックアップをまとめて扱うための仕様と利用マニュアルです。スマホで日々入力し、PCでは全体を見渡せます。</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="manual-layout">
+      <nav class="manual-nav" aria-label="マニュアル目次">
+        <strong>目次</strong>
+        <a href="#overview">アプリの概要</a>
+        <a href="#features">機能一覧</a>
+        <a href="#daily">日々の使い方</a>
+        <a href="#backup">バックアップ</a>
+        <a href="#start">使い始める</a>
+        <a href="#phone">スマホに追加</a>
+        <a href="#cloud">PC・スマホ同期</a>
+        <a href="#publish">公開・更新手順</a>
+        <a href="#care">注意点と保守</a>
+      </nav>
+
+      <main class="manual-main">
+        <section id="overview">
+          <div class="section-heading">
+            <span class="section-number">01 / OVERVIEW</span>
+            <h2>アプリの概要</h2>
+            <p>家庭菜園や畑の栽培情報を、苗単位で残すためのWebアプリです。左右に分かれた畑ページをマス目として管理し、収穫の数、栽培費、農薬の適用可否までを同じデータにまとめます。</p>
+          </div>
+          <div class="flow" aria-label="基本的な利用の流れ">
+            <div class="flow-step"><span>STEP 1</span><strong>苗を配置</strong><p>畑マップの区画を選び、野菜・品種・植え付け日を登録します。</p></div>
+            <div class="flow-step"><span>STEP 2</span><strong>日々の記録</strong><p>収穫、費用、作業、農薬散布をスマホからその場で入力します。</p></div>
+            <div class="flow-step"><span>STEP 3</span><strong>全体を確認</strong><p>野菜別の収穫、費用、直近の推移、農薬の安全状態を確認します。</p></div>
+            <div class="flow-step"><span>STEP 4</span><strong>データを守る</strong><p>バックアップ、またはSupabase同期で端末変更・故障に備えます。</p></div>
+          </div>
+          <div class="notice">通常の利用にアプリのインストールは不要です。公開URLをChromeまたはSafariで開くだけで使えます。スマホのホーム画面に追加すると、専用アプリのように起動できます。</div>
+        </section>
+
+        <section id="features">
+          <div class="section-heading">
+            <span class="section-number">02 / FEATURES</span>
+            <h2>現在使える主な機能</h2>
+            <p>記録する単位を増やしすぎず、畑仕事の流れに沿って入力できるように構成しています。</p>
+          </div>
+          <div class="feature-grid">
+            <article class="feature-item"><span class="feature-icon">01</span><div><h3>畑マップ・苗配置</h3><p>左ページ・右ページを切り替え、行と列のマスに苗を配置。列数・段数を変更しても、既存データをできるだけ維持します。</p></div></article>
+            <article class="feature-item"><span class="feature-icon">02</span><div><h3>野菜・品種の登録</h3><p>野菜はイラスト付きの選択画面から選択。品種、植え付け日、栽培シーズン、メモを苗ごとに記録できます。</p></div></article>
+            <article class="feature-item"><span class="feature-icon">03</span><div><h3>収穫カウント</h3><p>マップ上の苗で素早く増減。編集画面では数量・単位を指定して一括加算・減算できます。</p></div></article>
+            <article class="feature-item"><span class="feature-icon">04</span><div><h3>収穫ダッシュボード</h3><p>野菜別・品種別の合計、期間別推移、収穫履歴を集計。PCでは広い表示領域を使って確認できます。</p></div></article>
+            <article class="feature-item"><span class="feature-icon">05</span><div><h3>費用・レシート</h3><p>日付、分類、金額、メモを記録。レシート画像から合計候補を読み取り、手入力で確定できます。</p></div></article>
+            <article class="feature-item"><span class="feature-icon">06</span><div><h3>作業記録・予定</h3><p>水やり、追肥、剪定などの作業履歴と、これから行う予定を野菜・苗に紐づけて管理します。</p></div></article>
+            <article class="feature-item"><span class="feature-icon">07</span><div><h3>農薬対応表・散布記録</h3><p>野菜ごとの適用情報を確認し、散布を記録。畑マップでは選択した農薬に対するOK・注意・NGを表示します。</p></div></article>
+            <article class="feature-item"><span class="feature-icon">08</span><div><h3>栽培終了・アーカイブ</h3><p>終了した苗は畑マップから外して保管。年・シーズンで絞り込み、必要なら畑へ戻せます。</p></div></article>
+            <article class="feature-item"><span class="feature-icon">09</span><div><h3>クラウド同期</h3><p>任意でSupabaseを設定すると、PCとスマホで同じデータを共有できます。設定しなければ端末内だけで使えます。</p></div></article>
+            <article class="feature-item"><span class="feature-icon">10</span><div><h3>バックアップ・復元</h3><p>JSONファイルへ全記録を保存。復元前の状態は端末内に自動退避され、すぐに取り消せます。</p></div></article>
+          </div>
+        </section>
+
+        <section id="daily">
+          <div class="section-heading">
+            <span class="section-number">03 / DAILY USE</span>
+            <h2>日々の使い方</h2>
+            <p>最初に苗を置き、以後は収穫・作業・費用を記録するだけです。記録は自動保存されます。</p>
+          </div>
+          <div class="setup-grid">
+            <article class="setup-item"><h3>最初にすること</h3><p>畑マップ上の空き区画の追加操作から、野菜、品種、植え付け日を選んで登録します。苗の色とアイコンで野菜を見分けられます。</p></article>
+            <article class="setup-item"><h3>収穫を入力する</h3><p>収穫モードで苗を選び、プラス・マイナスを押します。数をまとめて変える場合は苗の「編」を開き、「収穫を一括調整」を使います。</p></article>
+            <article class="setup-item"><h3>苗の情報を直す</h3><p>苗カードの「編」から野菜、品種、日付、メモを変更できます。不要になった苗は栽培終了にして履歴へ移します。</p></article>
+            <article class="setup-item"><h3>費用を残す</h3><p>費用タブで、日付、名前、分類、税込金額を入力します。レシートがある場合は写真を選び、読取候補を確認して登録します。</p></article>
+            <article class="setup-item"><h3>作業を残す</h3><p>作業タブで、水やりや追肥などを登録します。次にすることは予定として入れると、未完了の一覧から確認できます。</p></article>
+            <article class="setup-item"><h3>農薬を確認する</h3><p>農薬対応表で適用を確認し、散布記録を登録します。畑マップ上部で農薬を選ぶと、現在植えている苗の状態を色で確認できます。</p></article>
+          </div>
+          <div class="guide-block">
+            <h3>農薬の扱いについて</h3>
+            <ul class="compact-list">
+              <li>対応表は確認を補助するためのものです。使用前には必ず購入した製品ラベルの適用作物、希釈倍率、使用時期、使用回数を確認してください。</li>
+              <li>散布後の収穫可否は、登録した散布日と収穫前日数をもとに表示します。表示だけで判断せず、ラベルの記載を優先してください。</li>
+              <li>適用データの追加・見直しは、農薬対応表ページで行います。</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="backup">
+          <div class="section-heading">
+            <span class="section-number">04 / BACKUP</span>
+            <h2>バックアップと復元</h2>
+            <p>スマホの故障、ブラウザデータ削除、誤操作に備えるため、月に一度または大きな変更前にバックアップしてください。</p>
+          </div>
+          <div class="step-grid">
+            <article class="step-item"><span class="step-no">1</span><h3>保存する</h3><p>アプリ右上の箱アイコンを押し、「バックアップを保存」を選択します。<span class="path">field-harvest-backup-日付.json</span> が端末に保存されます。</p></article>
+            <article class="step-item"><span class="step-no">2</span><h3>復元前に確認</h3><p>同じ画面で「ファイルを選択」。苗・収穫・費用などの件数が表示されるため、対象ファイルを確認します。</p></article>
+            <article class="step-item"><span class="step-no">3</span><h3>復元・取り消し</h3><p>「この内容で復元」を押すと置き換わります。直前の状態は端末内へ退避されるため、その画面で取り消せます。</p></article>
+          </div>
+          <div class="notice">バックアップには畑・収穫・費用・作業・予定・農薬散布・アーカイブの記録が含まれます。SupabaseのURLやキーなど、クラウド接続設定は含まれません。</div>
+        </section>
+
+        <section id="start">
+          <div class="section-heading">
+            <span class="section-number">05 / GET STARTED</span>
+            <h2>このアプリを使い始める手順</h2>
+            <p>普段使うだけなら、インストール作業は不要です。公開URLを開く方法と、アプリ自体を管理・更新する方法は別です。</p>
+          </div>
+          <div class="install-callout">
+            <div><h3>普段使う人</h3><p>Google Chrome、Safari、Microsoft Edgeなどの最新ブラウザだけで利用できます。アカウント作成やソフトのインストールは不要です。</p></div>
+            <a class="action-link" href="https://triu6666-cmyk.github.io/field-harvest-app/">公開アプリを開く</a>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>目的</th><th>必要なもの</th><th>すること</th></tr></thead>
+              <tbody>
+                <tr><td>スマホ・PCで使う</td><td>Chrome / Safariなどのブラウザ</td><td>公開URLを開く。記録は最初はその端末内に保存されます。</td></tr>
+                <tr><td>スマホへ追加</td><td>スマホのブラウザ</td><td>下の「スマホに追加」を実施。ホーム画面からすぐ起動できます。</td></tr>
+                <tr><td>PC・スマホで同じ記録を使う</td><td>Supabaseアカウント</td><td>クラウド同期を設定し、同じ共有データIDを両方の端末に設定します。</td></tr>
+                <tr><td>アプリを更新・公開する</td><td>GitHubアカウント、Git</td><td>ローカルの変更をGitHubへpushし、GitHub Pagesで公開します。</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="phone">
+          <div class="section-heading">
+            <span class="section-number">06 / PHONE</span>
+            <h2>スマホのホーム画面に追加する</h2>
+            <p>追加するとブラウザのタブを探さずに起動できます。アプリのような全画面表示で開くこともできます。</p>
+          </div>
+          <div class="setup-grid">
+            <article class="setup-item"><h3>iPhone / iPad（Safari）</h3><p>公開URLをSafariで開く。画面下の共有ボタンを押す。「ホーム画面に追加」を選ぶ。名前を確認し「追加」を押す。</p></article>
+            <article class="setup-item"><h3>Android（Chrome）</h3><p>公開URLをChromeで開く。右上のメニューを押す。「ホーム画面に追加」または「アプリをインストール」を選び、画面の案内に従います。</p></article>
+          </div>
+          <div class="guide-block">
+            <h3>更新が見えないとき</h3>
+            <ul class="compact-list">
+              <li>アプリを閉じて、ホーム画面のアイコンからもう一度開きます。</li>
+              <li>ブラウザで公開URLを開き直し、更新または再読み込みを行います。</li>
+              <li>画面上の「最終更新」時刻が新しくなっているか確認します。公開直後はGitHub Pagesの反映に数分かかることがあります。</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="cloud">
+          <div class="section-heading">
+            <span class="section-number">07 / CLOUD SYNC</span>
+            <h2>PCとスマホで同じデータを使う</h2>
+            <p>初期状態のデータはブラウザごとに保存されます。同じ記録を複数端末で扱う場合だけ、Supabaseによるクラウド同期を設定します。</p>
+          </div>
+          <div class="step-grid">
+            <article class="step-item"><span class="step-no">1</span><h3>Supabaseを準備</h3><p><a href="https://supabase.com/" target="_blank" rel="noreferrer">Supabase</a>で無料アカウントとプロジェクトを作成します。SQL Editorで<span class="path">docs/supabase-schema.sql</span>の内容を実行します。</p></article>
+            <article class="step-item"><span class="step-no">2</span><h3>PCに設定</h3><p>アプリ右上のクラウドアイコンを開き、Project URL、publishable key、共有データIDを入力します。共有IDは「生成」で作れます。</p></article>
+            <article class="step-item"><span class="step-no">3</span><h3>スマホへ設定</h3><p>PC側で「設定リンクをコピー」を使い、スマホでそのリンクを開きます。最後にクラウドへ保存し、もう一方で取得します。</p></article>
+          </div>
+          <div class="notice">入力するのは browser 用の publishable key または anon public key です。secret key / service_role key は絶対にアプリやスマホへ入力しないでください。</div>
+        </section>
+
+        <section id="publish">
+          <div class="section-heading">
+            <span class="section-number">08 / PUBLISH AND UPDATE</span>
+            <h2>アプリを更新・公開する手順</h2>
+            <p>機能や画面を変える管理者向けの手順です。日常利用だけなら、この作業は不要です。</p>
+          </div>
+          <div class="setup-grid">
+            <article class="setup-item"><h3>最初にインストールするもの</h3><p><a href="https://git-scm.com/downloads" target="_blank" rel="noreferrer">Git for Windows</a>、最新のブラウザ、GitHubアカウントを用意します。コードを手で編集する場合は<a href="https://code.visualstudio.com/" target="_blank" rel="noreferrer">Visual Studio Code</a>が便利です。Node.jsは開発用ローカルサーバーを使う場合だけ必要です。</p></article>
+            <article class="setup-item"><h3>GitHub Pagesを有効にする</h3><p>GitHubでリポジトリを作成し、ファイルを<span class="path">main</span>ブランチへアップロードします。Settings → Pages → Deploy from a branch → main / root を選びます。</p></article>
+            <article class="setup-item"><h3>更新を公開する</h3><p>変更後、Gitでコミットしてpushします。GitHub Pagesが自動で更新されます。公開URLはGitHubの Settings → Pages に表示されます。</p></article>
+            <article class="setup-item"><h3>ローカルで確認する</h3><p>ファイルを直接開くか、開発用サーバーを使って確認します。このリポジトリには<span class="path">tools/start-mobile-server.cmd</span>があります。</p></article>
+          </div>
+          <div class="guide-block">
+            <h3>公開前の確認項目</h3>
+            <ul class="compact-list">
+              <li>PCとスマホ幅の両方で、文字やボタンが重なっていない。</li>
+              <li>収穫のプラス・マイナス、苗編集、費用登録、バックアップ画面が動く。</li>
+              <li>更新時刻とservice workerのキャッシュ番号を更新し、古い画面が残らないようにする。</li>
+              <li>Supabaseを使う場合、secret keyがHTMLやJavaScriptに入っていない。</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="care">
+          <div class="section-heading">
+            <span class="section-number">09 / CARE</span>
+            <h2>注意点とおすすめの運用</h2>
+            <p>記録を失わず、毎年の栽培比較に使える状態を保つための基本ルールです。</p>
+          </div>
+          <div class="risk-grid">
+            <article class="risk-item"><h3>月1回はバックアップ</h3><p>JSONファイルはスマホ本体だけでなく、クラウドストレージやPCにも保管します。大きな編集の前にも保存します。</p></article>
+            <article class="risk-item"><h3>同期前後は確認</h3><p>複数端末で同時に編集した場合は、最後に保存した内容が優先されます。重要な編集後はクラウドへ保存してから別端末で取得します。</p></article>
+            <article class="risk-item"><h3>農薬はラベル優先</h3><p>アプリの対応表は補助です。実際の使用は製品ラベル、地域の指導、作物の状態を優先して判断します。</p></article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="manual-footer">
+      <div class="footer-inner">
+        <span>畑管理アプリ 仕様・利用マニュアル</span>
+        <a href="../index.html">畑管理アプリを開く</a>
+      </div>
+    </footer>
+  </body>
+</html>
