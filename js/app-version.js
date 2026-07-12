@@ -1,6 +1,6 @@
 window.FIELD_HARVEST_APP_VERSION = {
-  updatedAt: "2026-07-12T16:26:00+09:00",
-  display: "2026/07/12 16:26"
+  updatedAt: "2026-07-12T16:34:00+09:00",
+  display: "2026/07/12 16:34"
 };
 
 document.querySelectorAll("[data-app-updated]").forEach((element) => {

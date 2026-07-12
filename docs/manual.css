@@ -267,9 +267,85 @@ h3 { margin-bottom: 7px; color: #07583a; font-size: 17px; line-height: 1.4; }
   border-radius: 8px;
   background: var(--mint);
   color: var(--green);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
 }
+
+.comic-guide {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: 22px;
+  align-items: center;
+  margin-top: 25px;
+  padding: 18px;
+  border: 1px solid #d6ead8;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #f5fff0);
+}
+
+.comic-guide figure { margin: 0; overflow: hidden; border-radius: 7px; background: #e9f8ff; }
+.comic-guide figure img { display: block; width: 100%; height: auto; }
+
+.comic-copy { display: grid; gap: 13px; }
+.comic-copy h3 { margin-bottom: 0; font-size: 21px; }
+
+.comic-bubble {
+  position: relative;
+  margin: 0;
+  padding: 13px 15px;
+  border: 2px solid #0d9a5d;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #186141;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.55;
+}
+
+.comic-bubble::after {
+  position: absolute;
+  left: 22px;
+  bottom: -10px;
+  width: 16px;
+  height: 16px;
+  border-right: 2px solid #0d9a5d;
+  border-bottom: 2px solid #0d9a5d;
+  background: #ffffff;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.comic-points { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
+
+.comic-point {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #d4ebd9;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #317057;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.comic-point b {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #dff7e8;
+  color: #087e48;
+  font-size: 12px;
+}
+
+.comic-point:nth-child(2) b { background: #e2f7fc; color: #007b9a; }
+.comic-point:nth-child(3) b { background: #fff4d0; color: #a96c00; }
+.comic-point:nth-child(4) b { background: #ffe9e2; color: #b44e33; }
 
 .feature-item:nth-child(3n + 2) .feature-icon { background: #e2f7fc; color: #007b9a; }
 .feature-item:nth-child(3n) .feature-icon { background: #fff4d0; color: #a96c00; }
@@ -355,7 +431,8 @@ td:first-child { color: #07583a; font-weight: 900; white-space: nowrap; }
   .step-grid { grid-template-columns: 1fr; }
   .visual-overview,
   .image-story,
-  .image-story.reverse { grid-template-columns: 1fr; }
+  .image-story.reverse,
+  .comic-guide { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
