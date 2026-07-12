@@ -109,6 +109,9 @@ h1 {
   letter-spacing: 0;
 }
 
+h1 span { display: block; }
+h1 span:last-child { white-space: nowrap; }
+
 .header-copy > p:last-child { max-width: 650px; margin-bottom: 0; font-weight: 700; }
 
 .manual-layout {
@@ -421,6 +424,7 @@ td:first-child { color: #07583a; font-weight: 900; white-space: nowrap; }
 @media (max-width: 640px) {
   .header-inner, .manual-layout, .footer-inner { width: min(100% - 28px, 1220px); }
   .header-copy { padding: 25px 0 58px; }
+  h1 span:first-child { display: inline; }
   .header-nav { padding-top: 14px; }
   .manual-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .feature-grid, .setup-grid, .risk-grid, .install-callout, .feature-gallery, .phone-visual { grid-template-columns: 1fr; }
