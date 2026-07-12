@@ -50,30 +50,19 @@
             <div class="flow-step"><span>STEP 3</span><strong>全体を確認</strong><p>野菜別の収穫、費用、直近の推移、農薬の安全状態を確認します。</p></div>
             <div class="flow-step"><span>STEP 4</span><strong>データを守る</strong><p>バックアップ、またはSupabase同期で端末変更・故障に備えます。</p></div>
           </div>
-          <div class="visual-overview">
+          <div class="screen-guide">
+            <div class="screen-guide-heading">
+              <span>画面を読む</span>
+              <h3>畑マップは、苗の配置と今日の収穫を同時に見る画面です。</h3>
+            </div>
             <figure class="shot-frame">
               <img src="../assets/manual/field-map.png" alt="野菜アイコンと収穫数が表示された畑マップの実画面">
               <figcaption><strong>畑マップの実画面</strong>苗の野菜名、品種、収穫数を区画ごとに確認できます。</figcaption>
             </figure>
-            <div class="visual-copy">
-              <h3>区画を見れば、今の畑が分かる</h3>
-              <p>野菜ごとに色とイラストが変わります。区画上には野菜名、品種、現在の収穫数を表示し、収穫の入力や編集へすぐ進めます。</p>
-              <div class="visual-tags"><span>左右ページ</span><span>列の通番</span><span>苗ごとの収穫数</span><span>農薬の状態表示</span></div>
-            </div>
-          </div>
-          <div class="comic-guide">
-            <figure>
-              <img src="../assets/manual/guide-illustration.png" alt="スマホを持ち、野菜が育つ畑に立つ家庭菜園のイラスト">
-            </figure>
-            <div class="comic-copy">
-              <h3>畑しごとを、さっと記録。</h3>
-              <p class="comic-bubble">畑で気づいたら、その場でスマホに残す。あとでPCの大きい画面から、収穫や費用をゆっくり振り返る。これが一番続けやすい使い方です。</p>
-              <div class="comic-points">
-                <span class="comic-point"><b>苗</b>植えたら置く</span>
-                <span class="comic-point"><b>収</b>採れたら数える</span>
-                <span class="comic-point"><b>費</b>買ったら残す</span>
-                <span class="comic-point"><b>保</b>月1回保存</span>
-              </div>
+            <div class="screen-notes">
+              <article><b>1</b><div><strong>上の列番号</strong><span>右端を1番として通番を表示。スマホで横に動かしても、どの列かを確認できます。</span></div></article>
+              <article><b>2</b><div><strong>野菜色と品種名</strong><span>野菜ごとの色・イラストで見分けます。品種は苗カード内に小さく表示されます。</span></div></article>
+              <article><b>3</b><div><strong>収穫の操作</strong><span>苗のカードから収穫数を増減。詳細な変更は「編」からまとめて行えます。</span></div></article>
             </div>
           </div>
           <div class="notice">通常の利用にアプリのインストールは不要です。公開URLをChromeまたはSafariで開くだけで使えます。スマホのホーム画面に追加すると、専用アプリのように起動できます。</div>
@@ -97,15 +86,26 @@
             <article class="feature-item"><span class="feature-icon">雲</span><div><h3>クラウド同期</h3><p>任意でSupabaseを設定すると、PCとスマホで同じデータを共有できます。設定しなければ端末内だけで使えます。</p></div></article>
             <article class="feature-item"><span class="feature-icon">箱</span><div><h3>バックアップ・復元</h3><p>JSONファイルへ全記録を保存。復元前の状態は端末内に自動退避され、すぐに取り消せます。</p></div></article>
           </div>
-          <div class="feature-gallery">
-            <figure class="shot-frame">
-              <img src="../assets/manual/harvest-dashboard.png" alt="野菜別の収穫ランキングと収穫推移を表示する収穫ダッシュボードの実画面">
-              <figcaption><strong>収穫ダッシュボード</strong>野菜別の合計、日ごとの推移、費用との比較を図表で確認します。</figcaption>
-            </figure>
-            <figure class="shot-frame">
-              <img src="../assets/manual/pesticide-table.png" alt="野菜アイコン付きの農薬対応表と散布記録を表示する実画面">
-              <figcaption><strong>農薬対応表</strong>野菜を選ぶと適用可否と使用条件を一覧で確認できます。</figcaption>
-            </figure>
+          <div class="screen-guide dashboard-guide">
+            <div class="screen-guide-heading">
+              <span>画面を読む</span>
+              <h3>収穫ダッシュボードは、数字を「比較できる状態」にする画面です。</h3>
+            </div>
+            <div class="screen-detail-grid">
+              <figure class="shot-frame">
+                <img src="../assets/manual/harvest-dashboard-focus.png" alt="野菜別ランキングと直近7日の推移を拡大表示した収穫ダッシュボード">
+                <figcaption><strong>収穫の量と推移</strong>今月の主役、野菜別ランキング、日ごとの収穫を一度に確認します。</figcaption>
+              </figure>
+              <figure class="shot-frame">
+                <img src="../assets/manual/harvest-cost-focus.png" alt="野菜別の収穫数と目安費用を拡大表示した表">
+                <figcaption><strong>収穫と費用の比較</strong>費用を収穫数で割った目安も野菜ごとに確認できます。</figcaption>
+              </figure>
+            </div>
+            <div class="screen-notes">
+              <article><b>1</b><div><strong>今月の主役</strong><span>一番多く収穫できた野菜と、その収穫数を最初に表示します。</span></div></article>
+              <article><b>2</b><div><strong>直近7日の推移</strong><span>横棒と目盛りで、収穫が多かった日と少なかった日を読み取れます。</span></div></article>
+              <article><b>3</b><div><strong>目安費用</strong><span>畑全体の費用を収穫数で按分した参考値です。正確な原価ではなく比較用です。</span></div></article>
+            </div>
           </div>
         </section>
 
@@ -131,15 +131,19 @@
               <li>適用データの追加・見直しは、農薬対応表ページで行います。</li>
             </ul>
           </div>
-          <div class="image-story reverse">
+          <div class="screen-guide pesticide-guide">
+            <div class="screen-guide-heading">
+              <span>画面を読む</span>
+              <h3>農薬対応表は、野菜を選んでから条件を横並びで確認します。</h3>
+            </div>
             <figure class="shot-frame">
-              <img src="../assets/manual/pesticide-table.png" alt="農薬対応表でトマトの適用情報を確認している実画面">
+              <img src="../assets/manual/pesticide-reference-focus.png" alt="トマトの農薬適用情報を拡大表示した農薬対応表">
               <figcaption><strong>農薬の確認と記録</strong>対応表の確認から散布記録まで、同じ画面で行えます。</figcaption>
             </figure>
-            <div class="visual-copy">
-              <h3>農薬の確認を、畑マップの判断へつなげる</h3>
-              <p>対応表では野菜アイコンを押して対象を絞り込めます。散布を記録した後は、収穫前日数を考慮した状態を畑マップ上で確認できます。</p>
-              <div class="visual-tags"><span>野菜アイコンで選択</span><span>適用条件の表</span><span>散布履歴</span><span>収穫前日数</span></div>
+            <div class="screen-notes">
+              <article><b>1</b><div><strong>野菜名を確認</strong><span>見出しの野菜名と、購入した農薬ラベルの登録作物名が一致するか確認します。</span></div></article>
+              <article><b>2</b><div><strong>使用時期と回数</strong><span>収穫前日数、本剤・総使用回数を横並びで確認します。</span></div></article>
+              <article><b>3</b><div><strong>散布後の状態</strong><span>散布を記録すると、畑マップの苗に収穫可否の状態が表示されます。</span></div></article>
             </div>
           </div>
         </section>
@@ -155,16 +159,20 @@
             <article class="step-item"><span class="step-no">2</span><h3>復元前に確認</h3><p>同じ画面で「ファイルを選択」。苗・収穫・費用などの件数が表示されるため、対象ファイルを確認します。</p></article>
             <article class="step-item"><span class="step-no">3</span><h3>復元・取り消し</h3><p>「この内容で復元」を押すと置き換わります。直前の状態は端末内へ退避されるため、その画面で取り消せます。</p></article>
           </div>
-          <div class="image-story">
-            <div class="visual-copy">
-              <h3>復元前のデータも残す設計</h3>
-              <p>ファイルを選んだだけでは復元されず、記録件数を確認してから実行します。復元した直後は、直前の状態へ戻す操作もできます。</p>
-              <div class="visual-tags"><span>JSONで保存</span><span>内容件数を表示</span><span>復元前に退避</span></div>
+          <div class="screen-guide backup-guide">
+            <div class="screen-guide-heading">
+              <span>画面を読む</span>
+              <h3>バックアップは、保存と復元を一つの画面で安全に行います。</h3>
             </div>
             <figure class="shot-frame">
               <img src="../assets/manual/backup.png" alt="バックアップ保存と復元を選べるモーダル画面">
               <figcaption><strong>バックアップ管理画面</strong>保存と復元を一つの画面に集約しています。</figcaption>
             </figure>
+            <div class="screen-notes">
+              <article><b>1</b><div><strong>保存前に件数を確認</strong><span>苗、収穫、費用、作業、農薬の件数を表示してからJSONファイルを保存します。</span></div></article>
+              <article><b>2</b><div><strong>ファイルの内容を確認</strong><span>復元する前に、選んだバックアップファイルの件数を表示します。</span></div></article>
+              <article><b>3</b><div><strong>直前へ戻せる</strong><span>復元前の状態は端末内に一時保管されるため、操作直後なら取り消せます。</span></div></article>
+            </div>
           </div>
           <div class="notice">バックアップには畑・収穫・費用・作業・予定・農薬散布・アーカイブの記録が含まれます。SupabaseのURLやキーなど、クラウド接続設定は含まれません。</div>
         </section>

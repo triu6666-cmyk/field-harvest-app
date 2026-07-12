@@ -1,4 +1,4 @@
-const CACHE_NAME = "field-harvest-manager-v65";
+const CACHE_NAME = "field-harvest-manager-v66";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -16,11 +16,11 @@ const APP_SHELL = [
   "./docs/manual.html",
   "./docs/manual.css",
   "./assets/manual/field-map.png",
-  "./assets/manual/harvest-dashboard.png",
-  "./assets/manual/pesticide-table.png",
   "./assets/manual/backup.png",
   "./assets/manual/mobile-map.png",
-  "./assets/manual/guide-illustration.png",
+  "./assets/manual/harvest-dashboard-focus.png",
+  "./assets/manual/harvest-cost-focus.png",
+  "./assets/manual/pesticide-reference-focus.png",
   "./manifest.webmanifest",
   "./assets/app-icon.svg"
 ];
