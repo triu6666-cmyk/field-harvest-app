@@ -21,7 +21,7 @@
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">収穫量管理</strong>
-          <time class="app-updated site-updated" data-app-updated datetime="2026-07-12T15:29:00+09:00">最終更新 2026/07/12 15:29</time>
+          <time class="app-updated site-updated" data-app-updated datetime="2026-07-12T15:48:00+09:00">最終更新 2026/07/12 15:48</time>
         </span>
       </a>
       <div class="header-actions site-header-actions">
@@ -37,21 +37,13 @@
           </svg>
         </button>
         <span id="syncMiniStatus" class="sync-mini-status">ローカル</span>
-        <button class="icon-button site-header-button" id="exportButton" type="button" title="データを書き出す" aria-label="データを書き出す">
+        <button class="icon-button site-header-button" id="exportButton" type="button" title="バックアップと復元" aria-label="バックアップと復元を開く">
           <svg class="header-icon site-header-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 3v11"></path>
-            <path d="m7 10 5 5 5-5"></path>
-            <path d="M5 19h14"></path>
+            <path d="M4 8h16v11H4z"></path>
+            <path d="M8 8V4h8v4"></path>
+            <path d="M9 14h6"></path>
           </svg>
         </button>
-        <label class="icon-button file-button site-header-button" title="データを読み込む" aria-label="データを読み込む">
-          <svg class="header-icon site-header-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 15V4"></path>
-            <path d="m7 8 5-5 5 5"></path>
-            <path d="M5 19h14"></path>
-          </svg>
-          <input id="importInput" type="file" accept="application/json">
-        </label>
       </div>
     </header>
 
@@ -647,6 +639,48 @@
             <textarea id="syncLinkOutput" readonly rows="3" aria-label="スマホ設定リンク"></textarea>
             <span>このリンクにはpublishable/anon keyと共有データIDが含まれます。自分の端末や信頼できる相手だけに送ってください。</span>
           </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="backupModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="backupModalTitle">
+      <section class="modal-panel backup-modal-panel">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">データの保管</p>
+            <h2 id="backupModalTitle">バックアップと復元</h2>
+          </div>
+          <button id="closeBackupModalButton" class="modal-close-button" type="button" aria-label="閉じる">×</button>
+        </div>
+        <div class="backup-panel">
+          <p class="backup-intro">畑・収穫・費用・作業・農薬記録を1つのファイルにまとめます。クラウド接続の設定は含みません。</p>
+          <section class="backup-card backup-download-card">
+            <div>
+              <span class="backup-card-kicker">今のデータを保存</span>
+              <strong>バックアップを作成</strong>
+              <p id="backupCurrentSummary" class="backup-summary"></p>
+            </div>
+            <button id="downloadBackupButton" class="primary-button" type="button">バックアップを保存</button>
+          </section>
+          <section class="backup-card backup-restore-card">
+            <div>
+              <span class="backup-card-kicker">保存済みファイルから戻す</span>
+              <strong>バックアップを復元</strong>
+              <p id="backupRestorePreview" class="backup-summary">バックアップファイルを選択してください。</p>
+            </div>
+            <label class="secondary-button backup-file-button">
+              ファイルを選択
+              <input id="backupRestoreInput" type="file" accept="application/json,.json">
+            </label>
+            <button id="restoreBackupButton" class="danger-button" type="button" disabled>この内容で復元</button>
+          </section>
+          <section id="backupUndoCard" class="backup-undo-card hidden">
+            <div>
+              <strong>直前の状態を保管中</strong>
+              <p id="backupUndoSummary" class="backup-summary"></p>
+            </div>
+            <button id="undoBackupRestoreButton" class="secondary-button" type="button">復元を取り消す</button>
+          </section>
         </div>
       </section>
     </div>

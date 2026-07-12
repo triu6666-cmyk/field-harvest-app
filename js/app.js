@@ -93,6 +93,7 @@ let quickHarvestRenderTimer = null;
 let quickHarvestCloudTimer = null;
 let quickHarvestCloudSaving = false;
 let quickHarvestCloudDirty = false;
+let pendingBackupRestore = null;
 
 const HARVEST_MODE_UNITS = ["個", "本", "玉", "g", "kg"];
 const PESTICIDE_CROP_ALIASES = {
@@ -153,6 +154,16 @@ const elements = {
   closeHarvestModeButton: document.querySelector("#closeHarvestModeButton"),
   undoHarvestModeButton: document.querySelector("#undoHarvestModeButton"),
   syncSettingsButton: document.querySelector("#syncSettingsButton"),
+  backupModal: document.querySelector("#backupModal"),
+  closeBackupModalButton: document.querySelector("#closeBackupModalButton"),
+  backupCurrentSummary: document.querySelector("#backupCurrentSummary"),
+  downloadBackupButton: document.querySelector("#downloadBackupButton"),
+  backupRestoreInput: document.querySelector("#backupRestoreInput"),
+  backupRestorePreview: document.querySelector("#backupRestorePreview"),
+  restoreBackupButton: document.querySelector("#restoreBackupButton"),
+  backupUndoCard: document.querySelector("#backupUndoCard"),
+  backupUndoSummary: document.querySelector("#backupUndoSummary"),
+  undoBackupRestoreButton: document.querySelector("#undoBackupRestoreButton"),
   syncMiniStatus: document.querySelector("#syncMiniStatus"),
   syncModal: document.querySelector("#syncModal"),
   closeSyncModalButton: document.querySelector("#closeSyncModalButton"),
@@ -232,7 +243,6 @@ const elements = {
   costPerformanceSummary: document.querySelector("#costPerformanceSummary"),
   emptyStateTemplate: document.querySelector("#emptyStateTemplate"),
   exportButton: document.querySelector("#exportButton"),
-  importInput: document.querySelector("#importInput"),
   mapFilterSelect: document.querySelector("#mapFilterSelect"),
   mapPesticideSelect: document.querySelector("#mapPesticideSelect"),
   pesticideMapBar: document.querySelector("#pesticideMapBar"),
@@ -443,6 +453,15 @@ elements.harvestModeModal.addEventListener("click", (event) => {
 });
 
 elements.syncSettingsButton.addEventListener("click", openSyncModal);
+elements.exportButton.addEventListener("click", openBackupModal);
+elements.closeBackupModalButton.addEventListener("click", closeBackupModal);
+elements.backupModal.addEventListener("click", (event) => {
+  if (event.target === elements.backupModal) closeBackupModal();
+});
+elements.downloadBackupButton.addEventListener("click", downloadBackup);
+elements.backupRestoreInput.addEventListener("change", readBackupRestoreFile);
+elements.restoreBackupButton.addEventListener("click", restoreBackup);
+elements.undoBackupRestoreButton.addEventListener("click", undoBackupRestore);
 elements.closeSyncModalButton.addEventListener("click", closeSyncModal);
 elements.syncModal.addEventListener("click", (event) => {
   if (event.target === elements.syncModal) {
@@ -531,7 +550,9 @@ elements.pullCloudButton.addEventListener("click", async () => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !elements.syncModal.classList.contains("hidden")) {
+  if (event.key === "Escape" && !elements.backupModal.classList.contains("hidden")) {
+    closeBackupModal();
+  } else if (event.key === "Escape" && !elements.syncModal.classList.contains("hidden")) {
     closeSyncModal();
   } else if (event.key === "Escape" && !elements.harvestModeModal.classList.contains("hidden")) {
     closeHarvestMode();
@@ -733,31 +754,6 @@ elements.expenseForm.addEventListener("submit", (event) => {
   elements.expenseDateInput.value = today;
   elements.expenseCategoryInput.value = "その他";
   saveAndRender();
-});
-
-elements.exportButton.addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `harvest-records-${today}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-});
-
-elements.importInput.addEventListener("change", async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
-
-  try {
-    const imported = JSON.parse(await file.text());
-    state = normalizeState(imported);
-    saveAndRender();
-  } catch {
-    alert("読み込めないファイルです。");
-  } finally {
-    elements.importInput.value = "";
-  }
 });
 
 function render() {
@@ -3629,6 +3625,112 @@ function openSyncModal() {
 function closeSyncModal() {
   elements.syncModal.classList.add("hidden");
   document.body.classList.remove("modal-open");
+}
+
+function openBackupModal() {
+  pendingBackupRestore = null;
+  elements.backupRestoreInput.value = "";
+  renderBackupModal();
+  elements.backupModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+}
+
+function closeBackupModal() {
+  elements.backupModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+}
+
+function renderBackupModal() {
+  elements.backupCurrentSummary.textContent = backupStateSummary(state);
+  const restorePoint = storage.loadRestorePoint();
+  elements.backupUndoCard.classList.toggle("hidden", !restorePoint);
+  elements.backupUndoSummary.textContent = restorePoint
+    ? `${formatSyncDate(restorePoint.savedAt)} の状態に戻せます。${backupStateSummary(restorePoint.data)}`
+    : "";
+
+  if (pendingBackupRestore) {
+    elements.backupRestorePreview.textContent = `${pendingBackupRestore.fileName} を読み込みました。${backupStateSummary(pendingBackupRestore.data)}`;
+  } else {
+    elements.backupRestorePreview.textContent = "バックアップファイルを選択してください。";
+  }
+  elements.restoreBackupButton.disabled = !pendingBackupRestore;
+}
+
+function backupStateSummary(backupState) {
+  const data = normalizeState(backupState);
+  return `苗 ${data.seedlings.length}件 / 収穫 ${data.harvests.length}件 / 費用 ${data.expenses.length}件 / 作業 ${data.activities.length + data.tasks.length}件 / 農薬 ${data.pesticideApplications.length}件`;
+}
+
+function createBackupPayload() {
+  return {
+    schema: "field-harvest-manager-backup",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: state
+  };
+}
+
+function downloadBackup() {
+  const blob = new Blob([JSON.stringify(createBackupPayload(), null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `field-harvest-backup-${currentLocalDate()}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+async function readBackupRestoreFile(event) {
+  const file = event.target.files?.[0];
+  pendingBackupRestore = null;
+  if (!file) {
+    renderBackupModal();
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(await file.text());
+    const data = extractBackupData(parsed);
+    if (!isBackupState(data)) throw new Error("バックアップの形式が正しくありません。");
+    pendingBackupRestore = { data, fileName: file.name };
+  } catch (error) {
+    alert(error.message || "バックアップファイルを読み込めませんでした。");
+  }
+  renderBackupModal();
+}
+
+function extractBackupData(value) {
+  if (value?.schema === "field-harvest-manager-backup") return value.data;
+  return value;
+}
+
+function isBackupState(value) {
+  return Boolean(value && typeof value === "object" && value.grid &&
+    Array.isArray(value.seedlings) && Array.isArray(value.harvests) &&
+    Array.isArray(value.expenses) && Array.isArray(value.activities) &&
+    Array.isArray(value.tasks) && Array.isArray(value.pesticideApplications));
+}
+
+function restoreBackup() {
+  if (!pendingBackupRestore) return;
+  if (!confirm("現在のデータは直前の状態として端末に保管します。選択したバックアップで置き換えますか？")) return;
+
+  storage.saveRestorePoint(state);
+  state = normalizeState(pendingBackupRestore.data);
+  pendingBackupRestore = null;
+  saveAndRender();
+  renderBackupModal();
+}
+
+function undoBackupRestore() {
+  const restorePoint = storage.loadRestorePoint();
+  if (!restorePoint) return;
+  if (!confirm("復元前の状態に戻しますか？")) return;
+
+  state = normalizeState(restorePoint.data);
+  storage.clearRestorePoint();
+  saveAndRender();
+  renderBackupModal();
 }
 
 function renderSyncSettings() {

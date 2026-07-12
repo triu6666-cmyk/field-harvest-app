@@ -1,6 +1,7 @@
 const FIELD_APP_STORAGE_KEY = "field-harvest-manager-v1";
 const FIELD_APP_UPDATED_KEY = `${FIELD_APP_STORAGE_KEY}:updated-at`;
 const FIELD_APP_CLOUD_SETTINGS_KEY = `${FIELD_APP_STORAGE_KEY}:cloud-settings`;
+const FIELD_APP_RESTORE_POINT_KEY = `${FIELD_APP_STORAGE_KEY}:restore-point`;
 const SUPABASE_MODULE_URL = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 let cloudClientPromise = null;
@@ -33,6 +34,25 @@ window.fieldHarvestStorage = {
 
   localUpdatedAt() {
     return localStorage.getItem(FIELD_APP_UPDATED_KEY) || "";
+  },
+
+  saveRestorePoint(value) {
+    const restorePoint = { savedAt: new Date().toISOString(), data: value };
+    localStorage.setItem(FIELD_APP_RESTORE_POINT_KEY, JSON.stringify(restorePoint));
+    return restorePoint;
+  },
+
+  loadRestorePoint() {
+    try {
+      const restorePoint = JSON.parse(localStorage.getItem(FIELD_APP_RESTORE_POINT_KEY) || "null");
+      return restorePoint?.data ? restorePoint : null;
+    } catch {
+      return null;
+    }
+  },
+
+  clearRestorePoint() {
+    localStorage.removeItem(FIELD_APP_RESTORE_POINT_KEY);
   },
 
   loadSettings() {

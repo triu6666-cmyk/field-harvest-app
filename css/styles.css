@@ -2644,6 +2644,99 @@ select:focus {
   width: min(720px, 100%);
 }
 
+.backup-modal-panel {
+  width: min(680px, 100%);
+}
+
+.backup-panel {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.backup-intro,
+.backup-summary {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.backup-card,
+.backup-undo-card {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid rgba(32, 115, 74, 0.18);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.backup-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.backup-card > div,
+.backup-undo-card > div {
+  display: grid;
+  gap: 5px;
+}
+
+.backup-card strong,
+.backup-undo-card strong {
+  color: #063f2a;
+  font-size: 17px;
+}
+
+.backup-card-kicker {
+  color: #087642;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.backup-restore-card {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  background: linear-gradient(135deg, #ffffff, #fffaf0);
+}
+
+.backup-file-button {
+  display: inline-grid;
+  place-items: center;
+  min-height: 42px;
+  cursor: pointer;
+}
+
+.backup-file-button input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+
+.backup-undo-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border-color: rgba(11, 179, 232, 0.28);
+  background: #f3fdff;
+}
+
+@media (max-width: 640px) {
+  .backup-card,
+  .backup-restore-card,
+  .backup-undo-card {
+    grid-template-columns: 1fr;
+  }
+
+  .backup-card .primary-button,
+  .backup-card .secondary-button,
+  .backup-card .danger-button,
+  .backup-undo-card .secondary-button {
+    width: 100%;
+  }
+}
+
 .detail-modal-panel {
   width: min(680px, 100%);
 }
