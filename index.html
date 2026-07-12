@@ -21,7 +21,7 @@
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">収穫量管理</strong>
-          <time class="app-updated site-updated" data-app-updated datetime="2026-07-12T15:11:00+09:00">最終更新 2026/07/12 15:11</time>
+          <time class="app-updated site-updated" data-app-updated datetime="2026-07-12T15:29:00+09:00">最終更新 2026/07/12 15:29</time>
         </span>
       </a>
       <div class="header-actions site-header-actions">
@@ -532,6 +532,32 @@
             メモ
             <input id="modalSeedlingMemoInput" placeholder="支柱あり、日当たり良好など">
           </label>
+          <section id="modalHarvestAdjuster" class="modal-harvest-adjuster wide hidden" aria-label="収穫を一括調整">
+            <div class="modal-tool-row">
+              <span class="field-label">収穫を一括調整</span>
+              <strong id="modalHarvestCurrentTotal" class="modal-harvest-current-total">累計 0個</strong>
+            </div>
+            <div class="harvest-adjust-grid">
+              <label>
+                数量
+                <input id="modalHarvestAdjustAmount" type="number" min="0.1" step="0.1" value="1">
+              </label>
+              <label>
+                単位
+                <select id="modalHarvestAdjustUnit">
+                  <option value="個">個</option>
+                  <option value="g">g</option>
+                  <option value="kg">kg</option>
+                  <option value="本">本</option>
+                  <option value="束">束</option>
+                </select>
+              </label>
+              <div class="harvest-adjust-actions" aria-label="収穫調整の操作">
+                <button id="modalHarvestSubtractButton" class="harvest-adjust-button subtract" type="button" title="指定数を減らす" aria-label="指定数を減らす">−</button>
+                <button id="modalHarvestAddButton" class="harvest-adjust-button add" type="button" title="指定数を増やす" aria-label="指定数を増やす">＋</button>
+              </div>
+            </div>
+          </section>
           <div class="form-actions modal-seedling-actions wide">
             <button id="endSeedlingButton" class="danger-button hidden" type="button">今日で栽培終了</button>
             <button id="modalSeedlingSubmitButton" class="primary-button" type="submit">苗を登録</button>

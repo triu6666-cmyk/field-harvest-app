@@ -129,6 +129,12 @@ const elements = {
   modalCellSelect: document.querySelector("#modalCellSelect"),
   modalSeedlingMemoInput: document.querySelector("#modalSeedlingMemoInput"),
   modalSeedlingSubmitButton: document.querySelector("#modalSeedlingSubmitButton"),
+  modalHarvestAdjuster: document.querySelector("#modalHarvestAdjuster"),
+  modalHarvestCurrentTotal: document.querySelector("#modalHarvestCurrentTotal"),
+  modalHarvestAdjustAmount: document.querySelector("#modalHarvestAdjustAmount"),
+  modalHarvestAdjustUnit: document.querySelector("#modalHarvestAdjustUnit"),
+  modalHarvestSubtractButton: document.querySelector("#modalHarvestSubtractButton"),
+  modalHarvestAddButton: document.querySelector("#modalHarvestAddButton"),
   endSeedlingButton: document.querySelector("#endSeedlingButton"),
   pasteSeedlingButton: document.querySelector("#pasteSeedlingButton"),
   closeSeedlingModalButton: document.querySelector("#closeSeedlingModalButton"),
@@ -396,6 +402,10 @@ elements.endSeedlingButton.addEventListener("click", () => {
   closeSeedlingModal();
   archiveSeedling(seedlingId);
 });
+
+elements.modalHarvestAdjustUnit.addEventListener("change", renderModalHarvestAdjuster);
+elements.modalHarvestAddButton.addEventListener("click", () => applyModalHarvestAdjustment(1));
+elements.modalHarvestSubtractButton.addEventListener("click", () => applyModalHarvestAdjustment(-1));
 
 elements.closeSeedlingModalButton.addEventListener("click", closeSeedlingModal);
 elements.cancelModalSeedlingButton.addEventListener("click", closeSeedlingModal);
@@ -3020,6 +3030,10 @@ function openSeedlingModal({ cell = "", seedling = null, template = null } = {})
   elements.modalSeasonInput.value = cultivationSeasonValue(source);
   elements.modalCellSelect.value = seedling?.cell || cell;
   elements.modalSeedlingMemoInput.value = source?.memo || "";
+  elements.modalHarvestAdjustAmount.value = "1";
+  elements.modalHarvestAdjustUnit.value = "個";
+  elements.modalHarvestAdjuster.classList.toggle("hidden", !seedling);
+  renderModalHarvestAdjuster();
   renderCropPicker();
   renderPasteSeedlingButton();
   elements.seedlingModal.classList.remove("hidden");
@@ -3034,9 +3048,51 @@ function closeSeedlingModal() {
   elements.modalSeedlingForm.reset();
   elements.modalPlantedDateInput.value = today;
   elements.modalSeasonInput.value = inferCultivationSeason(today);
+  elements.modalHarvestAdjuster.classList.add("hidden");
+  elements.modalHarvestAdjustAmount.value = "1";
+  elements.modalHarvestAdjustUnit.value = "個";
   renderCropPicker();
   elements.seedlingModal.classList.add("hidden");
   document.body.classList.remove("modal-open");
+}
+
+function renderModalHarvestAdjuster() {
+  const seedling = state.seedlings.find((item) => item.id === modalSeedlingId);
+  const unit = elements.modalHarvestAdjustUnit.value || "個";
+  const total = seedling ? harvestTotalForSeedlingUnit(seedling.id, unit) : 0;
+  elements.modalHarvestCurrentTotal.textContent = `累計 ${formatNumber(total)}${unit}`;
+  elements.modalHarvestSubtractButton.disabled = !seedling || total <= 0;
+  elements.modalHarvestAddButton.disabled = !seedling;
+}
+
+function applyModalHarvestAdjustment(direction) {
+  const seedling = state.seedlings.find((item) => item.id === modalSeedlingId);
+  const amount = Number(elements.modalHarvestAdjustAmount.value);
+  const unit = elements.modalHarvestAdjustUnit.value || "個";
+  if (!seedling) return;
+  if (!Number.isFinite(amount) || amount <= 0) {
+    alert("数量は0より大きい数を入力してください。");
+    return;
+  }
+
+  if (direction > 0) {
+    addHarvest({
+      seedlingId: seedling.id,
+      date: today,
+      amount,
+      unit,
+      memo: "苗編集から一括加算"
+    });
+  } else {
+    const total = harvestTotalForSeedlingUnit(seedling.id, unit);
+    if (amount > total) {
+      alert(`累計 ${formatNumber(total)}${unit} を超えて減らすことはできません。`);
+      return;
+    }
+    subtractHarvestAmount(seedling.id, unit, amount);
+  }
+
+  renderModalHarvestAdjuster();
 }
 
 function openSeedlingDetail(seedlingId) {
@@ -3912,6 +3968,26 @@ function undoLatestHarvestUnit(seedlingId, unit, { quick = false, memo = "", dat
   } else {
     saveAndRender();
   }
+}
+
+function subtractHarvestAmount(seedlingId, unit, amount) {
+  let remaining = amount;
+  for (let index = state.harvests.length - 1; index >= 0 && remaining > 0; index -= 1) {
+    const harvest = state.harvests[index];
+    if (harvest.seedlingId !== seedlingId || harvest.unit !== unit) continue;
+
+    const currentAmount = Number(harvest.amount || 0);
+    const deduction = Math.min(currentAmount, remaining);
+    const nextAmount = Number((currentAmount - deduction).toFixed(10));
+    remaining = Number((remaining - deduction).toFixed(10));
+
+    if (nextAmount <= 0) {
+      state.harvests.splice(index, 1);
+    } else {
+      state.harvests[index] = { ...harvest, amount: nextAmount };
+    }
+  }
+  saveAndRender();
 }
 
 function saveQuickHarvest(seedlingId) {
