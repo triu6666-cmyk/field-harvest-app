@@ -54,6 +54,12 @@ const CROP_PICKER_ITEMS = [
   { name: "いちご" }
 ];
 
+const CULTIVATION_SEASONS = [
+  { value: "spring-summer", label: "春夏" },
+  { value: "autumn-winter", label: "秋冬" },
+  { value: "year-round", label: "通年" }
+];
+
 let state = loadState();
 let editingSeedlingId = "";
 let modalSeedlingId = "";
@@ -70,6 +76,8 @@ let harvestHistoryMonthFilter = "all";
 let harvestHistoryCropFilter = "all";
 let expenseHistoryMonthFilter = "all";
 let expenseHistoryCategoryFilter = "all";
+let archiveYearFilter = "all";
+let archiveSeasonFilter = "all";
 let detailSeedlingId = "";
 let harvestModeUnit = "個";
 let harvestModeCropFilter = "all";
@@ -117,6 +125,7 @@ const elements = {
   modalCropNameInput: document.querySelector("#modalCropNameInput"),
   modalVarietyInput: document.querySelector("#modalVarietyInput"),
   modalPlantedDateInput: document.querySelector("#modalPlantedDateInput"),
+  modalSeasonInput: document.querySelector("#modalSeasonInput"),
   modalCellSelect: document.querySelector("#modalCellSelect"),
   modalSeedlingMemoInput: document.querySelector("#modalSeedlingMemoInput"),
   modalSeedlingSubmitButton: document.querySelector("#modalSeedlingSubmitButton"),
@@ -199,6 +208,8 @@ const elements = {
   archivedSeedlingDetails: document.querySelector("#archivedSeedlingDetails"),
   archivedSeedlingCount: document.querySelector("#archivedSeedlingCount"),
   archivedSeedlingList: document.querySelector("#archivedSeedlingList"),
+  archiveYearFilter: document.querySelector("#archiveYearFilter"),
+  archiveSeasonFilter: document.querySelector("#archiveSeasonFilter"),
   aggregateByVarietyButton: document.querySelector("#aggregateByVarietyButton"),
   aggregateByCropButton: document.querySelector("#aggregateByCropButton"),
   costPeriodMonthButton: document.querySelector("#costPeriodMonthButton"),
@@ -233,6 +244,7 @@ const elements = {
 const today = currentLocalDate();
 elements.plantedDateInput.value = today;
 elements.modalPlantedDateInput.value = today;
+elements.modalSeasonInput.value = inferCultivationSeason(today);
 elements.harvestDateInput.value = today;
 elements.activityDateInput.value = today;
 elements.taskDateInput.value = today;
@@ -308,6 +320,7 @@ elements.seedlingForm.addEventListener("submit", (event) => {
     cropName: elements.cropNameInput.value.trim(),
     variety: elements.varietyInput.value.trim(),
     plantedDate: elements.plantedDateInput.value,
+    season: inferCultivationSeason(elements.plantedDateInput.value),
     cell: elements.cellSelect.value,
     memo: elements.seedlingMemoInput.value.trim()
   };
@@ -353,6 +366,7 @@ elements.modalSeedlingForm.addEventListener("submit", (event) => {
     cropName: elements.modalCropNameInput.value.trim(),
     variety: elements.modalVarietyInput.value.trim(),
     plantedDate: elements.modalPlantedDateInput.value,
+    season: elements.modalSeasonInput.value,
     cell: elements.modalCellSelect.value,
     memo: elements.modalSeedlingMemoInput.value.trim()
   };
@@ -385,6 +399,19 @@ elements.endSeedlingButton.addEventListener("click", () => {
 
 elements.closeSeedlingModalButton.addEventListener("click", closeSeedlingModal);
 elements.cancelModalSeedlingButton.addEventListener("click", closeSeedlingModal);
+elements.modalPlantedDateInput.addEventListener("change", () => {
+  if (!modalSeedlingId) {
+    elements.modalSeasonInput.value = inferCultivationSeason(elements.modalPlantedDateInput.value);
+  }
+});
+elements.archiveYearFilter.addEventListener("change", () => {
+  archiveYearFilter = elements.archiveYearFilter.value;
+  renderArchivedSeedlingList();
+});
+elements.archiveSeasonFilter.addEventListener("change", () => {
+  archiveSeasonFilter = elements.archiveSeasonFilter.value;
+  renderArchivedSeedlingList();
+});
 elements.seedlingModal.addEventListener("click", (event) => {
   if (event.target === elements.seedlingModal) {
     closeSeedlingModal();
@@ -1868,9 +1895,16 @@ function renderSeedlingList() {
 }
 
 function renderArchivedSeedlingList() {
-  const archivedSeedlings = [...state.archivedSeedlings]
+  const allArchivedSeedlings = [...state.archivedSeedlings]
     .sort((a, b) => String(b.endedDate || b.archivedAt || "").localeCompare(String(a.endedDate || a.archivedAt || "")));
-  elements.archivedSeedlingCount.textContent = `${archivedSeedlings.length}件`;
+  renderArchiveFilterOptions(allArchivedSeedlings);
+  const archivedSeedlings = allArchivedSeedlings.filter((seedling) => (
+    (archiveYearFilter === "all" || cultivationYear(seedling) === archiveYearFilter)
+    && (archiveSeasonFilter === "all" || cultivationSeasonValue(seedling) === archiveSeasonFilter)
+  ));
+  elements.archivedSeedlingCount.textContent = archivedSeedlings.length === allArchivedSeedlings.length
+    ? `${allArchivedSeedlings.length}件`
+    : `${archivedSeedlings.length}/${allArchivedSeedlings.length}件`;
   elements.archivedSeedlingList.replaceChildren();
 
   if (!archivedSeedlings.length) {
@@ -1881,6 +1915,27 @@ function renderArchivedSeedlingList() {
   archivedSeedlings.forEach((seedling) => {
     elements.archivedSeedlingList.append(createArchivedSeedlingCard(seedling));
   });
+}
+
+function renderArchiveFilterOptions(archivedSeedlings) {
+  const years = [...new Set(archivedSeedlings.map(cultivationYear).filter(Boolean))]
+    .sort((a, b) => b.localeCompare(a));
+  archiveYearFilter = syncSelectOptions(
+    elements.archiveYearFilter,
+    [
+      { value: "all", label: "すべて" },
+      ...years.map((year) => ({ value: year, label: `${year}年` }))
+    ],
+    archiveYearFilter
+  );
+  archiveSeasonFilter = syncSelectOptions(
+    elements.archiveSeasonFilter,
+    [
+      { value: "all", label: "すべて" },
+      ...CULTIVATION_SEASONS
+    ],
+    archiveSeasonFilter
+  );
 }
 
 function createArchivedSeedlingCard(seedling) {
@@ -1902,7 +1957,7 @@ function createArchivedSeedlingCard(seedling) {
 
   const status = document.createElement("span");
   status.className = "archive-status";
-  status.textContent = "栽培終了";
+  status.textContent = `${cultivationYear(seedling) || "年不明"} ${cultivationSeasonLabel(seedling)}`;
   heading.append(title, status);
 
   const period = document.createElement("p");
@@ -1938,6 +1993,34 @@ function createArchiveStat(label, value) {
 
 function formatArchiveDate(dateString) {
   return String(dateString || "").replaceAll("-", "/");
+}
+
+function cultivationYear(seedling) {
+  return String(seedling?.plantedDate || "").slice(0, 4);
+}
+
+function cultivationSeasonValue(seedling) {
+  const season = seedling?.season;
+  return CULTIVATION_SEASONS.some((item) => item.value === season)
+    ? season
+    : inferCultivationSeason(seedling?.plantedDate);
+}
+
+function cultivationSeasonLabel(seedling) {
+  const value = cultivationSeasonValue(seedling);
+  return CULTIVATION_SEASONS.find((item) => item.value === value)?.label || "秋冬";
+}
+
+function inferCultivationSeason(dateString) {
+  const month = Number(String(dateString || "").slice(5, 7));
+  return month >= 3 && month <= 8 ? "spring-summer" : "autumn-winter";
+}
+
+function normalizeSeedlingSeason(seedling) {
+  return {
+    ...seedling,
+    season: cultivationSeasonValue(seedling)
+  };
 }
 
 function createHarvestAggregateTable() {
@@ -2934,6 +3017,7 @@ function openSeedlingModal({ cell = "", seedling = null, template = null } = {})
   elements.modalCropNameInput.value = source?.cropName || "";
   elements.modalVarietyInput.value = source?.variety || "";
   elements.modalPlantedDateInput.value = source?.plantedDate || today;
+  elements.modalSeasonInput.value = cultivationSeasonValue(source);
   elements.modalCellSelect.value = seedling?.cell || cell;
   elements.modalSeedlingMemoInput.value = source?.memo || "";
   renderCropPicker();
@@ -2949,6 +3033,7 @@ function closeSeedlingModal() {
   elements.endSeedlingButton.classList.add("hidden");
   elements.modalSeedlingForm.reset();
   elements.modalPlantedDateInput.value = today;
+  elements.modalSeasonInput.value = inferCultivationSeason(today);
   renderCropPicker();
   elements.seedlingModal.classList.add("hidden");
   document.body.classList.remove("modal-open");
@@ -2999,7 +3084,11 @@ function renderSeedlingDetail(seedling) {
   const crop = document.createElement("strong");
   crop.textContent = seedling.cropName;
   const meta = document.createElement("span");
-  meta.textContent = [seedling.variety || "品種なし", cellDisplayName(seedling.cell)].join(" / ");
+  meta.textContent = [
+    seedling.variety || "品種なし",
+    cellDisplayName(seedling.cell),
+    `${cultivationYear(seedling) || "年不明"} ${cultivationSeasonLabel(seedling)}`
+  ].join(" / ");
   heroText.append(crop, meta);
   hero.append(heroText);
 
@@ -3713,6 +3802,7 @@ function applySeedlingTemplateToModal(template) {
   elements.modalCropNameInput.value = template.cropName || "";
   elements.modalVarietyInput.value = template.variety || "";
   elements.modalPlantedDateInput.value = template.plantedDate || today;
+  elements.modalSeasonInput.value = cultivationSeasonValue(template);
   elements.modalSeedlingMemoInput.value = template.memo || "";
   renderCropPicker();
   elements.modalVarietyInput.focus();
@@ -3748,6 +3838,7 @@ function createSeedlingTemplate(seedling) {
     cropName: seedling.cropName,
     variety: seedling.variety || "",
     plantedDate: seedling.plantedDate || today,
+    season: cultivationSeasonValue(seedling),
     memo: seedling.memo || ""
   };
 }
@@ -4259,8 +4350,8 @@ function normalizeState(value) {
   return {
     layoutVersion: defaultState.layoutVersion,
     grid,
-    seedlings: repairStaleOverflowCells(seedlings, grid),
-    archivedSeedlings,
+    seedlings: repairStaleOverflowCells(seedlings.map(normalizeSeedlingSeason), grid),
+    archivedSeedlings: archivedSeedlings.map(normalizeSeedlingSeason),
     harvests: compactQuickHarvests(harvests),
     expenses,
     activities,

@@ -21,7 +21,7 @@
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">収穫量管理</strong>
-          <time class="app-updated site-updated" data-app-updated datetime="2026-07-10T18:02:00+09:00">最終更新 2026/07/10 18:02</time>
+          <time class="app-updated site-updated" data-app-updated datetime="2026-07-12T15:11:00+09:00">最終更新 2026/07/12 15:11</time>
         </span>
       </a>
       <div class="header-actions site-header-actions">
@@ -391,6 +391,16 @@
               <span id="archivedSeedlingCount" class="record-collapsible-count">0件</span>
             </summary>
             <div class="record-collapsible-content">
+              <div class="history-filter-row archive-filter-row" aria-label="過去の栽培の絞り込み">
+                <label>
+                  年
+                  <select id="archiveYearFilter"></select>
+                </label>
+                <label>
+                  シーズン
+                  <select id="archiveSeasonFilter"></select>
+                </label>
+              </div>
               <div id="archivedSeedlingList" class="archive-grid"></div>
             </div>
           </details>
@@ -505,6 +515,14 @@
           <label>
             植えた日
             <input id="modalPlantedDateInput" type="date">
+          </label>
+          <label>
+            栽培シーズン
+            <select id="modalSeasonInput">
+              <option value="spring-summer">春夏</option>
+              <option value="autumn-winter">秋冬</option>
+              <option value="year-round">通年</option>
+            </select>
           </label>
           <label>
             マス

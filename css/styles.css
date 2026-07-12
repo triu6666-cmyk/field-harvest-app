@@ -1146,6 +1146,11 @@ select:focus {
   gap: 8px;
 }
 
+.archive-filter-row {
+  grid-template-columns: repeat(2, minmax(110px, 180px));
+  justify-content: end;
+}
+
 .archive-card {
   display: grid;
   gap: 8px;
