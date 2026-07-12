@@ -50,6 +50,17 @@
             <div class="flow-step"><span>STEP 3</span><strong>全体を確認</strong><p>野菜別の収穫、費用、直近の推移、農薬の安全状態を確認します。</p></div>
             <div class="flow-step"><span>STEP 4</span><strong>データを守る</strong><p>バックアップ、またはSupabase同期で端末変更・故障に備えます。</p></div>
           </div>
+          <div class="visual-overview">
+            <figure class="shot-frame">
+              <img src="../assets/manual/field-map.png" alt="野菜アイコンと収穫数が表示された畑マップの実画面">
+              <figcaption><strong>畑マップの実画面</strong>苗の野菜名、品種、収穫数を区画ごとに確認できます。</figcaption>
+            </figure>
+            <div class="visual-copy">
+              <h3>区画を見れば、今の畑が分かる</h3>
+              <p>野菜ごとに色とイラストが変わります。区画上には野菜名、品種、現在の収穫数を表示し、収穫の入力や編集へすぐ進めます。</p>
+              <div class="visual-tags"><span>左右ページ</span><span>列の通番</span><span>苗ごとの収穫数</span><span>農薬の状態表示</span></div>
+            </div>
+          </div>
           <div class="notice">通常の利用にアプリのインストールは不要です。公開URLをChromeまたはSafariで開くだけで使えます。スマホのホーム画面に追加すると、専用アプリのように起動できます。</div>
         </section>
 
@@ -70,6 +81,16 @@
             <article class="feature-item"><span class="feature-icon">08</span><div><h3>栽培終了・アーカイブ</h3><p>終了した苗は畑マップから外して保管。年・シーズンで絞り込み、必要なら畑へ戻せます。</p></div></article>
             <article class="feature-item"><span class="feature-icon">09</span><div><h3>クラウド同期</h3><p>任意でSupabaseを設定すると、PCとスマホで同じデータを共有できます。設定しなければ端末内だけで使えます。</p></div></article>
             <article class="feature-item"><span class="feature-icon">10</span><div><h3>バックアップ・復元</h3><p>JSONファイルへ全記録を保存。復元前の状態は端末内に自動退避され、すぐに取り消せます。</p></div></article>
+          </div>
+          <div class="feature-gallery">
+            <figure class="shot-frame">
+              <img src="../assets/manual/harvest-dashboard.png" alt="野菜別の収穫ランキングと収穫推移を表示する収穫ダッシュボードの実画面">
+              <figcaption><strong>収穫ダッシュボード</strong>野菜別の合計、日ごとの推移、費用との比較を図表で確認します。</figcaption>
+            </figure>
+            <figure class="shot-frame">
+              <img src="../assets/manual/pesticide-table.png" alt="野菜アイコン付きの農薬対応表と散布記録を表示する実画面">
+              <figcaption><strong>農薬対応表</strong>野菜を選ぶと適用可否と使用条件を一覧で確認できます。</figcaption>
+            </figure>
           </div>
         </section>
 
@@ -95,6 +116,17 @@
               <li>適用データの追加・見直しは、農薬対応表ページで行います。</li>
             </ul>
           </div>
+          <div class="image-story reverse">
+            <figure class="shot-frame">
+              <img src="../assets/manual/pesticide-table.png" alt="農薬対応表でトマトの適用情報を確認している実画面">
+              <figcaption><strong>農薬の確認と記録</strong>対応表の確認から散布記録まで、同じ画面で行えます。</figcaption>
+            </figure>
+            <div class="visual-copy">
+              <h3>農薬の確認を、畑マップの判断へつなげる</h3>
+              <p>対応表では野菜アイコンを押して対象を絞り込めます。散布を記録した後は、収穫前日数を考慮した状態を畑マップ上で確認できます。</p>
+              <div class="visual-tags"><span>野菜アイコンで選択</span><span>適用条件の表</span><span>散布履歴</span><span>収穫前日数</span></div>
+            </div>
+          </div>
         </section>
 
         <section id="backup">
@@ -107,6 +139,17 @@
             <article class="step-item"><span class="step-no">1</span><h3>保存する</h3><p>アプリ右上の箱アイコンを押し、「バックアップを保存」を選択します。<span class="path">field-harvest-backup-日付.json</span> が端末に保存されます。</p></article>
             <article class="step-item"><span class="step-no">2</span><h3>復元前に確認</h3><p>同じ画面で「ファイルを選択」。苗・収穫・費用などの件数が表示されるため、対象ファイルを確認します。</p></article>
             <article class="step-item"><span class="step-no">3</span><h3>復元・取り消し</h3><p>「この内容で復元」を押すと置き換わります。直前の状態は端末内へ退避されるため、その画面で取り消せます。</p></article>
+          </div>
+          <div class="image-story">
+            <div class="visual-copy">
+              <h3>復元前のデータも残す設計</h3>
+              <p>ファイルを選んだだけでは復元されず、記録件数を確認してから実行します。復元した直後は、直前の状態へ戻す操作もできます。</p>
+              <div class="visual-tags"><span>JSONで保存</span><span>内容件数を表示</span><span>復元前に退避</span></div>
+            </div>
+            <figure class="shot-frame">
+              <img src="../assets/manual/backup.png" alt="バックアップ保存と復元を選べるモーダル画面">
+              <figcaption><strong>バックアップ管理画面</strong>保存と復元を一つの画面に集約しています。</figcaption>
+            </figure>
           </div>
           <div class="notice">バックアップには畑・収穫・費用・作業・予定・農薬散布・アーカイブの記録が含まれます。SupabaseのURLやキーなど、クラウド接続設定は含まれません。</div>
         </section>
@@ -143,6 +186,16 @@
           <div class="setup-grid">
             <article class="setup-item"><h3>iPhone / iPad（Safari）</h3><p>公開URLをSafariで開く。画面下の共有ボタンを押す。「ホーム画面に追加」を選ぶ。名前を確認し「追加」を押す。</p></article>
             <article class="setup-item"><h3>Android（Chrome）</h3><p>公開URLをChromeで開く。右上のメニューを押す。「ホーム画面に追加」または「アプリをインストール」を選び、画面の案内に従います。</p></article>
+          </div>
+          <div class="phone-visual">
+            <div class="visual-copy">
+              <h3>畑のそばではスマホ表示で入力</h3>
+              <p>収穫ボタン、作業、費用、一覧は下部ナビゲーションで切り替えます。畑マップは横にスクロールでき、画面全体が引っ張られないように調整されています。</p>
+              <p class="image-note">掲載画像は説明用のサンプル記録を使った実際の画面です。</p>
+            </div>
+            <figure class="shot-frame">
+              <img src="../assets/manual/mobile-map.png" alt="スマホ幅で表示した畑管理アプリの実画面">
+            </figure>
           </div>
           <div class="guide-block">
             <h3>更新が見えないとき</h3>
