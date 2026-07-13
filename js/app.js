@@ -109,6 +109,13 @@ const elements = {
   resizeGridButton: document.querySelector("#resizeGridButton"),
   mapSection: document.querySelector(".map-section"),
   workspace: document.querySelector(".workspace"),
+  todayFieldDate: document.querySelector("#todayFieldDate"),
+  todayFieldStats: document.querySelector("#todayFieldStats"),
+  todayTaskList: document.querySelector("#todayTaskList"),
+  todaySafetyList: document.querySelector("#todaySafetyList"),
+  todayActivityList: document.querySelector("#todayActivityList"),
+  openTodayHarvestButton: document.querySelector("#openTodayHarvestButton"),
+  openTodayTasksButton: document.querySelector("#openTodayTasksButton"),
   fieldGrid: document.querySelector("#fieldGrid"),
   summaryText: document.querySelector("#summaryText"),
   cellSelect: document.querySelector("#cellSelect"),
@@ -444,6 +451,8 @@ elements.seedlingDetailModal.addEventListener("click", (event) => {
   }
 });
 elements.openHarvestModeButton.addEventListener("click", openHarvestMode);
+elements.openTodayHarvestButton.addEventListener("click", openHarvestMode);
+elements.openTodayTasksButton.addEventListener("click", openTodayTasks);
 elements.closeHarvestModeButton.addEventListener("click", closeHarvestMode);
 elements.undoHarvestModeButton.addEventListener("click", undoLastHarvestModeAction);
 elements.harvestModeModal.addEventListener("click", (event) => {
@@ -765,6 +774,7 @@ function render() {
   renderModalCellOptions();
   renderSeedlingOptions();
   renderActivityTargetOptions();
+  renderTodayField();
   renderField();
   renderSideButtons();
   renderRecords();
@@ -781,6 +791,167 @@ function render() {
   if (!elements.harvestModeModal.classList.contains("hidden")) {
     renderHarvestMode();
   }
+}
+
+function renderTodayField() {
+  const todayHarvests = state.harvests.filter((harvest) => harvest.date === today);
+  const dueTasks = state.tasks
+    .filter((task) => !task.completed && task.date && task.date <= today)
+    .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  const waitingSeedlings = state.seedlings
+    .map((seedling) => ({ seedling, safety: pesticideSafetyForSeedling(seedling) }))
+    .filter(({ safety }) => safety?.status === "wait")
+    .sort((a, b) => String(a.safety.availableDate).localeCompare(String(b.safety.availableDate)));
+
+  elements.todayFieldDate.textContent = `${formatTodayFieldDate(today)} / 栽培中 ${state.seedlings.length}区画`;
+  elements.todayFieldStats.replaceChildren(
+    createTodayStat("今日の収穫", formatHarvestUnitTotals(todayHarvests) || "記録なし", `${todayHarvests.length}件の収穫記録`, "harvest"),
+    createTodayStat("今日やること", `${dueTasks.length}件`, dueTasks.some((task) => task.date < today) ? "期限を過ぎた予定あり" : "未完了の予定", "tasks"),
+    createTodayStat("収穫待ち", `${waitingSeedlings.length}区画`, waitingSeedlings.length ? "散布後の待機中" : "農薬の待機なし", "safety"),
+    createTodayStat("最近の作業", state.activities.length ? formatMonthDay(latestActivityDate()) : "記録なし", state.activities.length ? "作業履歴を確認" : "最初の作業を登録", "activity")
+  );
+
+  renderTodayTaskList(dueTasks);
+  renderTodaySafetyList(waitingSeedlings);
+  renderTodayActivityList();
+}
+
+function formatTodayFieldDate(dateString) {
+  const [year, month, day] = String(dateString).split("-").map(Number);
+  const date = new Date(year, month - 1, day, 12);
+  return new Intl.DateTimeFormat("ja-JP", {
+    month: "long",
+    day: "numeric",
+    weekday: "short"
+  }).format(date);
+}
+
+function formatHarvestUnitTotals(harvests) {
+  const totals = harvests.reduce((result, harvest) => {
+    const unit = harvest.unit || "個";
+    result[unit] = (result[unit] || 0) + Number(harvest.amount || 0);
+    return result;
+  }, {});
+
+  return Object.entries(totals)
+    .sort(([unitA], [unitB]) => unitA.localeCompare(unitB, "ja"))
+    .map(([unit, amount]) => `${formatNumber(amount)}${unit}`)
+    .join(" / ");
+}
+
+function createTodayStat(label, value, note, tone) {
+  const card = document.createElement("article");
+  card.className = `today-stat ${tone}`;
+  const labelElement = document.createElement("span");
+  labelElement.textContent = label;
+  const valueElement = document.createElement("strong");
+  valueElement.textContent = value;
+  const noteElement = document.createElement("small");
+  noteElement.textContent = note;
+  card.append(labelElement, valueElement, noteElement);
+  return card;
+}
+
+function renderTodayTaskList(tasks) {
+  elements.todayTaskList.replaceChildren();
+  if (!tasks.length) {
+    appendTodayEmpty(elements.todayTaskList, "今日の予定はありません。必要な作業を予定に追加できます。");
+    return;
+  }
+
+  tasks.slice(0, 4).forEach((task) => {
+    const item = document.createElement("article");
+    item.className = "today-list-item task";
+    const icon = document.createElement("span");
+    icon.className = "today-list-icon";
+    icon.textContent = activityTypeIcon(task.type);
+    const body = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = `${task.type} / ${activityTargetLabel(task)}`;
+    const meta = document.createElement("span");
+    meta.textContent = `${taskDueLabel(task)}${task.memo ? ` / ${task.memo}` : ""}`;
+    body.append(title, meta);
+    const completeButton = document.createElement("button");
+    completeButton.className = "today-complete-button";
+    completeButton.type = "button";
+    completeButton.textContent = "完了";
+    completeButton.addEventListener("click", () => toggleTaskComplete(task.id));
+    item.append(icon, body, completeButton);
+    elements.todayTaskList.append(item);
+  });
+}
+
+function renderTodaySafetyList(rows) {
+  elements.todaySafetyList.replaceChildren();
+  if (!rows.length) {
+    appendTodayEmpty(elements.todaySafetyList, "収穫待ちの苗はありません。散布を記録するとここに表示されます。");
+    return;
+  }
+
+  rows.slice(0, 4).forEach(({ seedling, safety }) => {
+    const item = document.createElement("article");
+    item.className = "today-list-item safety";
+    const icon = createCropIllustration(seedling.cropName);
+    icon.classList.add("today-crop-icon");
+    const body = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = seedlingLabel(seedling);
+    const meta = document.createElement("span");
+    meta.textContent = `${safety.detail} / 収穫可: ${formatMonthDay(safety.availableDate)}`;
+    body.append(title, meta);
+    item.append(icon, body);
+    elements.todaySafetyList.append(item);
+  });
+}
+
+function renderTodayActivityList() {
+  elements.todayActivityList.replaceChildren();
+  const activities = [...state.activities]
+    .sort((a, b) => `${b.date || ""}${b.createdAt || ""}`.localeCompare(`${a.date || ""}${a.createdAt || ""}`))
+    .slice(0, 4);
+
+  if (!activities.length) {
+    appendTodayEmpty(elements.todayActivityList, "まだ作業記録がありません。水やりなどを記録してみましょう。");
+    return;
+  }
+
+  activities.forEach((activity) => {
+    const item = document.createElement("article");
+    item.className = "today-list-item activity";
+    const icon = document.createElement("span");
+    icon.className = "today-list-icon";
+    icon.textContent = activityTypeIcon(activity.type);
+    const body = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = `${activity.type} / ${activityTargetLabel(activity)}`;
+    const meta = document.createElement("span");
+    meta.textContent = `${formatMonthDay(activity.date)}${activity.memo ? ` / ${activity.memo}` : ""}`;
+    body.append(title, meta);
+    item.append(icon, body);
+    elements.todayActivityList.append(item);
+  });
+}
+
+function appendTodayEmpty(target, message) {
+  const empty = document.createElement("p");
+  empty.className = "today-empty";
+  empty.textContent = message;
+  target.append(empty);
+}
+
+function latestActivityDate() {
+  return state.activities
+    .map((activity) => activity.date)
+    .filter(Boolean)
+    .sort((a, b) => b.localeCompare(a))[0] || "";
+}
+
+function openTodayTasks() {
+  activityViewMode = "tasks";
+  renderActivityView();
+  activateTab("activities");
+  setMobileNavActive("activities");
+  elements.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderCellOptions() {

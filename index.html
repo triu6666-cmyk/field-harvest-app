@@ -21,7 +21,7 @@
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">収穫量管理</strong>
-          <time class="app-updated site-updated" data-app-updated datetime="2026-07-12T16:55:00+09:00">最終更新 2026/07/12 16:55</time>
+          <time class="app-updated site-updated" data-app-updated datetime="2026-07-12T17:17:00+09:00">最終更新 2026/07/12 17:17</time>
         </span>
       </a>
       <div class="header-actions site-header-actions">
@@ -104,6 +104,50 @@
           <a class="pesticide-map-link" href="pesticides.html">農薬対応表を見る</a>
         </div>
         <div id="fieldGrid" class="field-grid" aria-label="畑のマス"></div>
+      </section>
+
+      <section class="today-field" aria-labelledby="todayFieldTitle">
+        <div class="today-field-heading">
+          <div>
+            <p class="today-field-kicker">TODAY'S FIELD</p>
+            <h2 id="todayFieldTitle">今日の畑</h2>
+            <p id="todayFieldDate" class="today-field-date"></p>
+          </div>
+          <div class="today-field-actions">
+            <button id="openTodayHarvestButton" class="today-field-action harvest" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 20h10"></path>
+                <path d="M10 20c5-2 6-7 6-12"></path>
+                <path d="M15 8c-3 0-5-2-5-5 3 0 5 2 5 5Z"></path>
+                <path d="M16 13c3 0 5-2 5-5-3 0-5 2-5 5Z"></path>
+              </svg>
+              <span>収穫する</span>
+            </button>
+            <button id="openTodayTasksButton" class="today-field-action tasks" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 4h10a2 2 0 0 1 2 2v16H5V6a2 2 0 0 1 2-2Z"></path>
+                <path d="M9 4V2h6v2"></path>
+                <path d="m8 13 2 2 5-5"></path>
+              </svg>
+              <span>予定を見る</span>
+            </button>
+          </div>
+        </div>
+        <div id="todayFieldStats" class="today-field-stats"></div>
+        <div class="today-field-grid">
+          <section class="today-field-panel tasks-panel">
+            <div class="today-panel-heading"><span class="today-panel-icon">作</span><h3>今日やること</h3></div>
+            <div id="todayTaskList" class="today-list"></div>
+          </section>
+          <section class="today-field-panel safety-panel">
+            <div class="today-panel-heading"><span class="today-panel-icon">薬</span><h3>収穫・農薬の注意</h3></div>
+            <div id="todaySafetyList" class="today-list"></div>
+          </section>
+          <section class="today-field-panel activity-panel">
+            <div class="today-panel-heading"><span class="today-panel-icon">記</span><h3>最近の作業</h3></div>
+            <div id="todayActivityList" class="today-list"></div>
+          </section>
+        </div>
       </section>
 
       <section class="workspace">
