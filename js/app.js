@@ -8,6 +8,7 @@ const defaultState = {
   harvests: [],
   expenses: [],
   activities: [],
+  observations: [],
   tasks: [],
   pesticideApplications: []
 };
@@ -202,9 +203,19 @@ const elements = {
   activityFocusList: document.querySelector("#activityFocusList"),
   activityList: document.querySelector("#activityList"),
   showActivityRecordsButton: document.querySelector("#showActivityRecordsButton"),
+  showObservationButton: document.querySelector("#showObservationButton"),
   showTaskPlannerButton: document.querySelector("#showTaskPlannerButton"),
   activityRecordsView: document.querySelector("#activityRecordsView"),
+  observationView: document.querySelector("#observationView"),
   taskPlannerView: document.querySelector("#taskPlannerView"),
+  observationDateInput: document.querySelector("#observationDateInput"),
+  observationCategoryInput: document.querySelector("#observationCategoryInput"),
+  observationTargetSelect: document.querySelector("#observationTargetSelect"),
+  observationMemoInput: document.querySelector("#observationMemoInput"),
+  observationForm: document.querySelector("#observationForm"),
+  observationSummary: document.querySelector("#observationSummary"),
+  observationFocusList: document.querySelector("#observationFocusList"),
+  observationList: document.querySelector("#observationList"),
   taskDateInput: document.querySelector("#taskDateInput"),
   taskTypeInput: document.querySelector("#taskTypeInput"),
   taskTargetSelect: document.querySelector("#taskTargetSelect"),
@@ -270,6 +281,7 @@ elements.modalPlantedDateInput.value = today;
 elements.modalSeasonInput.value = inferCultivationSeason(today);
 elements.harvestDateInput.value = today;
 elements.activityDateInput.value = today;
+elements.observationDateInput.value = today;
 elements.taskDateInput.value = today;
 elements.expenseDateInput.value = today;
 elements.expenseCategoryInput.value = "その他";
@@ -299,6 +311,11 @@ elements.mobileNavButtons.forEach((button) => {
 
 elements.showActivityRecordsButton.addEventListener("click", () => {
   activityViewMode = "records";
+  renderActivityView();
+});
+
+elements.showObservationButton.addEventListener("click", () => {
+  activityViewMode = "observations";
   renderActivityView();
 });
 
@@ -720,6 +737,37 @@ elements.activityForm.addEventListener("submit", (event) => {
   activateTab("activities");
 });
 
+elements.observationForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const seedling = findSeedling(elements.observationTargetSelect.value);
+  const status = selectedObservationStatus();
+
+  if (status === "good" && seedling) {
+    state.observations.forEach((observation) => {
+      if (observation.seedlingId === seedling.id && observation.active) {
+        observation.active = false;
+        observation.resolvedAt = new Date().toISOString();
+      }
+    });
+  }
+
+  state.observations.push({
+    id: createId("observation"),
+    date: elements.observationDateInput.value,
+    category: elements.observationCategoryInput.value,
+    status,
+    seedlingId: seedling?.id || "",
+    targetLabel: seedling ? seedlingLabel(seedling) : "畑全体",
+    memo: elements.observationMemoInput.value.trim(),
+    active: status !== "good",
+    createdAt: new Date().toISOString()
+  });
+  elements.observationForm.reset();
+  elements.observationDateInput.value = today;
+  saveAndRender();
+  activateTab("activities");
+});
+
 elements.taskForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const seedling = findSeedling(elements.taskTargetSelect.value);
@@ -783,6 +831,9 @@ function render() {
   renderActivitySummary();
   renderActivityFocusList();
   renderActivityList();
+  renderObservationSummary();
+  renderObservationFocusList();
+  renderObservationList();
   renderTaskSummary();
   renderTaskList();
   renderTaskBadges();
@@ -802,17 +853,19 @@ function renderTodayField() {
     .map((seedling) => ({ seedling, safety: pesticideSafetyForSeedling(seedling) }))
     .filter(({ safety }) => safety?.status === "wait")
     .sort((a, b) => String(a.safety.availableDate).localeCompare(String(b.safety.availableDate)));
+  const activeObservations = activeObservationsList();
+  const observedAreaCount = new Set(activeObservations.map((observation) => observation.seedlingId || observation.id)).size;
 
   elements.todayFieldDate.textContent = `${formatTodayFieldDate(today)} / 栽培中 ${state.seedlings.length}区画`;
   elements.todayFieldStats.replaceChildren(
     createTodayStat("今日の収穫", formatHarvestUnitTotals(todayHarvests) || "記録なし", `${todayHarvests.length}件の収穫記録`, "harvest"),
     createTodayStat("今日やること", `${dueTasks.length}件`, dueTasks.some((task) => task.date < today) ? "期限を過ぎた予定あり" : "未完了の予定", "tasks"),
     createTodayStat("収穫待ち", `${waitingSeedlings.length}区画`, waitingSeedlings.length ? "散布後の待機中" : "農薬の待機なし", "safety"),
-    createTodayStat("最近の作業", state.activities.length ? formatMonthDay(latestActivityDate()) : "記録なし", state.activities.length ? "作業履歴を確認" : "最初の作業を登録", "activity")
+    createTodayStat("要観察", `${observedAreaCount}区画`, observedAreaCount ? "状態記録を確認" : "気になる区画なし", "observation")
   );
 
   renderTodayTaskList(dueTasks);
-  renderTodaySafetyList(waitingSeedlings);
+  renderTodaySafetyList(waitingSeedlings, activeObservations);
   renderTodayActivityList();
 }
 
@@ -881,14 +934,25 @@ function renderTodayTaskList(tasks) {
   });
 }
 
-function renderTodaySafetyList(rows) {
+function renderTodaySafetyList(rows, observations = []) {
   elements.todaySafetyList.replaceChildren();
-  if (!rows.length) {
-    appendTodayEmpty(elements.todaySafetyList, "収穫待ちの苗はありません。散布を記録するとここに表示されます。");
-    return;
-  }
+  observations.slice(0, 2).forEach((observation) => {
+    const item = document.createElement("article");
+    item.className = `today-list-item observation ${observation.status}`;
+    const icon = document.createElement("span");
+    icon.className = "today-list-icon";
+    icon.textContent = observationStatusIcon(observation.status);
+    const body = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = `${observationStatusLabel(observation.status)} / ${activityTargetLabel(observation)}`;
+    const meta = document.createElement("span");
+    meta.textContent = `${observation.category}${observation.memo ? ` / ${observation.memo}` : ""}`;
+    body.append(title, meta);
+    item.append(icon, body);
+    elements.todaySafetyList.append(item);
+  });
 
-  rows.slice(0, 4).forEach(({ seedling, safety }) => {
+  rows.slice(0, Math.max(0, 4 - observations.length)).forEach(({ seedling, safety }) => {
     const item = document.createElement("article");
     item.className = "today-list-item safety";
     const icon = createCropIllustration(seedling.cropName);
@@ -902,6 +966,10 @@ function renderTodaySafetyList(rows) {
     item.append(icon, body);
     elements.todaySafetyList.append(item);
   });
+
+  if (!elements.todaySafetyList.children.length) {
+    appendTodayEmpty(elements.todaySafetyList, "収穫待ち・要観察の区画はありません。状態記録を残すとここに表示されます。");
+  }
 }
 
 function renderTodayActivityList() {
@@ -996,6 +1064,7 @@ function renderSeedlingOptions() {
 
 function renderActivityTargetOptions() {
   populateWorkTargetSelect(elements.activityTargetSelect);
+  populateWorkTargetSelect(elements.observationTargetSelect);
   populateWorkTargetSelect(elements.taskTargetSelect);
 }
 
@@ -2653,6 +2722,105 @@ function renderActivityList() {
     });
 }
 
+function renderObservationSummary() {
+  elements.observationSummary.replaceChildren();
+  const currentMonth = today.slice(0, 7);
+  const active = activeObservationsList();
+  const monthCount = state.observations.filter((observation) => observation.date?.startsWith(currentMonth)).length;
+  elements.observationSummary.append(
+    createSummaryCard("要観察", `${active.filter((observation) => observation.status === "attention").length}件`),
+    createSummaryCard("対応必要", `${active.filter((observation) => observation.status === "issue").length}件`),
+    createSummaryCard("今月の記録", `${monthCount}件`)
+  );
+}
+
+function renderObservationFocusList() {
+  elements.observationFocusList.replaceChildren();
+  const observations = activeObservationsList();
+  if (!observations.length) {
+    appendEmptyMessage(elements.observationFocusList, "確認が必要な区画はありません。気になる変化があれば状態を記録してください。");
+    return;
+  }
+
+  observations.slice(0, 8).forEach((observation) => {
+    const item = document.createElement("article");
+    item.className = `observation-focus-item ${observation.status}`;
+    const icon = document.createElement("span");
+    icon.className = "observation-focus-icon";
+    icon.textContent = observationStatusIcon(observation.status);
+    const body = document.createElement("div");
+    body.className = "observation-focus-body";
+    const title = document.createElement("strong");
+    title.textContent = `${activityTargetLabel(observation)} / ${observationStatusLabel(observation.status)}`;
+    const meta = document.createElement("span");
+    meta.textContent = `${formatMonthDay(observation.date)} / ${observation.category}${observation.memo ? ` / ${observation.memo}` : ""}`;
+    body.append(title, meta);
+    const resolveButton = document.createElement("button");
+    resolveButton.className = "observation-resolve-button";
+    resolveButton.type = "button";
+    resolveButton.textContent = "解決";
+    resolveButton.addEventListener("click", () => resolveObservation(observation.id));
+    item.append(icon, body, resolveButton);
+    elements.observationFocusList.append(item);
+  });
+}
+
+function renderObservationList() {
+  elements.observationList.replaceChildren();
+  if (!state.observations.length) {
+    appendEmptyMessage(elements.observationList, "まだ状態記録がありません。");
+    return;
+  }
+
+  [...state.observations]
+    .sort((a, b) => `${b.date || ""}${b.createdAt || ""}`.localeCompare(`${a.date || ""}${a.createdAt || ""}`))
+    .slice(0, 20)
+    .forEach((observation) => {
+      const stateText = observation.active ? observationStatusLabel(observation.status) : "解決済み";
+      const item = createRecordItem({
+        title: `${stateText} / ${activityTargetLabel(observation)}`,
+        meta: `${observation.category}${observation.memo ? ` / ${observation.memo}` : ""}`,
+        total: observation.date || "日付なし",
+        variant: "observation",
+        icon: observationStatusIcon(observation.status),
+        onDelete: () => deleteRecord("observations", observation.id)
+      });
+      item.dataset.observationStatus = observation.active ? observation.status : "resolved";
+      elements.observationList.append(item);
+    });
+}
+
+function activeObservationsList() {
+  return state.observations
+    .filter((observation) => observation.active)
+    .sort((a, b) => {
+      const severity = { issue: 0, attention: 1 };
+      const severityDifference = (severity[a.status] ?? 2) - (severity[b.status] ?? 2);
+      if (severityDifference !== 0) return severityDifference;
+      return `${b.date || ""}${b.createdAt || ""}`.localeCompare(`${a.date || ""}${a.createdAt || ""}`);
+    });
+}
+
+function selectedObservationStatus() {
+  return document.querySelector('input[name="observationStatus"]:checked')?.value || "good";
+}
+
+function observationStatusLabel(status) {
+  return { good: "良好", attention: "要観察", issue: "対応必要" }[status] || "記録";
+}
+
+function observationStatusIcon(status) {
+  return { good: "良", attention: "見", issue: "!" }[status] || "記";
+}
+
+function resolveObservation(id) {
+  const observation = state.observations.find((row) => row.id === id);
+  if (!observation) return;
+  observation.active = false;
+  observation.resolvedAt = new Date().toISOString();
+  saveAndRender();
+}
+
 function activityTargetLabel(activity) {
   if (!activity.seedlingId) return activity.targetLabel || "畑全体";
   return findSeedling(activity.seedlingId)
@@ -2681,12 +2849,17 @@ function activityTypeKey(type) {
 }
 
 function renderActivityView() {
+  const showRecords = activityViewMode === "records";
+  const showObservations = activityViewMode === "observations";
   const showTasks = activityViewMode === "tasks";
-  elements.activityRecordsView.classList.toggle("hidden", showTasks);
+  elements.activityRecordsView.classList.toggle("hidden", !showRecords);
+  elements.observationView.classList.toggle("hidden", !showObservations);
   elements.taskPlannerView.classList.toggle("hidden", !showTasks);
-  elements.showActivityRecordsButton.classList.toggle("active", !showTasks);
+  elements.showActivityRecordsButton.classList.toggle("active", showRecords);
+  elements.showObservationButton.classList.toggle("active", showObservations);
   elements.showTaskPlannerButton.classList.toggle("active", showTasks);
-  elements.showActivityRecordsButton.setAttribute("aria-pressed", String(!showTasks));
+  elements.showActivityRecordsButton.setAttribute("aria-pressed", String(showRecords));
+  elements.showObservationButton.setAttribute("aria-pressed", String(showObservations));
   elements.showTaskPlannerButton.setAttribute("aria-pressed", String(showTasks));
 }
 
@@ -3829,7 +4002,7 @@ function renderBackupModal() {
 
 function backupStateSummary(backupState) {
   const data = normalizeState(backupState);
-  return `苗 ${data.seedlings.length}件 / 収穫 ${data.harvests.length}件 / 費用 ${data.expenses.length}件 / 作業 ${data.activities.length + data.tasks.length}件 / 農薬 ${data.pesticideApplications.length}件`;
+  return `苗 ${data.seedlings.length}件 / 収穫 ${data.harvests.length}件 / 費用 ${data.expenses.length}件 / 作業 ${data.activities.length + data.tasks.length}件 / 状態 ${data.observations.length}件 / 農薬 ${data.pesticideApplications.length}件`;
 }
 
 function createBackupPayload() {
@@ -4680,9 +4853,10 @@ function normalizeState(value) {
   const harvests = Array.isArray(value?.harvests) ? value.harvests : [];
   const expenses = Array.isArray(value?.expenses) ? value.expenses : [];
   const activities = Array.isArray(value?.activities) ? value.activities : [];
+  const observations = Array.isArray(value?.observations) ? value.observations : [];
   const tasks = Array.isArray(value?.tasks) ? value.tasks : [];
   const pesticideApplications = Array.isArray(value?.pesticideApplications) ? value.pesticideApplications : [];
-  const hasRecords = seedlings.length || archivedSeedlings.length || harvests.length || expenses.length || activities.length || tasks.length || pesticideApplications.length;
+  const hasRecords = seedlings.length || archivedSeedlings.length || harvests.length || expenses.length || activities.length || observations.length || tasks.length || pesticideApplications.length;
   const savedColumns = value?.grid?.columns;
   const savedRows = value?.grid?.rows;
   const isOldLayout = value?.layoutVersion !== defaultState.layoutVersion;
@@ -4704,8 +4878,19 @@ function normalizeState(value) {
     harvests: compactQuickHarvests(harvests),
     expenses,
     activities,
+    observations: observations.map(normalizeObservation),
     tasks,
     pesticideApplications
+  };
+}
+
+function normalizeObservation(observation) {
+  const status = ["good", "attention", "issue"].includes(observation?.status) ? observation.status : "attention";
+  return {
+    ...observation,
+    category: observation?.category || "その他",
+    status,
+    active: typeof observation?.active === "boolean" ? observation.active : status !== "good"
   };
 }
 

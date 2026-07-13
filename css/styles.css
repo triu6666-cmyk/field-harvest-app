@@ -988,6 +988,7 @@ select:focus {
 .today-stat.tasks { border-top: 3px solid #12c96a; }
 .today-stat.safety { border-top: 3px solid #e8a600; }
 .today-stat.activity { border-top: 3px solid #11afd1; }
+.today-stat.observation { border-top: 3px solid #e8a600; }
 
 .today-field-grid {
   display: grid;
@@ -1935,7 +1936,7 @@ select:focus {
 
 .activity-view-tabs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   max-width: 420px;
   margin: 0 0 16px;
@@ -1944,6 +1945,51 @@ select:focus {
   border-radius: 8px;
   background: #edf7ef;
 }
+
+.observation-status-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.observation-status-picker legend {
+  width: 100%;
+  margin-bottom: 7px;
+  color: #063f2a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.observation-status-option {
+  position: relative;
+  display: grid;
+  min-height: 46px;
+  place-items: center;
+  border: 1px solid rgba(32, 115, 74, 0.18);
+  border-radius: 8px;
+  background: #fff;
+  color: #426554;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.observation-status-option input {
+  position: absolute;
+  opacity: 0;
+}
+
+.observation-status-option:has(input:checked) {
+  border-color: currentColor;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.observation-status-option.good { color: #087642; background: #f0fff4; }
+.observation-status-option.attention { color: #a56a00; background: #fff9df; }
+.observation-status-option.issue { color: #c83d2c; background: #fff1ed; }
 
 .activity-view-tab {
   min-height: 40px;
@@ -2052,6 +2098,75 @@ select:focus {
   font-size: 11px;
   font-weight: 900;
 }
+
+.observation-focus-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 60px;
+  border: 1px solid rgba(191, 117, 14, 0.28);
+  border-left: 5px solid #e8a600;
+  border-radius: 8px;
+  background: #fffdf4;
+  padding: 9px 10px;
+}
+
+.observation-focus-item.issue {
+  border-color: rgba(200, 61, 44, 0.3);
+  border-left-color: #d94b37;
+  background: #fff7f4;
+}
+
+.observation-focus-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 8px;
+  background: #fff1bd;
+  color: #9a6200;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.observation-focus-item.issue .observation-focus-icon {
+  background: #ffe1da;
+  color: #ba3023;
+}
+
+.observation-focus-body {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.observation-focus-body strong,
+.observation-focus-body span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.observation-focus-body strong { color: #654800; font-size: 13px; }
+.observation-focus-body span { color: #806d42; font-size: 11px; }
+.observation-focus-item.issue .observation-focus-body strong { color: #8a3127; }
+.observation-focus-item.issue .observation-focus-body span { color: #96645d; }
+
+.observation-resolve-button {
+  min-height: 34px;
+  border: 1px solid rgba(136, 102, 14, 0.28);
+  border-radius: 7px;
+  background: #fff;
+  color: #88650c;
+  padding: 0 11px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.record-item-observation::before { background: linear-gradient(180deg, #e9ad05, #f7c94a); }
+.record-item-observation[data-observation-status="issue"]::before { background: linear-gradient(180deg, #e85935, #ff9374); }
+.record-item-observation[data-observation-status="resolved"]::before { background: linear-gradient(180deg, #8ba197, #cad7ce); }
 
 .task-list {
   display: grid;
