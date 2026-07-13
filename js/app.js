@@ -259,6 +259,9 @@ const elements = {
   expenseCategoryFilter: document.querySelector("#expenseCategoryFilter"),
   harvestSummary: document.querySelector("#harvestSummary"),
   costPerformanceSummary: document.querySelector("#costPerformanceSummary"),
+  cultivationCycleNote: document.querySelector("#cultivationCycleNote"),
+  cultivationCycleSummary: document.querySelector("#cultivationCycleSummary"),
+  cultivationCycleList: document.querySelector("#cultivationCycleList"),
   emptyStateTemplate: document.querySelector("#emptyStateTemplate"),
   exportButton: document.querySelector("#exportButton"),
   mapFilterSelect: document.querySelector("#mapFilterSelect"),
@@ -1651,6 +1654,7 @@ function createQuickHarvest(seedling) {
 function renderRecords() {
   renderHarvestSummary();
   renderCostPerformanceSummary();
+  renderCultivationCycle();
   renderAggregateTabs();
   renderSeedlingList();
   renderArchivedSeedlingList();
@@ -1658,6 +1662,118 @@ function renderRecords() {
   elements.recentHarvestCount.textContent = `${state.harvests.length}件`;
   if (elements.recentHarvestDetails.open) renderHarvestList();
   renderExpenseList();
+}
+
+function renderCultivationCycle() {
+  const rows = state.seedlings
+    .map((seedling) => cultivationCycleForSeedling(seedling))
+    .sort((a, b) => cycleStatusOrder(a.status) - cycleStatusOrder(b.status) || b.plantedDays - a.plantedDays);
+
+  elements.cultivationCycleSummary.replaceChildren();
+  elements.cultivationCycleList.replaceChildren();
+  elements.cultivationCycleNote.textContent = rows.length ? `栽培中 ${rows.length}区画 / 定植から収穫までの進み具合` : "栽培中の苗を登録すると、ここに経過を表示します。";
+
+  if (!rows.length) {
+    appendEmptyMessage(elements.cultivationCycleList, "栽培中の苗がありません。畑マップから苗を登録してください。");
+    return;
+  }
+
+  const activeCount = rows.filter((row) => row.status === "harvesting").length;
+  const beforeHarvestCount = rows.filter((row) => row.status === "before-harvest").length;
+  const quietCount = rows.filter((row) => row.status === "quiet").length;
+  elements.cultivationCycleSummary.append(
+    createCycleSummaryCard("収穫中", `${activeCount}区画`, "直近14日以内に収穫"),
+    createCycleSummaryCard("収穫前", `${beforeHarvestCount}区画`, "定植後、まだ収穫記録なし"),
+    createCycleSummaryCard("収穫間隔", `${quietCount}区画`, "14日以上、収穫記録なし")
+  );
+
+  rows.slice(0, 8).forEach((row) => elements.cultivationCycleList.append(createCultivationCycleCard(row)));
+  if (rows.length > 8) {
+    const more = document.createElement("p");
+    more.className = "cultivation-cycle-more";
+    more.textContent = `ほか ${rows.length - 8}区画は畑マップから確認できます。`;
+    elements.cultivationCycleList.append(more);
+  }
+}
+
+function cultivationCycleForSeedling(seedling) {
+  const harvests = state.harvests
+    .filter((harvest) => harvest.seedlingId === seedling.id && Number(harvest.amount || 0) > 0 && harvest.date)
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const firstHarvest = harvests[0];
+  const lastHarvest = harvests.at(-1);
+  const plantedDays = seedling.plantedDate ? Math.max(0, daysBetweenDates(seedling.plantedDate, today) ?? 0) : 0;
+  const daysToFirstHarvest = firstHarvest?.date && seedling.plantedDate
+    ? Math.max(0, daysBetweenDates(seedling.plantedDate, firstHarvest.date) ?? 0)
+    : null;
+  const daysSinceHarvest = lastHarvest?.date ? Math.max(0, daysBetweenDates(lastHarvest.date, today) ?? 0) : null;
+  const status = !harvests.length ? "before-harvest" : daysSinceHarvest <= 14 ? "harvesting" : "quiet";
+  return { seedling, harvests, firstHarvest, lastHarvest, plantedDays, daysToFirstHarvest, daysSinceHarvest, status };
+}
+
+function cycleStatusOrder(status) {
+  return { harvesting: 0, quiet: 1, "before-harvest": 2 }[status] ?? 3;
+}
+
+function cycleStatusLabel(status) {
+  return { harvesting: "収穫中", quiet: "収穫間隔", "before-harvest": "収穫前" }[status] || "記録中";
+}
+
+function createCycleSummaryCard(label, value, note) {
+  const card = document.createElement("article");
+  card.className = "cultivation-cycle-summary-card";
+  const labelElement = document.createElement("span");
+  labelElement.textContent = label;
+  const valueElement = document.createElement("strong");
+  valueElement.textContent = value;
+  const noteElement = document.createElement("small");
+  noteElement.textContent = note;
+  card.append(labelElement, valueElement, noteElement);
+  return card;
+}
+
+function createCultivationCycleCard(row) {
+  const { seedling, firstHarvest, lastHarvest, plantedDays, daysToFirstHarvest, daysSinceHarvest, status } = row;
+  const card = document.createElement("button");
+  card.className = `cultivation-cycle-card ${status}`;
+  card.type = "button";
+  applyCropTheme(card, seedling.cropName);
+  card.title = `${seedlingLabel(seedling)}の詳細を開く`;
+  card.addEventListener("click", () => openSeedlingDetail(seedling.id));
+
+  const head = document.createElement("div");
+  head.className = "cultivation-cycle-card-head";
+  const icon = createCropIllustration(seedling.cropName);
+  icon.classList.add("cultivation-cycle-crop-icon");
+  const identity = document.createElement("div");
+  const crop = document.createElement("strong");
+  crop.textContent = seedling.cropName;
+  const variety = document.createElement("span");
+  variety.textContent = `${seedling.variety || "品種なし"} / ${cellDisplayName(seedling.cell)}`;
+  identity.append(crop, variety);
+  const badge = document.createElement("em");
+  badge.textContent = cycleStatusLabel(status);
+  head.append(icon, identity, badge);
+
+  const days = document.createElement("div");
+  days.className = "cultivation-cycle-days";
+  const value = document.createElement("strong");
+  value.textContent = `${plantedDays}`;
+  const unit = document.createElement("span");
+  unit.textContent = "日目";
+  const label = document.createElement("small");
+  label.textContent = seedling.plantedDate ? `定植 ${formatMonthDay(seedling.plantedDate)}から` : "定植日未入力";
+  days.append(value, unit, label);
+
+  const timeline = document.createElement("div");
+  timeline.className = "cultivation-cycle-timeline";
+  const first = document.createElement("span");
+  first.textContent = firstHarvest ? `初収穫 ${formatMonthDay(firstHarvest.date)}${daysToFirstHarvest !== null ? ` (${daysToFirstHarvest}日目)` : ""}` : "初収穫はまだ";
+  const latest = document.createElement("span");
+  latest.textContent = lastHarvest ? `前回 ${formatMonthDay(lastHarvest.date)} (${daysSinceHarvest}日前)` : "生育を見守り中";
+  timeline.append(first, latest);
+  card.append(head, days, timeline);
+  return card;
 }
 
 function renderAggregateTabs() {
@@ -3470,6 +3586,7 @@ function renderSeedlingDetail(seedling) {
     .filter((record) => pesticideApplicationMatchesSeedling(record, seedling))
     .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
   const pesticideSafety = pesticideSafetyForSeedling(seedling);
+  const cultivationCycle = cultivationCycleForSeedling(seedling);
 
   const hero = document.createElement("section");
   hero.className = "seedling-detail-hero";
@@ -3523,6 +3640,9 @@ function renderSeedlingDetail(seedling) {
     createDetailStat("収穫合計", harvestTotalsForSeedling(seedling.id) || "収穫なし"),
     createDetailStat("収穫回数", `${harvests.length}回`),
     createDetailStat("植えた日", seedling.plantedDate || "未入力"),
+    createDetailStat("定植から", seedling.plantedDate ? `${cultivationCycle.plantedDays}日` : "未入力"),
+    createDetailStat("初収穫", cultivationCycle.firstHarvest ? `${formatMonthDay(cultivationCycle.firstHarvest.date)} / ${cultivationCycle.daysToFirstHarvest}日目` : "まだ"),
+    createDetailStat("栽培状況", cycleStatusLabel(cultivationCycle.status), cultivationCycle.status === "quiet" ? "warning" : ""),
     createDetailStat("費用", expenses.length ? `${formatNumber(expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0))}円` : "記録なし"),
     createDetailStat("農薬注意", pesticideSafetySummaryText(pesticideSafety), pesticideSafety?.status === "wait" ? "warning" : "")
   );

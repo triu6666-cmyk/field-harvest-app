@@ -1567,18 +1567,96 @@ select:focus {
 }
 
 .harvest-summary-section,
-.record-table-section {
+.record-table-section,
+.cultivation-cycle-section {
   margin-bottom: 14px;
 }
 
 .harvest-summary-section h3,
 .record-table-section h3,
+.cultivation-cycle-section h3,
 .record-columns h3 {
   margin: 0 0 8px;
   color: #063f2a;
   font-size: 15px;
   line-height: 1.25;
 }
+
+.section-supporting-text {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cultivation-cycle-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.cultivation-cycle-summary-card {
+  display: grid;
+  gap: 2px;
+  min-height: 68px;
+  border: 1px solid rgba(32, 115, 74, 0.14);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #f1fff4);
+  padding: 9px 10px;
+}
+
+.cultivation-cycle-summary-card span { color: #52705c; font-size: 11px; font-weight: 800; }
+.cultivation-cycle-summary-card strong { color: #075638; font-size: 18px; line-height: 1.1; }
+.cultivation-cycle-summary-card small { color: var(--muted); font-size: 10px; line-height: 1.25; }
+
+.cultivation-cycle-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.cultivation-cycle-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid rgba(32, 115, 74, 0.16);
+  border-top: 4px solid #12a35b;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, color-mix(in srgb, var(--crop-soft, #effff2) 72%, #ffffff));
+  color: var(--crop-ink, #063f2a);
+  padding: 10px;
+  text-align: left;
+}
+
+.cultivation-cycle-card.quiet { border-top-color: #e8a600; }
+.cultivation-cycle-card.before-harvest { border-top-color: #0bb3e8; }
+.cultivation-cycle-card:hover { transform: translateY(-1px); box-shadow: 0 9px 18px rgba(22, 63, 46, 0.12); }
+
+.cultivation-cycle-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: center;
+}
+
+.cultivation-cycle-crop-icon { width: 28px; height: 28px; }
+.cultivation-cycle-card-head div { display: grid; min-width: 0; gap: 2px; }
+.cultivation-cycle-card-head strong,
+.cultivation-cycle-card-head span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cultivation-cycle-card-head strong { font-size: 14px; }
+.cultivation-cycle-card-head span { color: color-mix(in srgb, var(--crop-ink, #063f2a) 65%, #ffffff); font-size: 10px; }
+.cultivation-cycle-card-head em { border-radius: 999px; background: #e9fff1; color: #087642; padding: 3px 6px; font-size: 10px; font-style: normal; font-weight: 900; }
+.cultivation-cycle-card.quiet .cultivation-cycle-card-head em { background: #fff2c8; color: #9a6200; }
+.cultivation-cycle-card.before-harvest .cultivation-cycle-card-head em { background: #e6f8ff; color: #007e9e; }
+
+.cultivation-cycle-days { display: grid; grid-template-columns: auto auto 1fr; align-items: baseline; gap: 3px; }
+.cultivation-cycle-days strong { font-size: 28px; line-height: 0.9; }
+.cultivation-cycle-days span { font-size: 12px; font-weight: 900; }
+.cultivation-cycle-days small { justify-self: end; color: var(--muted); font-size: 10px; text-align: right; }
+
+.cultivation-cycle-timeline { display: grid; gap: 3px; border-top: 1px solid rgba(32, 115, 74, 0.12); padding-top: 7px; }
+.cultivation-cycle-timeline span { color: #466551; font-size: 10px; line-height: 1.3; }
+.cultivation-cycle-more { grid-column: 1 / -1; margin: 2px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
 
 .record-section-header {
   display: flex;
@@ -3659,12 +3737,14 @@ select:focus {
   }
 
   #recordsPanel > .harvest-summary-section,
-  #recordsPanel > .record-table-section {
+  #recordsPanel > .record-table-section,
+  #recordsPanel > .cultivation-cycle-section {
     min-width: 0;
     margin-bottom: 0;
   }
 
   #recordsPanel > .harvest-summary-section:first-child,
+  #recordsPanel > .cultivation-cycle-section,
   #recordsPanel > .archive-collapsible,
   #recordsPanel > .record-columns {
     grid-column: 1 / -1;
@@ -3834,6 +3914,10 @@ select:focus {
 
   .harvest-chart-panel .metric-chart-tick {
     top: 5px;
+  }
+
+  .cultivation-cycle-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
