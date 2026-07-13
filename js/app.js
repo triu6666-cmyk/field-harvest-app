@@ -79,6 +79,8 @@ let expenseHistoryMonthFilter = "all";
 let expenseHistoryCategoryFilter = "all";
 let archiveYearFilter = "all";
 let archiveSeasonFilter = "all";
+let seasonReviewYearFilter = "all";
+let seasonReviewSeasonFilter = "all";
 let detailSeedlingId = "";
 let harvestModeUnit = "個";
 let harvestModeCropFilter = "all";
@@ -257,6 +259,11 @@ const elements = {
   archivedSeedlingList: document.querySelector("#archivedSeedlingList"),
   archiveYearFilter: document.querySelector("#archiveYearFilter"),
   archiveSeasonFilter: document.querySelector("#archiveSeasonFilter"),
+  seasonReviewYearFilter: document.querySelector("#seasonReviewYearFilter"),
+  seasonReviewSeasonFilter: document.querySelector("#seasonReviewSeasonFilter"),
+  seasonReviewNote: document.querySelector("#seasonReviewNote"),
+  seasonReviewSummary: document.querySelector("#seasonReviewSummary"),
+  seasonReviewRanking: document.querySelector("#seasonReviewRanking"),
   aggregateByVarietyButton: document.querySelector("#aggregateByVarietyButton"),
   aggregateByCropButton: document.querySelector("#aggregateByCropButton"),
   costPeriodMonthButton: document.querySelector("#costPeriodMonthButton"),
@@ -470,6 +477,14 @@ elements.archiveYearFilter.addEventListener("change", () => {
 elements.archiveSeasonFilter.addEventListener("change", () => {
   archiveSeasonFilter = elements.archiveSeasonFilter.value;
   renderArchivedSeedlingList();
+});
+elements.seasonReviewYearFilter.addEventListener("change", () => {
+  seasonReviewYearFilter = elements.seasonReviewYearFilter.value;
+  renderSeasonReview();
+});
+elements.seasonReviewSeasonFilter.addEventListener("change", () => {
+  seasonReviewSeasonFilter = elements.seasonReviewSeasonFilter.value;
+  renderSeasonReview();
 });
 elements.seedlingModal.addEventListener("click", (event) => {
   if (event.target === elements.seedlingModal) {
@@ -1886,6 +1901,7 @@ function renderRecords() {
   renderHarvestSummary();
   renderCostPerformanceSummary();
   renderCultivationCycle();
+  renderSeasonReview();
   renderAggregateTabs();
   renderSeedlingList();
   renderArchivedSeedlingList();
@@ -1925,6 +1941,173 @@ function renderCultivationCycle() {
     more.textContent = `ほか ${rows.length - 8}区画は畑マップから確認できます。`;
     elements.cultivationCycleList.append(more);
   }
+}
+
+function renderSeasonReview() {
+  const archivedSeedlings = [...state.archivedSeedlings];
+  renderSeasonReviewFilterOptions(archivedSeedlings);
+  const rows = archivedSeedlings.filter((seedling) => (
+    (seasonReviewYearFilter === "all" || cultivationYear(seedling) === seasonReviewYearFilter)
+    && (seasonReviewSeasonFilter === "all" || cultivationSeasonValue(seedling) === seasonReviewSeasonFilter)
+  ));
+  elements.seasonReviewSummary.replaceChildren();
+  elements.seasonReviewRanking.replaceChildren();
+  elements.seasonReviewNote.textContent = rows.length ? `栽培終了 ${rows.length}区画から、次の品種選びに使える記録をまとめています。` : "栽培を終了した苗があると、ここで次季に向けた比較ができます。";
+
+  if (!rows.length) {
+    appendEmptyMessage(elements.seasonReviewRanking, "過去の栽培がありません。苗の編集画面から「今日で栽培終了」にすると振り返りに追加されます。");
+    return;
+  }
+
+  const rowMetrics = rows.map((seedling) => archivedSeedlingMetrics(seedling));
+  const totalHarvestEvents = rowMetrics.reduce((sum, row) => sum + row.harvests.length, 0);
+  const totalExpenses = rowMetrics.reduce((sum, row) => sum + row.expenseTotal, 0);
+  const longestCycle = [...rowMetrics].sort((a, b) => b.days - a.days)[0];
+  elements.seasonReviewSummary.append(
+    createSeasonReviewSummaryCard("栽培終了", `${rows.length}区画`, "比較対象の区画数"),
+    createSeasonReviewSummaryCard("収穫記録", `${totalHarvestEvents}回`, "数量は品種ごとに確認"),
+    createSeasonReviewSummaryCard("関連費用", totalExpenses ? `${formatNumber(totalExpenses)}円` : "記録なし", "苗にひもづいた費用"),
+    createSeasonReviewSummaryCard("最長栽培", longestCycle ? `${longestCycle.days}日` : "-", longestCycle ? seedlingLabel(longestCycle.seedling) : "記録なし")
+  );
+
+  seasonReviewGroups(rowMetrics).slice(0, 6).forEach((group, index) => {
+    elements.seasonReviewRanking.append(createSeasonReviewCard(group, index));
+  });
+}
+
+function renderSeasonReviewFilterOptions(archivedSeedlings) {
+  const years = [...new Set(archivedSeedlings.map(cultivationYear).filter(Boolean))]
+    .sort((a, b) => b.localeCompare(a));
+  seasonReviewYearFilter = syncSelectOptions(
+    elements.seasonReviewYearFilter,
+    [{ value: "all", label: "すべて" }, ...years.map((year) => ({ value: year, label: `${year}年` }))],
+    seasonReviewYearFilter
+  );
+  seasonReviewSeasonFilter = syncSelectOptions(
+    elements.seasonReviewSeasonFilter,
+    [{ value: "all", label: "すべて" }, ...CULTIVATION_SEASONS],
+    seasonReviewSeasonFilter
+  );
+}
+
+function archivedSeedlingMetrics(seedling) {
+  const harvests = state.harvests.filter((harvest) => harvest.seedlingId === seedling.id && Number(harvest.amount || 0) > 0);
+  const expenses = state.expenses.filter((expense) => expense.seedlingId === seedling.id);
+  const days = seedling.plantedDate && seedling.endedDate
+    ? Math.max(0, daysBetweenDates(seedling.plantedDate, seedling.endedDate) ?? 0)
+    : 0;
+  return {
+    seedling,
+    harvests,
+    expenseTotal: expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0),
+    days
+  };
+}
+
+function seasonReviewGroups(rows) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const key = `${row.seedling.cropName}\u0000${row.seedling.variety || ""}`;
+    const group = groups.get(key) || {
+      cropName: row.seedling.cropName,
+      variety: row.seedling.variety || "品種なし",
+      rows: [],
+      harvests: [],
+      expenseTotal: 0,
+      daysTotal: 0
+    };
+    group.rows.push(row);
+    group.harvests.push(...row.harvests);
+    group.expenseTotal += row.expenseTotal;
+    group.daysTotal += row.days;
+    groups.set(key, group);
+  });
+  return [...groups.values()]
+    .map((group) => ({ ...group, averageDays: Math.round(group.daysTotal / group.rows.length) }))
+    .sort((a, b) => b.harvests.length - a.harvests.length || b.rows.length - a.rows.length || a.cropName.localeCompare(b.cropName, "ja"));
+}
+
+function createSeasonReviewSummaryCard(label, value, note) {
+  const card = document.createElement("article");
+  card.className = "season-review-summary-card";
+  const labelElement = document.createElement("span");
+  labelElement.textContent = label;
+  const valueElement = document.createElement("strong");
+  valueElement.textContent = value;
+  const noteElement = document.createElement("small");
+  noteElement.textContent = note;
+  card.append(labelElement, valueElement, noteElement);
+  return card;
+}
+
+function createSeasonReviewCard(group, index) {
+  const card = document.createElement("article");
+  card.className = "season-review-card";
+  applyCropTheme(card, group.cropName);
+
+  const heading = document.createElement("div");
+  heading.className = "season-review-card-heading";
+  heading.append(createCropIllustration(group.cropName));
+  const name = document.createElement("div");
+  const crop = document.createElement("strong");
+  crop.textContent = group.cropName;
+  const variety = document.createElement("span");
+  variety.textContent = group.variety;
+  name.append(crop, variety);
+  const rank = document.createElement("em");
+  rank.textContent = index === 0 ? "収穫記録最多" : `${index + 1}位`;
+  heading.append(name, rank);
+
+  const stats = document.createElement("div");
+  stats.className = "season-review-card-stats";
+  stats.append(
+    createSeasonReviewStat("栽培", `${group.rows.length}回`),
+    createSeasonReviewStat("収穫", `${group.harvests.length}回`),
+    createSeasonReviewStat("平均", `${group.averageDays}日`),
+    createSeasonReviewStat("費用", group.expenseTotal ? `${formatNumber(group.expenseTotal)}円` : "-"),
+    createSeasonReviewStat("収穫合計", harvestTotalsForRows(group.harvests))
+  );
+
+  const reuseButton = document.createElement("button");
+  reuseButton.className = "season-review-reuse-button";
+  reuseButton.type = "button";
+  reuseButton.textContent = "この品種で苗を登録";
+  reuseButton.addEventListener("click", () => {
+    const source = group.rows[0].seedling;
+    openSeedlingModal({
+      template: {
+        cropName: source.cropName,
+        variety: source.variety || "",
+        plantedDate: today,
+        season: inferCultivationSeason(today),
+        memo: source.memo || ""
+      }
+    });
+  });
+  card.append(heading, stats, reuseButton);
+  return card;
+}
+
+function createSeasonReviewStat(label, value) {
+  const stat = document.createElement("div");
+  const labelElement = document.createElement("span");
+  labelElement.textContent = label;
+  const valueElement = document.createElement("strong");
+  valueElement.textContent = value || "-";
+  stat.append(labelElement, valueElement);
+  return stat;
+}
+
+function harvestTotalsForRows(harvests) {
+  const totals = harvests.reduce((result, harvest) => {
+    const unit = harvest.unit || "個";
+    result[unit] = (result[unit] || 0) + Number(harvest.amount || 0);
+    return result;
+  }, {});
+  return Object.entries(totals)
+    .sort(([unitA], [unitB]) => unitA.localeCompare(unitB, "ja"))
+    .map(([unit, amount]) => `${formatNumber(amount)}${unit}`)
+    .join(" / ") || "-";
 }
 
 function cultivationCycleForSeedling(seedling) {

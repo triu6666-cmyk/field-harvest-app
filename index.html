@@ -21,7 +21,7 @@
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">収穫量管理</strong>
-          <time class="app-updated site-updated" data-app-updated datetime="2026-07-13T21:12:00+09:00">最終更新 2026/07/13 21:12</time>
+          <time class="app-updated site-updated" data-app-updated datetime="2026-07-13T21:26:00+09:00">最終更新 2026/07/13 21:26</time>
         </span>
       </a>
       <div class="header-actions site-header-actions">
@@ -481,6 +481,26 @@
             </div>
             <div id="cultivationCycleSummary" class="cultivation-cycle-summary"></div>
             <div id="cultivationCycleList" class="cultivation-cycle-list"></div>
+          </section>
+          <section class="season-review-section">
+            <div class="record-section-header season-review-header">
+              <div>
+                <h3>シーズン振り返り</h3>
+                <p id="seasonReviewNote" class="section-supporting-text"></p>
+              </div>
+              <div class="season-review-filters" aria-label="シーズン振り返りの絞り込み">
+                <label>
+                  年
+                  <select id="seasonReviewYearFilter"></select>
+                </label>
+                <label>
+                  シーズン
+                  <select id="seasonReviewSeasonFilter"></select>
+                </label>
+              </div>
+            </div>
+            <div id="seasonReviewSummary" class="season-review-summary"></div>
+            <div id="seasonReviewRanking" class="season-review-ranking"></div>
           </section>
           <section class="record-table-section">
             <div class="record-section-header">

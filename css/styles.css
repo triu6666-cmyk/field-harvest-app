@@ -1586,19 +1586,93 @@ select:focus {
 
 .harvest-summary-section,
 .record-table-section,
-.cultivation-cycle-section {
+.cultivation-cycle-section,
+.season-review-section {
   margin-bottom: 14px;
 }
 
 .harvest-summary-section h3,
 .record-table-section h3,
 .cultivation-cycle-section h3,
+.season-review-section h3,
 .record-columns h3 {
   margin: 0 0 8px;
   color: #063f2a;
   font-size: 15px;
   line-height: 1.25;
 }
+
+.season-review-header { align-items: end; }
+
+.season-review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 7px;
+}
+
+.season-review-filters label {
+  display: grid;
+  gap: 3px;
+  color: #426854;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.season-review-filters select { min-width: 92px; min-height: 34px; font-size: 12px; }
+
+.season-review-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.season-review-summary-card {
+  display: grid;
+  gap: 2px;
+  min-height: 68px;
+  border: 1px solid rgba(32, 115, 74, 0.14);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #f1fff4);
+  padding: 9px 10px;
+}
+
+.season-review-summary-card span { color: #52705c; font-size: 11px; font-weight: 800; }
+.season-review-summary-card strong { color: #075638; font-size: 18px; line-height: 1.1; }
+.season-review-summary-card small { overflow: hidden; color: var(--muted); font-size: 10px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+
+.season-review-ranking {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+}
+
+.season-review-card {
+  display: grid;
+  gap: 9px;
+  border: 1px solid rgba(32, 115, 74, 0.16);
+  border-top: 4px solid var(--crop-start, #12a35b);
+  border-radius: 8px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--crop-soft, #effff2) 74%, #ffffff), #ffffff);
+  padding: 10px;
+}
+
+.season-review-card-heading { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 7px; align-items: center; }
+.season-review-card-heading .crop-illustration { width: 32px; height: 32px; }
+.season-review-card-heading > div { display: grid; min-width: 0; gap: 2px; }
+.season-review-card-heading strong, .season-review-card-heading span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.season-review-card-heading strong { color: var(--crop-ink, #063f2a); font-size: 14px; }
+.season-review-card-heading span { color: color-mix(in srgb, var(--crop-ink, #063f2a) 63%, #ffffff); font-size: 10px; }
+.season-review-card-heading em { border-radius: 999px; background: #e9fff1; color: #087642; padding: 3px 6px; font-size: 10px; font-style: normal; font-weight: 900; }
+
+.season-review-card-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.season-review-card-stats > div { display: grid; min-width: 0; gap: 2px; padding: 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.72); }
+.season-review-card-stats > div:last-child { grid-column: 1 / -1; }
+.season-review-card-stats span { color: #55735f; font-size: 9px; font-weight: 800; }
+.season-review-card-stats strong { overflow: hidden; color: var(--crop-ink, #063f2a); font-size: 11px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+
+.season-review-reuse-button { min-height: 36px; border: 1px solid rgba(8, 118, 66, 0.25); border-radius: 7px; background: #ffffff; color: #087642; font-size: 11px; font-weight: 900; }
 
 .section-supporting-text {
   margin: 3px 0 0;
@@ -3809,13 +3883,15 @@ select:focus {
 
   #recordsPanel > .harvest-summary-section,
   #recordsPanel > .record-table-section,
-  #recordsPanel > .cultivation-cycle-section {
+  #recordsPanel > .cultivation-cycle-section,
+  #recordsPanel > .season-review-section {
     min-width: 0;
     margin-bottom: 0;
   }
 
   #recordsPanel > .harvest-summary-section:first-child,
   #recordsPanel > .cultivation-cycle-section,
+  #recordsPanel > .season-review-section,
   #recordsPanel > .archive-collapsible,
   #recordsPanel > .record-columns {
     grid-column: 1 / -1;
@@ -3990,6 +4066,10 @@ select:focus {
   .cultivation-cycle-list {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  .season-review-ranking {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 980px) {
@@ -4003,6 +4083,19 @@ select:focus {
 }
 
 @media (max-width: 640px) {
+  .season-review-header { align-items: start; }
+
+  .season-review-filters {
+    justify-content: start;
+    width: 100%;
+  }
+
+  .season-review-filters label { flex: 1 1 0; }
+
+  .season-review-filters select { width: 100%; }
+
+  .season-review-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
   .notification-permission-card {
     align-items: stretch;
     flex-direction: column;
