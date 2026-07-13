@@ -21,10 +21,17 @@
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">収穫量管理</strong>
-          <time class="app-updated site-updated" data-app-updated datetime="2026-07-13T20:55:00+09:00">最終更新 2026/07/13 20:55</time>
+          <time class="app-updated site-updated" data-app-updated datetime="2026-07-13T21:12:00+09:00">最終更新 2026/07/13 21:12</time>
         </span>
       </a>
       <div class="header-actions site-header-actions">
+        <button class="icon-button site-header-button notification-header-button" id="notificationButton" type="button" title="通知センター" aria-label="通知センターを開く">
+          <svg class="header-icon site-header-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+            <path d="M10 21h4"></path>
+          </svg>
+          <b id="notificationBadge" class="notification-badge hidden">0</b>
+        </button>
         <a class="icon-button site-header-button" href="pesticides.html" title="農薬対応表" aria-label="農薬対応表を開く">
           <svg class="header-icon site-header-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
@@ -747,6 +754,32 @@
             <textarea id="syncLinkOutput" readonly rows="3" aria-label="スマホ設定リンク"></textarea>
             <span>このリンクにはpublishable/anon keyと共有データIDが含まれます。自分の端末や信頼できる相手だけに送ってください。</span>
           </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="notificationModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="notificationModalTitle">
+      <section class="modal-panel notification-modal-panel">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">畑の通知</p>
+            <h2 id="notificationModalTitle">確認が必要なこと</h2>
+          </div>
+          <button id="closeNotificationModalButton" class="modal-close-button" type="button" aria-label="閉じる"></button>
+        </div>
+        <div class="notification-panel">
+          <section class="notification-permission-card">
+            <div>
+              <span class="notification-card-kicker">端末通知</span>
+              <strong id="notificationPermissionStatus">通知の状態を確認中</strong>
+            </div>
+            <div class="notification-permission-actions">
+              <button id="requestNotificationPermissionButton" class="primary-button" type="button">通知を許可</button>
+              <button id="testNotificationButton" class="secondary-button" type="button">テスト</button>
+            </div>
+          </section>
+          <p id="notificationCountText" class="notification-count-text"></p>
+          <div id="notificationList" class="notification-list"></div>
         </div>
       </section>
     </div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "field-harvest-manager-v70";
+const CACHE_NAME = "field-harvest-manager-v71";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -71,5 +71,13 @@ self.addEventListener("fetch", (event) => {
     caches.match(event.request).then((cachedResponse) => (
       cachedResponse || fetch(event.request)
     ))
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) => clients[0]?.focus() || self.clients.openWindow("./"))
   );
 });

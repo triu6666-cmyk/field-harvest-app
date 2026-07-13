@@ -95,6 +95,9 @@ let quickHarvestCloudTimer = null;
 let quickHarvestCloudSaving = false;
 let quickHarvestCloudDirty = false;
 let pendingBackupRestore = null;
+let notificationRegistration = null;
+
+const NOTIFICATION_SENT_DATE_KEY = "field-harvest-notification-sent-date";
 
 const HARVEST_MODE_UNITS = ["個", "本", "玉", "g", "kg"];
 const PESTICIDE_CROP_ALIASES = {
@@ -117,6 +120,15 @@ const elements = {
   todayActivityList: document.querySelector("#todayActivityList"),
   openTodayHarvestButton: document.querySelector("#openTodayHarvestButton"),
   openTodayTasksButton: document.querySelector("#openTodayTasksButton"),
+  notificationButton: document.querySelector("#notificationButton"),
+  notificationBadge: document.querySelector("#notificationBadge"),
+  notificationModal: document.querySelector("#notificationModal"),
+  closeNotificationModalButton: document.querySelector("#closeNotificationModalButton"),
+  notificationPermissionStatus: document.querySelector("#notificationPermissionStatus"),
+  requestNotificationPermissionButton: document.querySelector("#requestNotificationPermissionButton"),
+  testNotificationButton: document.querySelector("#testNotificationButton"),
+  notificationCountText: document.querySelector("#notificationCountText"),
+  notificationList: document.querySelector("#notificationList"),
   fieldGrid: document.querySelector("#fieldGrid"),
   summaryText: document.querySelector("#summaryText"),
   cellSelect: document.querySelector("#cellSelect"),
@@ -473,6 +485,13 @@ elements.seedlingDetailModal.addEventListener("click", (event) => {
 elements.openHarvestModeButton.addEventListener("click", openHarvestMode);
 elements.openTodayHarvestButton.addEventListener("click", openHarvestMode);
 elements.openTodayTasksButton.addEventListener("click", openTodayTasks);
+elements.notificationButton.addEventListener("click", openNotificationModal);
+elements.closeNotificationModalButton.addEventListener("click", closeNotificationModal);
+elements.notificationModal.addEventListener("click", (event) => {
+  if (event.target === elements.notificationModal) closeNotificationModal();
+});
+elements.requestNotificationPermissionButton.addEventListener("click", requestNotificationPermission);
+elements.testNotificationButton.addEventListener("click", sendTestNotification);
 elements.closeHarvestModeButton.addEventListener("click", closeHarvestMode);
 elements.undoHarvestModeButton.addEventListener("click", undoLastHarvestModeAction);
 elements.harvestModeModal.addEventListener("click", (event) => {
@@ -579,7 +598,9 @@ elements.pullCloudButton.addEventListener("click", async () => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !elements.backupModal.classList.contains("hidden")) {
+  if (event.key === "Escape" && !elements.notificationModal.classList.contains("hidden")) {
+    closeNotificationModal();
+  } else if (event.key === "Escape" && !elements.backupModal.classList.contains("hidden")) {
     closeBackupModal();
   } else if (event.key === "Escape" && !elements.syncModal.classList.contains("hidden")) {
     closeSyncModal();
@@ -826,6 +847,7 @@ function render() {
   renderSeedlingOptions();
   renderActivityTargetOptions();
   renderTodayField();
+  renderNotificationCenter();
   renderField();
   renderSideButtons();
   renderRecords();
@@ -870,6 +892,215 @@ function renderTodayField() {
   renderTodayTaskList(dueTasks);
   renderTodaySafetyList(waitingSeedlings, activeObservations);
   renderTodayActivityList();
+}
+
+function renderNotificationCenter() {
+  const alerts = farmNotificationAlerts();
+  elements.notificationList.replaceChildren();
+  elements.notificationBadge.textContent = alerts.length > 99 ? "99+" : String(alerts.length);
+  elements.notificationBadge.classList.toggle("hidden", alerts.length === 0);
+  elements.notificationButton.setAttribute("aria-label", alerts.length ? `通知センターを開く。要確認 ${alerts.length}件` : "通知センターを開く。要確認なし");
+  elements.notificationCountText.textContent = alerts.length ? `要確認 ${alerts.length}件。項目を押すと該当画面を開きます。` : "今のところ、確認が必要なことはありません。";
+  renderNotificationPermissionState();
+
+  if (!alerts.length) {
+    appendEmptyMessage(elements.notificationList, "期限超過の予定、要観察、農薬の収穫待ち、収穫間隔の空いた苗はありません。");
+    return;
+  }
+
+  alerts.forEach((alert) => elements.notificationList.append(createNotificationItem(alert)));
+}
+
+function farmNotificationAlerts() {
+  const alerts = [];
+  const dueTasks = state.tasks
+    .filter((task) => !task.completed && task.date && task.date <= today)
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  dueTasks.slice(0, 5).forEach((task) => {
+    const overdue = task.date < today;
+    alerts.push({
+      kind: "task",
+      tone: overdue ? "urgent" : "warning",
+      icon: overdue ? "!" : "作",
+      title: `${overdue ? "期限超過" : "今日の予定"} / ${task.type}`,
+      detail: `${activityTargetLabel(task)}${task.memo ? ` / ${task.memo}` : ""}`,
+      actionLabel: "予定",
+      open: openTodayTasks
+    });
+  });
+
+  activeObservationsList().slice(0, 5).forEach((observation) => {
+    alerts.push({
+      kind: "observation",
+      tone: observation.status === "issue" ? "urgent" : "warning",
+      icon: observationStatusIcon(observation.status),
+      title: `${observationStatusLabel(observation.status)} / ${activityTargetLabel(observation)}`,
+      detail: `${observation.category}${observation.memo ? ` / ${observation.memo}` : ""}`,
+      actionLabel: "状態",
+      open: openObservationRecords
+    });
+  });
+
+  state.seedlings
+    .map((seedling) => ({ seedling, safety: pesticideSafetyForSeedling(seedling) }))
+    .filter(({ safety }) => safety?.status === "wait")
+    .sort((a, b) => String(a.safety.availableDate).localeCompare(String(b.safety.availableDate)))
+    .slice(0, 5)
+    .forEach(({ seedling, safety }) => {
+      alerts.push({
+        kind: "pesticide",
+        tone: "warning",
+        icon: "薬",
+        title: `収穫待ち / ${seedlingLabel(seedling)}`,
+        detail: `${safety.detail} / 収穫可: ${formatMonthDay(safety.availableDate)}`,
+        actionLabel: "畑",
+        open: () => elements.mapSection.scrollIntoView({ behavior: "smooth", block: "start" })
+      });
+    });
+
+  state.seedlings
+    .map((seedling) => cultivationCycleForSeedling(seedling))
+    .filter((row) => row.status === "quiet")
+    .sort((a, b) => (b.daysSinceHarvest || 0) - (a.daysSinceHarvest || 0))
+    .slice(0, 5)
+    .forEach((row) => {
+      alerts.push({
+        kind: "cycle",
+        tone: "warning",
+        icon: "収",
+        title: `収穫間隔 / ${seedlingLabel(row.seedling)}`,
+        detail: `前回収穫から ${row.daysSinceHarvest}日 / 状態を確認してください`,
+        actionLabel: "一覧",
+        open: openCultivationCycle
+      });
+    });
+
+  const order = { urgent: 0, warning: 1, normal: 2 };
+  return alerts.sort((a, b) => (order[a.tone] ?? 3) - (order[b.tone] ?? 3));
+}
+
+function createNotificationItem(alert) {
+  const item = document.createElement("article");
+  item.className = `notification-item ${alert.tone}`;
+  const icon = document.createElement("span");
+  icon.className = "notification-item-icon";
+  icon.textContent = alert.icon;
+  const body = document.createElement("div");
+  body.className = "notification-item-body";
+  const title = document.createElement("strong");
+  title.textContent = alert.title;
+  const detail = document.createElement("span");
+  detail.textContent = alert.detail;
+  body.append(title, detail);
+  const action = document.createElement("button");
+  action.className = "notification-item-action";
+  action.type = "button";
+  action.textContent = alert.actionLabel;
+  action.addEventListener("click", () => {
+    closeNotificationModal();
+    alert.open();
+  });
+  item.append(icon, body, action);
+  return item;
+}
+
+function openNotificationModal() {
+  renderNotificationCenter();
+  elements.notificationModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  elements.closeNotificationModalButton.focus();
+}
+
+function closeNotificationModal() {
+  elements.notificationModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+}
+
+function openObservationRecords() {
+  activityViewMode = "observations";
+  renderActivityView();
+  activateTab("activities");
+  setMobileNavActive("activities");
+  elements.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function openCultivationCycle() {
+  activateTab("records");
+  setMobileNavActive("records");
+  document.querySelector(".cultivation-cycle-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderNotificationPermissionState() {
+  if (!("Notification" in window)) {
+    elements.notificationPermissionStatus.textContent = "このブラウザでは端末通知を使えません";
+    elements.requestNotificationPermissionButton.disabled = true;
+    elements.testNotificationButton.disabled = true;
+    return;
+  }
+
+  const permission = Notification.permission;
+  const labels = {
+    granted: "この端末では通知を許可済みです",
+    denied: "この端末では通知がブロックされています",
+    default: "この端末で通知を許可できます"
+  };
+  elements.notificationPermissionStatus.textContent = labels[permission] || labels.default;
+  elements.requestNotificationPermissionButton.disabled = permission !== "default";
+  elements.requestNotificationPermissionButton.textContent = permission === "default" ? "通知を許可" : permission === "granted" ? "許可済み" : "ブロック中";
+  elements.testNotificationButton.disabled = permission !== "granted";
+}
+
+async function requestNotificationPermission() {
+  if (!("Notification" in window)) return;
+  try {
+    await Notification.requestPermission();
+    renderNotificationCenter();
+    if (Notification.permission === "granted") {
+      await showBrowserNotification("畑管理アプリ", "端末通知を有効にしました。", "field-harvest-permission");
+    }
+  } catch {
+    renderNotificationCenter();
+  }
+}
+
+async function sendTestNotification() {
+  const sent = await showBrowserNotification("畑管理アプリ", "通知テストです。畑の確認事項はベルから見られます。", "field-harvest-test");
+  if (!sent) renderNotificationCenter();
+}
+
+async function maybeSendFarmAlertNotification() {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  if (localStorage.getItem(NOTIFICATION_SENT_DATE_KEY) === today) return;
+  const alerts = farmNotificationAlerts();
+  if (!alerts.length) return;
+  const urgentCount = alerts.filter((alert) => alert.tone === "urgent").length;
+  const body = urgentCount
+    ? `対応が必要な項目 ${urgentCount}件を含む、要確認 ${alerts.length}件があります。`
+    : `畑で確認したい項目が ${alerts.length}件あります。`;
+  const sent = await showBrowserNotification("畑管理アプリ: 今日の確認", body, "field-harvest-daily-alert");
+  if (sent) localStorage.setItem(NOTIFICATION_SENT_DATE_KEY, today);
+}
+
+async function showBrowserNotification(title, body, tag) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return false;
+  const options = {
+    body,
+    icon: "./assets/app-icon.svg",
+    badge: "./assets/app-icon.svg",
+    tag,
+    renotify: false
+  };
+  try {
+    const registration = notificationRegistration || await navigator.serviceWorker?.ready;
+    if (registration?.showNotification) {
+      await registration.showNotification(title, options);
+    } else {
+      new Notification(title, options);
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function formatTodayFieldDate(dateString) {
@@ -5106,7 +5337,11 @@ function registerServiceWorker() {
   });
 
   navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" })
-    .then((registration) => registration.update())
+    .then((registration) => {
+      notificationRegistration = registration;
+      registration.update();
+      window.setTimeout(maybeSendFarmAlertNotification, 900);
+    })
     .catch(() => {
       // The app still works without offline caching.
     });
