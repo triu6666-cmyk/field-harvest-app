@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1677b8">
+    <title>栽培計画 | 畑管理アプリ</title>
+    <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/planning.css">
+    <link rel="stylesheet" href="css/shared-header.css">
+  </head>
+  <body>
+    <header class="site-header site-header--planning">
+      <a class="site-brand" href="index.html" aria-label="畑管理アプリのホーム">
+        <img class="site-brand-mark" src="assets/app-icon.svg" alt="">
+        <span class="site-brand-copy">
+          <small class="site-brand-kicker">畑の記録</small>
+          <strong class="site-brand-title">栽培計画</strong>
+          <time class="site-updated" data-app-updated datetime="2026-07-14T23:14:00+09:00">最終更新 2026/07/14 23:14</time>
+        </span>
+      </a>
+      <div class="site-header-actions">
+        <a class="site-header-button" href="index.html" title="畑マップ" aria-label="畑マップを開く">
+          <svg class="site-header-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z"></path><path d="M9 3v15"></path><path d="M15 6v15"></path></svg>
+        </a>
+        <a class="site-header-button" href="pesticides.html" title="農薬対応表" aria-label="農薬対応表を開く">
+          <svg class="site-header-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path><path d="m9 12 2 2 4-4"></path></svg>
+        </a>
+      </div>
+    </header>
+
+    <main class="planning-shell">
+      <section class="planning-hero" aria-labelledby="planningTitle">
+        <div>
+          <p class="planning-kicker">CROP PLANNER</p>
+          <h1 id="planningTitle">植える時期から、収穫の頃まで。</h1>
+          <p>種まき・定植の予定を入れると、収穫開始の目安をカレンダーへ並べます。</p>
+        </div>
+        <div class="planning-hero-stats" id="planningHeroStats"></div>
+      </section>
+
+      <section class="planning-workspace">
+        <aside class="plan-entry-panel" aria-labelledby="planEntryTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">NEW PLAN</p>
+              <h2 id="planEntryTitle">作付予定を追加</h2>
+            </div>
+            <span id="profileDataStatus" class="profile-data-status"></span>
+          </div>
+          <form id="plantingPlanForm" class="planning-form">
+            <label>
+              予定日
+              <input id="planDateInput" type="date" required>
+            </label>
+            <label>
+              種・苗
+              <select id="planMethodInput">
+                <option value="seed">種をまく</option>
+                <option value="seedling">苗を植える</option>
+              </select>
+            </label>
+            <label class="wide">
+              野菜
+              <input id="planCropSearch" type="search" placeholder="野菜名で絞り込み">
+              <div id="planCropPicker" class="plan-crop-picker" aria-label="野菜を選ぶ"></div>
+              <input id="planCropInput" type="hidden" required>
+            </label>
+            <label>
+              品種
+              <input id="planVarietyInput" type="text" placeholder="例: 桃太郎、五角">
+            </label>
+            <label>
+              収穫開始の目安
+              <div class="days-input-wrap">
+                <input id="planHarvestDaysInput" type="number" min="1" max="500" step="1" required placeholder="日数">
+                <span>日後</span>
+              </div>
+            </label>
+            <p id="planForecastPreview" class="plan-forecast-preview wide">野菜と予定日を選ぶと、収穫開始予測を表示します。</p>
+            <label class="wide">
+              メモ
+              <input id="planMemoInput" type="text" placeholder="予定の区画、育苗方法など">
+            </label>
+            <button class="plan-submit-button wide" type="submit">カレンダーに追加</button>
+          </form>
+        </aside>
+
+        <section class="calendar-panel" aria-labelledby="calendarTitle">
+          <div class="calendar-heading">
+            <div>
+              <p class="panel-kicker">ANNUAL VIEW</p>
+              <h2 id="calendarTitle">栽培カレンダー</h2>
+            </div>
+            <div class="calendar-year-controls">
+              <button id="previousYearButton" class="calendar-year-button" type="button" aria-label="前年を表示">‹</button>
+              <strong id="calendarYearLabel"></strong>
+              <button id="nextYearButton" class="calendar-year-button" type="button" aria-label="翌年を表示">›</button>
+            </div>
+          </div>
+          <div class="calendar-legend" aria-label="カレンダーの見方">
+            <span class="legend-item planting">植</span><span>種まき・定植</span>
+            <span class="legend-item harvest">収</span><span>収穫開始の目安</span>
+          </div>
+          <div id="annualCalendar" class="annual-calendar"></div>
+        </section>
+      </section>
+
+      <section class="plan-list-section" aria-labelledby="planListTitle">
+        <div class="section-heading-row">
+          <div>
+            <p class="panel-kicker">UPCOMING</p>
+            <h2 id="planListTitle">予定一覧</h2>
+          </div>
+          <span id="planListCount" class="plan-list-count">0件</span>
+        </div>
+        <div id="plantingPlanList" class="planting-plan-list"></div>
+      </section>
+    </main>
+
+    <template id="emptyPlanTemplate">
+      <p class="planning-empty">まだ作付予定がありません。上のフォームから追加してください。</p>
+    </template>
+
+    <script src="js/app-version.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/crop-icons.js"></script>
+    <script src="js/crop-calendar-data.js"></script>
+    <script src="js/planning.js"></script>
+  </body>
+</html>

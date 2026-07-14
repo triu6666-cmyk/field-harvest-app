@@ -20,6 +20,10 @@
   background: linear-gradient(100deg, #075638, #08a75b 58%, #0bb3e8 130%);
 }
 
+.site-header--planning {
+  background: linear-gradient(100deg, #126eac 0%, #00a7ad 52%, #55bc55 100%);
+}
+
 .site-brand {
   display: flex;
   align-items: center;
