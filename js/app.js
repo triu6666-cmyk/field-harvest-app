@@ -5,6 +5,7 @@ const defaultState = {
   grid: { columns: 20, rows: 5 },
   seedlings: [],
   archivedSeedlings: [],
+  plantingPlans: [],
   harvests: [],
   expenses: [],
   activities: [],
@@ -5384,13 +5385,14 @@ function renderSyncMiniStatus(message, status = "idle") {
 function normalizeState(value) {
   const seedlings = Array.isArray(value?.seedlings) ? value.seedlings : [];
   const archivedSeedlings = Array.isArray(value?.archivedSeedlings) ? value.archivedSeedlings : [];
+  const plantingPlans = Array.isArray(value?.plantingPlans) ? value.plantingPlans : [];
   const harvests = Array.isArray(value?.harvests) ? value.harvests : [];
   const expenses = Array.isArray(value?.expenses) ? value.expenses : [];
   const activities = Array.isArray(value?.activities) ? value.activities : [];
   const observations = Array.isArray(value?.observations) ? value.observations : [];
   const tasks = Array.isArray(value?.tasks) ? value.tasks : [];
   const pesticideApplications = Array.isArray(value?.pesticideApplications) ? value.pesticideApplications : [];
-  const hasRecords = seedlings.length || archivedSeedlings.length || harvests.length || expenses.length || activities.length || observations.length || tasks.length || pesticideApplications.length;
+  const hasRecords = seedlings.length || archivedSeedlings.length || plantingPlans.length || harvests.length || expenses.length || activities.length || observations.length || tasks.length || pesticideApplications.length;
   const savedColumns = value?.grid?.columns;
   const savedRows = value?.grid?.rows;
   const isOldLayout = value?.layoutVersion !== defaultState.layoutVersion;
@@ -5409,6 +5411,7 @@ function normalizeState(value) {
     grid,
     seedlings: repairStaleOverflowCells(seedlings.map(normalizeSeedlingSeason), grid),
     archivedSeedlings: archivedSeedlings.map(normalizeSeedlingSeason),
+    plantingPlans,
     harvests: compactQuickHarvests(harvests),
     expenses,
     activities,

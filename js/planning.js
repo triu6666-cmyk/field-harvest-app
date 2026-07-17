@@ -19,6 +19,10 @@ const elements = {
   planHarvestDaysInput: document.querySelector("#planHarvestDaysInput"),
   planForecastPreview: document.querySelector("#planForecastPreview"),
   planMemoInput: document.querySelector("#planMemoInput"),
+  planEntryKicker: document.querySelector("#planEntryKicker"),
+  planEntryTitle: document.querySelector("#planEntryTitle"),
+  planSubmitButton: document.querySelector("#planSubmitButton"),
+  cancelPlanEditButton: document.querySelector("#cancelPlanEditButton"),
   profileDataStatus: document.querySelector("#profileDataStatus"),
   planningHeroStats: document.querySelector("#planningHeroStats"),
   previousYearButton: document.querySelector("#previousYearButton"),
@@ -33,6 +37,7 @@ const elements = {
 let state = normalizeState(storage.load());
 let selectedCropName = "";
 let calendarYear = new Date().getFullYear();
+let editingPlanId = "";
 
 elements.planDateInput.value = currentLocalDate();
 
@@ -43,6 +48,7 @@ elements.planMethodInput.addEventListener("change", () => {
 });
 elements.planDateInput.addEventListener("change", renderForecastPreview);
 elements.planHarvestDaysInput.addEventListener("input", renderForecastPreview);
+elements.cancelPlanEditButton.addEventListener("click", resetPlanForm);
 elements.previousYearButton.addEventListener("click", () => {
   calendarYear -= 1;
   renderCalendar();
@@ -64,8 +70,8 @@ elements.planForm.addEventListener("submit", (event) => {
     return;
   }
 
-  state.plantingPlans.push({
-    id: createId("plan"),
+  const nextPlan = {
+    id: editingPlanId || createId("plan"),
     cropName: selectedCropName,
     variety: elements.planVarietyInput.value.trim(),
     method: elements.planMethodInput.value,
@@ -73,8 +79,13 @@ elements.planForm.addEventListener("submit", (event) => {
     daysToHarvest: Math.round(daysToHarvest),
     forecastHarvestDate: addDays(elements.planDateInput.value, Math.round(daysToHarvest)),
     memo: elements.planMemoInput.value.trim(),
-    createdAt: new Date().toISOString()
-  });
+    createdAt: editingPlanId ? state.plantingPlans.find((plan) => plan.id === editingPlanId)?.createdAt || new Date().toISOString() : new Date().toISOString()
+  };
+  if (editingPlanId) {
+    state.plantingPlans = state.plantingPlans.map((plan) => plan.id === editingPlanId ? nextPlan : plan);
+  } else {
+    state.plantingPlans.push(nextPlan);
+  }
   resetPlanForm();
   saveAndRender();
 });
@@ -125,6 +136,8 @@ function renderCropPicker() {
     const button = document.createElement("button");
     button.className = "plan-crop-option";
     button.type = "button";
+    button.draggable = true;
+    button.title = "カレンダーの日付へドラッグして予定を作成";
     button.classList.toggle("selected", cropName === selectedCropName);
     button.setAttribute("aria-pressed", String(cropName === selectedCropName));
     button.innerHTML = `${window.fieldHarvestCropIconSvg(cropName)}<span>${cropName}</span>`;
@@ -134,6 +147,10 @@ function renderCropPicker() {
       applyCropProfile();
       renderCropPicker();
       renderForecastPreview();
+    });
+    button.addEventListener("dragstart", (event) => {
+      event.dataTransfer?.setData("text/plain", `crop:${cropName}`);
+      if (event.dataTransfer) event.dataTransfer.effectAllowed = "copy";
     });
     elements.planCropPicker.append(button);
   });
@@ -241,16 +258,40 @@ function createCalendarDay(date, weekday) {
   cell.classList.toggle("today", date === currentLocalDate());
   cell.classList.toggle("sunday", weekday === 0);
   cell.classList.toggle("saturday", weekday === 6);
+  cell.dataset.date = date;
+  cell.addEventListener("dragenter", (event) => {
+    event.preventDefault();
+    cell.classList.add("drop-target");
+  });
+  cell.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      const payload = event.dataTransfer.getData("text/plain");
+      event.dataTransfer.dropEffect = payload.startsWith("crop:") ? "copy" : "move";
+    }
+    cell.classList.add("drop-target");
+  });
+  cell.addEventListener("dragleave", () => cell.classList.remove("drop-target"));
+  cell.addEventListener("drop", (event) => {
+    event.preventDefault();
+    cell.classList.remove("drop-target");
+    const payload = event.dataTransfer?.getData("text/plain") || "";
+    if (payload.startsWith("plan:")) movePlanToDate(payload.slice(5), date);
+    if (payload.startsWith("crop:")) preparePlanForDate(payload.slice(5), date);
+  });
   const day = document.createElement("span");
   day.className = "calendar-day-number";
   day.textContent = String(Number(date.slice(-2)));
   cell.append(day);
   const markers = calendarMarkersForDate(date);
   markers.slice(0, 2).forEach((marker) => {
-    const item = document.createElement("span");
+    const item = document.createElement("button");
     item.className = `calendar-marker ${marker.type}`;
+    item.type = "button";
     item.textContent = `${marker.type === "planting" ? "植" : "収"}${marker.cropName.slice(0, 2)}`;
     item.title = marker.title;
+    item.setAttribute("aria-label", `${marker.title}を編集`);
+    item.addEventListener("click", () => startPlanEdit(marker.planId));
     cell.append(item);
   });
   if (markers.length > 2) cell.title = `${markers.map((marker) => marker.title).join("\n")}`;
@@ -260,8 +301,8 @@ function createCalendarDay(date, weekday) {
 function calendarMarkersForDate(date) {
   const markers = [];
   state.plantingPlans.forEach((plan) => {
-    if (plan.plannedDate === date) markers.push({ type: "planting", cropName: plan.cropName, title: `${methodLabel(plan.method)}: ${plan.cropName}${plan.variety ? ` ${plan.variety}` : ""}` });
-    if (plan.forecastHarvestDate === date) markers.push({ type: "harvest", cropName: plan.cropName, title: `収穫開始目安: ${plan.cropName}${plan.variety ? ` ${plan.variety}` : ""}` });
+    if (plan.plannedDate === date) markers.push({ type: "planting", planId: plan.id, cropName: plan.cropName, title: `${methodLabel(plan.method)}: ${plan.cropName}${plan.variety ? ` ${plan.variety}` : ""}` });
+    if (plan.forecastHarvestDate === date) markers.push({ type: "harvest", planId: plan.id, cropName: plan.cropName, title: `収穫開始目安: ${plan.cropName}${plan.variety ? ` ${plan.variety}` : ""}` });
   });
   return markers.sort((a, b) => a.type.localeCompare(b.type, "ja"));
 }
@@ -280,6 +321,17 @@ function renderPlanList() {
 function createPlanCard(plan) {
   const card = document.createElement("article");
   card.className = "planting-plan-card";
+  card.draggable = true;
+  card.title = "カレンダーの日付へドラッグすると予定日を変更できます";
+  card.addEventListener("dragstart", (event) => {
+    event.dataTransfer?.setData("text/plain", `plan:${plan.id}`);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    card.classList.add("dragging");
+  });
+  card.addEventListener("dragend", () => {
+    card.classList.remove("dragging");
+    document.querySelectorAll(".calendar-day.drop-target").forEach((day) => day.classList.remove("drop-target"));
+  });
   card.style.setProperty("--plan-color", plan.method === "seed" ? "#1677b8" : "#2eaa55");
   const heading = document.createElement("div");
   heading.className = "plan-card-heading";
@@ -301,6 +353,13 @@ function createPlanCard(plan) {
   const memo = document.createElement("p");
   memo.className = "plan-card-memo";
   memo.textContent = plan.memo || `${plan.daysToHarvest}日後の収穫開始を予測`;
+  const actions = document.createElement("div");
+  actions.className = "plan-card-actions";
+  const edit = document.createElement("button");
+  edit.className = "plan-card-edit";
+  edit.type = "button";
+  edit.textContent = "編集";
+  edit.addEventListener("click", () => startPlanEdit(plan.id));
   const remove = document.createElement("button");
   remove.className = "plan-card-delete";
   remove.type = "button";
@@ -309,7 +368,8 @@ function createPlanCard(plan) {
     state.plantingPlans = state.plantingPlans.filter((item) => item.id !== plan.id);
     saveAndRender();
   });
-  card.append(heading, dates, memo, remove);
+  actions.append(edit, remove);
+  card.append(heading, dates, memo, actions);
   return card;
 }
 
@@ -328,8 +388,63 @@ function resetPlanForm() {
   elements.planForm.reset();
   elements.planDateInput.value = currentLocalDate();
   selectedCropName = "";
+  editingPlanId = "";
   elements.planCropInput.value = "";
   elements.planForecastPreview.classList.add("empty");
+  renderPlanFormMode();
+  renderCropPicker();
+  renderProfileDataStatus();
+  renderForecastPreview();
+}
+
+function startPlanEdit(planId) {
+  const plan = state.plantingPlans.find((item) => item.id === planId);
+  if (!plan) return;
+  editingPlanId = plan.id;
+  selectedCropName = plan.cropName;
+  elements.planCropInput.value = plan.cropName;
+  elements.planCropSearch.value = "";
+  elements.planDateInput.value = plan.plannedDate;
+  elements.planMethodInput.value = plan.method;
+  elements.planVarietyInput.value = plan.variety;
+  elements.planHarvestDaysInput.value = String(plan.daysToHarvest);
+  elements.planMemoInput.value = plan.memo;
+  calendarYear = Number(plan.plannedDate.slice(0, 4)) || calendarYear;
+  renderPlanFormMode();
+  renderCropPicker();
+  renderProfileDataStatus();
+  renderForecastPreview();
+  renderCalendar();
+  document.querySelector(".plan-entry-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  elements.planVarietyInput.focus();
+}
+
+function renderPlanFormMode() {
+  const isEditing = Boolean(editingPlanId);
+  elements.planEntryKicker.textContent = isEditing ? "EDIT PLAN" : "NEW PLAN";
+  elements.planEntryTitle.textContent = isEditing ? "作付予定を編集" : "作付予定を追加";
+  elements.planSubmitButton.textContent = isEditing ? "予定を更新" : "カレンダーに追加";
+  elements.cancelPlanEditButton.hidden = !isEditing;
+}
+
+function movePlanToDate(planId, date) {
+  const plan = state.plantingPlans.find((item) => item.id === planId);
+  if (!plan || plan.plannedDate === date) return;
+  plan.plannedDate = date;
+  plan.forecastHarvestDate = addDays(date, plan.daysToHarvest);
+  saveAndRender();
+}
+
+function preparePlanForDate(cropName, date) {
+  if (!cropNames.includes(cropName)) return;
+  selectedCropName = cropName;
+  elements.planCropInput.value = cropName;
+  elements.planCropSearch.value = "";
+  elements.planDateInput.value = date;
+  applyCropProfile();
+  renderCropPicker();
+  renderForecastPreview();
+  elements.planHarvestDaysInput.focus();
 }
 
 function methodLabel(method) {

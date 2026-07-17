@@ -73,7 +73,9 @@ button { cursor: pointer; }
 .days-input-wrap span { color: var(--muted); font-size: 12px; }
 .plan-forecast-preview { margin: 0; min-height: 42px; border: 1px solid rgba(34, 168, 83, 0.2); border-radius: 7px; background: #effff2; color: #176b3b; padding: 10px; font-size: 12px; font-weight: 800; line-height: 1.45; }
 .plan-forecast-preview.empty { border-color: rgba(237, 123, 57, 0.22); background: #fff8eb; color: #8a5a11; }
+.plan-form-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .plan-submit-button { min-height: 44px; border: 0; border-radius: 7px; background: linear-gradient(135deg, #0b9b9d, #2eaa55); color: #ffffff; font-size: 13px; font-weight: 900; box-shadow: 0 8px 17px rgba(10, 155, 157, 0.22); }
+.plan-cancel-button { min-height: 44px; border: 1px solid rgba(10, 127, 135, 0.24); border-radius: 7px; background: #ffffff; color: #16747d; padding: 0 11px; font-size: 12px; font-weight: 900; }
 
 .plan-crop-picker { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; max-height: 228px; margin-top: 7px; overflow-y: auto; padding-right: 2px; }
 .plan-crop-option { display: grid; min-width: 0; min-height: 64px; place-items: center; gap: 2px; border: 1px solid rgba(10, 127, 135, 0.17); border-radius: 7px; background: #ffffff; color: #2f5860; padding: 5px 3px; }
@@ -96,11 +98,12 @@ button { cursor: pointer; }
 .calendar-weekdays, .calendar-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
 .calendar-weekdays span { color: #729197; font-size: 8px; font-weight: 900; text-align: center; }
 .calendar-day { position: relative; display: grid; min-width: 0; min-height: 34px; align-content: start; justify-items: center; gap: 1px; border-radius: 4px; padding-top: 3px; }
+.calendar-day.drop-target { background: #dff8e9; box-shadow: inset 0 0 0 2px #2eaa55; }
 .calendar-day.today { background: #e9faf1; box-shadow: inset 0 0 0 1px rgba(46, 170, 85, 0.24); }
 .calendar-day-number { color: #476a71; font-size: 9px; line-height: 1; }
 .calendar-day.sunday .calendar-day-number { color: #d35c4b; }
 .calendar-day.saturday .calendar-day-number { color: #2d78b5; }
-.calendar-marker { display: block; width: min(100%, 24px); overflow: hidden; border-radius: 3px; color: #ffffff; padding: 2px 1px; font-size: 7px; font-weight: 900; line-height: 1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-marker { display: block; width: min(100%, 24px); overflow: hidden; border: 0; border-radius: 3px; color: #ffffff; padding: 2px 1px; font-size: 7px; font-weight: 900; line-height: 1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .calendar-marker.planting { background: #1677b8; }
 .calendar-marker.harvest { background: #e77932; }
 
@@ -108,6 +111,8 @@ button { cursor: pointer; }
 .plan-list-count { border-radius: 999px; background: #e8f8f5; color: #087b78; padding: 5px 9px; font-size: 11px; font-weight: 900; }
 .planting-plan-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 9px; margin-top: 12px; }
 .planting-plan-card { display: grid; gap: 9px; min-width: 0; border: 1px solid rgba(10, 127, 135, 0.16); border-top: 4px solid var(--plan-color, #0a9b9d); border-radius: 8px; background: #ffffff; padding: 10px; }
+.planting-plan-card[draggable="true"] { cursor: grab; }
+.planting-plan-card.dragging { opacity: 0.5; cursor: grabbing; }
 .plan-card-heading { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 7px; }
 .plan-card-heading svg { width: 34px; height: 34px; }
 .plan-card-heading div { display: grid; min-width: 0; gap: 2px; }
@@ -123,7 +128,10 @@ button { cursor: pointer; }
 .plan-card-date strong { color: #126b7a; font-size: 12px; }
 .plan-card-date.harvest strong { color: #bd6125; }
 .plan-card-memo { overflow: hidden; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
-.plan-card-delete { justify-self: end; border: 0; background: transparent; color: #be4b3c; padding: 3px; font-size: 11px; font-weight: 900; }
+.plan-card-actions { display: flex; justify-content: end; gap: 7px; }
+.plan-card-edit, .plan-card-delete { border: 0; background: transparent; padding: 3px; font-size: 11px; font-weight: 900; }
+.plan-card-edit { color: #147a8b; }
+.plan-card-delete { color: #be4b3c; }
 .planning-empty { grid-column: 1 / -1; margin: 0; border: 1px dashed rgba(10, 127, 135, 0.24); border-radius: 8px; background: #ffffff; color: var(--muted); padding: 14px; font-size: 13px; text-align: center; }
 
 @media (max-width: 1080px) {
