@@ -1111,6 +1111,8 @@ select:focus {
 }
 
 .today-complete-button:hover { background: #dff7e8; }
+.today-list-item.plan.harvest .today-crop-icon { background: #fff1e6; }
+.plan-action-button { border-color: rgba(10, 127, 135, 0.28); color: #08727a; }
 
 .today-empty {
   margin: 0;

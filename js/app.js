@@ -892,6 +892,7 @@ function renderTodayField() {
   const dueTasks = state.tasks
     .filter((task) => !task.completed && task.date && task.date <= today)
     .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  const planActions = upcomingPlanActions();
   const waitingSeedlings = state.seedlings
     .map((seedling) => ({ seedling, safety: pesticideSafetyForSeedling(seedling) }))
     .filter(({ safety }) => safety?.status === "wait")
@@ -902,12 +903,12 @@ function renderTodayField() {
   elements.todayFieldDate.textContent = `${formatTodayFieldDate(today)} / 栽培中 ${state.seedlings.length}区画`;
   elements.todayFieldStats.replaceChildren(
     createTodayStat("今日の収穫", formatHarvestUnitTotals(todayHarvests) || "記録なし", `${todayHarvests.length}件の収穫記録`, "harvest"),
-    createTodayStat("今日やること", `${dueTasks.length}件`, dueTasks.some((task) => task.date < today) ? "期限を過ぎた予定あり" : "未完了の予定", "tasks"),
+    createTodayStat("今日やること", `${dueTasks.length + planActions.length}件`, planActions.some((action) => action.days < 0) || dueTasks.some((task) => task.date < today) ? "期限を過ぎた予定あり" : "今週の予定を含む", "tasks"),
     createTodayStat("収穫待ち", `${waitingSeedlings.length}区画`, waitingSeedlings.length ? "散布後の待機中" : "農薬の待機なし", "safety"),
     createTodayStat("要観察", `${observedAreaCount}区画`, observedAreaCount ? "状態記録を確認" : "気になる区画なし", "observation")
   );
 
-  renderTodayTaskList(dueTasks);
+  renderTodayTaskList(dueTasks, planActions);
   renderTodaySafetyList(waitingSeedlings, activeObservations);
   renderTodayActivityList();
 }
@@ -931,6 +932,18 @@ function renderNotificationCenter() {
 
 function farmNotificationAlerts() {
   const alerts = [];
+  upcomingPlanActions().slice(0, 5).forEach((action) => {
+    const overdue = action.days < 0;
+    alerts.push({
+      kind: "plan",
+      tone: overdue ? "urgent" : "warning",
+      icon: action.type === "planting" ? "植" : "収",
+      title: `${overdue ? "予定超過" : action.type === "planting" ? "作付予定" : "収穫開始予定"} / ${action.plan.cropName}`,
+      detail: action.detail,
+      actionLabel: action.type === "planting" ? "配置" : "畑",
+      open: () => action.type === "planting" ? startPlanPlacement(action.plan) : openPlanHarvestMap(action.plan)
+    });
+  });
   const dueTasks = state.tasks
     .filter((task) => !task.completed && task.date && task.date <= today)
     .sort((a, b) => String(a.date).localeCompare(String(b.date)));
@@ -1157,14 +1170,18 @@ function createTodayStat(label, value, note, tone) {
   return card;
 }
 
-function renderTodayTaskList(tasks) {
+function renderTodayTaskList(tasks, planActions = []) {
   elements.todayTaskList.replaceChildren();
-  if (!tasks.length) {
+  if (!tasks.length && !planActions.length) {
     appendTodayEmpty(elements.todayTaskList, "今日の予定はありません。必要な作業を予定に追加できます。");
     return;
   }
 
-  tasks.slice(0, 4).forEach((task) => {
+  planActions.slice(0, 4).forEach((action) => {
+    elements.todayTaskList.append(createTodayPlanAction(action));
+  });
+
+  tasks.slice(0, Math.max(0, 4 - planActions.length)).forEach((task) => {
     const item = document.createElement("article");
     item.className = "today-list-item task";
     const icon = document.createElement("span");
@@ -1184,6 +1201,65 @@ function renderTodayTaskList(tasks) {
     item.append(icon, body, completeButton);
     elements.todayTaskList.append(item);
   });
+}
+
+function createTodayPlanAction(action) {
+  const item = document.createElement("article");
+  item.className = `today-list-item plan ${action.type}`;
+  const icon = createCropIllustration(action.plan.cropName);
+  icon.classList.add("today-crop-icon");
+  const body = document.createElement("div");
+  const title = document.createElement("strong");
+  title.textContent = `${action.type === "planting" ? "作付予定" : "収穫開始予定"} / ${action.plan.cropName}${action.plan.variety ? ` ${action.plan.variety}` : ""}`;
+  const meta = document.createElement("span");
+  meta.textContent = action.detail;
+  body.append(title, meta);
+  const actionButton = document.createElement("button");
+  actionButton.className = "today-complete-button plan-action-button";
+  actionButton.type = "button";
+  actionButton.textContent = action.type === "planting" ? "配置" : "畑";
+  actionButton.addEventListener("click", () => {
+    if (action.type === "planting") startPlanPlacement(action.plan);
+    else openPlanHarvestMap(action.plan);
+  });
+  item.append(icon, body, actionButton);
+  return item;
+}
+
+function upcomingPlanActions() {
+  return state.plantingPlans
+    .flatMap((plan) => {
+      if (!plan?.plannedDate) return [];
+      if (plan.status !== "active") {
+        const days = daysBetweenDates(today, plan.plannedDate);
+        if (days === null || days > 7) return [];
+        return [{
+          plan,
+          type: "planting",
+          days,
+          detail: planScheduleLabel(plan.plannedDate, days)
+        }];
+      }
+      const hasHarvestStarted = (plan.placedSeedlingIds || []).some((seedlingId) => (
+        state.harvests.some((harvest) => harvest.seedlingId === seedlingId && Number(harvest.amount) > 0)
+      ));
+      if (hasHarvestStarted) return [];
+      const days = daysBetweenDates(today, plan.forecastHarvestDate);
+      if (days === null || days > 7) return [];
+      return [{
+        plan,
+        type: "harvest",
+        days,
+        detail: `${planScheduleLabel(plan.forecastHarvestDate, days)} / ${plan.placedSeedlingIds?.length || 0}区画`
+      }];
+    })
+    .sort((a, b) => a.days - b.days || a.type.localeCompare(b.type, "ja"));
+}
+
+function planScheduleLabel(date, days) {
+  if (days < 0) return `${formatMonthDay(date)}予定 / ${Math.abs(days)}日超過`;
+  if (days === 0) return `${formatMonthDay(date)} / 今日`;
+  return `${formatMonthDay(date)} / あと${days}日`;
 }
 
 function renderTodaySafetyList(rows, observations = []) {
@@ -4855,6 +4931,7 @@ function applySeedlingTemplateToModal(template) {
 function startCopyPlacement(seedling) {
   copiedSeedlingTemplate = createSeedlingTemplate(seedling);
   copyPlacementTemplate = copiedSeedlingTemplate;
+  activePlanPlacementId = "";
   mapFilter = "all";
   elements.mapFilterSelect.value = "all";
   closeSeedlingModal();
@@ -4912,6 +4989,12 @@ function activatePendingPlanPlacement() {
     storage.save(state);
     return;
   }
+  startPlanPlacement(plan, { render: false });
+  storage.save(state);
+}
+
+function startPlanPlacement(plan, { render = true } = {}) {
+  if (!plan) return;
   activePlanPlacementId = plan.id;
   copyPlacementTemplate = {
     cropName: plan.cropName,
@@ -4922,7 +5005,17 @@ function activatePendingPlanPlacement() {
   };
   mapFilter = "all";
   elements.mapFilterSelect.value = "all";
-  storage.save(state);
+  if (render) {
+    renderField();
+    elements.mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function openPlanHarvestMap(plan) {
+  mapFilter = `crop:${plan.cropName}`;
+  elements.mapFilterSelect.value = mapFilter;
+  renderField();
+  elements.mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderSummary() {
