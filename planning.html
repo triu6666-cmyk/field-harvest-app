@@ -16,7 +16,7 @@
         <span class="site-brand-copy">
           <small class="site-brand-kicker">畑の記録</small>
           <strong class="site-brand-title">栽培計画</strong>
-          <time class="site-updated" data-app-updated datetime="2026-07-17T15:03:00+09:00">最終更新 2026/07/17 15:03</time>
+          <time class="site-updated" data-app-updated datetime="2026-07-17T15:26:00+09:00">最終更新 2026/07/17 15:26</time>
         </span>
       </a>
       <div class="site-header-actions">
@@ -66,6 +66,7 @@
               <div id="planCropPicker" class="plan-crop-picker" aria-label="野菜を選ぶ"></div>
               <input id="planCropInput" type="hidden" required>
             </label>
+            <p id="planSeasonGuide" class="plan-season-guide wide" hidden></p>
             <label>
               品種
               <input id="planVarietyInput" type="text" placeholder="例: 桃太郎、五角">
@@ -104,6 +105,7 @@
           <div class="calendar-legend" aria-label="カレンダーの見方">
             <span class="legend-item planting">植</span><span>種まき・定植</span>
             <span class="legend-item harvest">収</span><span>収穫開始の目安</span>
+            <span class="legend-item season">適</span><span>選択中の適期</span>
           </div>
           <div id="annualCalendar" class="annual-calendar"></div>
         </section>

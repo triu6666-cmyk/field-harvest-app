@@ -15,6 +15,7 @@ const elements = {
   planCropSearch: document.querySelector("#planCropSearch"),
   planCropPicker: document.querySelector("#planCropPicker"),
   planCropInput: document.querySelector("#planCropInput"),
+  planSeasonGuide: document.querySelector("#planSeasonGuide"),
   planVarietyInput: document.querySelector("#planVarietyInput"),
   planHarvestDaysInput: document.querySelector("#planHarvestDaysInput"),
   planForecastPreview: document.querySelector("#planForecastPreview"),
@@ -45,6 +46,7 @@ elements.planCropSearch.addEventListener("input", renderCropPicker);
 elements.planMethodInput.addEventListener("change", () => {
   applyCropProfile();
   renderForecastPreview();
+  renderCalendar();
 });
 elements.planDateInput.addEventListener("change", renderForecastPreview);
 elements.planHarvestDaysInput.addEventListener("input", renderForecastPreview);
@@ -122,6 +124,7 @@ function saveAndRender() {
 function render() {
   renderCropPicker();
   renderProfileDataStatus();
+  renderSeasonGuide();
   renderForecastPreview();
   renderHeroStats();
   renderCalendar();
@@ -146,7 +149,9 @@ function renderCropPicker() {
       elements.planCropInput.value = cropName;
       applyCropProfile();
       renderCropPicker();
+      renderSeasonGuide();
       renderForecastPreview();
+      renderCalendar();
     });
     button.addEventListener("dragstart", (event) => {
       event.dataTransfer?.setData("text/plain", `crop:${cropName}`);
@@ -163,30 +168,61 @@ function renderProfileDataStatus() {
   elements.profileDataStatus.textContent = hasCurrentProfile
     ? "栽培暦データあり"
     : profileCount ? "日数を手入力" : "栽培暦データ準備中";
+  elements.profileDataStatus.title = hasCurrentProfile
+    ? cropProfiles[selectedCropName].sources.join("\n")
+    : "";
+}
+
+function renderSeasonGuide() {
+  const profile = cropProfiles[selectedCropName];
+  if (!profile) {
+    elements.planSeasonGuide.hidden = true;
+    elements.planSeasonGuide.textContent = "";
+    return;
+  }
+  const plantingWindow = elements.planMethodInput.value === "seed"
+    ? profile.seedSowingWindow
+    : profile.seedlingPlantingWindow;
+  const plantingLabel = elements.planMethodInput.value === "seed" ? "種まき適期" : "定植適期";
+  const plantingText = formatSeasonWindow(plantingWindow) || "未掲載";
+  const harvestText = formatSeasonWindow(profile.harvestWindow) || "未掲載";
+  elements.planSeasonGuide.textContent = `${plantingLabel} ${plantingText}  |  収穫適期 ${harvestText}`;
+  elements.planSeasonGuide.title = profile.note || "";
+  elements.planSeasonGuide.hidden = false;
 }
 
 function applyCropProfile() {
   const profile = cropProfiles[selectedCropName];
   if (!profile) {
     renderProfileDataStatus();
+    renderSeasonGuide();
     return;
   }
   const days = elements.planMethodInput.value === "seedling" ? profile.seedlingDays : profile.seedDays;
   if (Number.isFinite(days) && days > 0) elements.planHarvestDaysInput.value = String(days);
   renderProfileDataStatus();
+  renderSeasonGuide();
 }
 
 function renderForecastPreview() {
   const date = elements.planDateInput.value;
   const days = Number(elements.planHarvestDaysInput.value);
   const cropName = selectedCropName || "野菜";
+  const profile = cropProfiles[selectedCropName];
   if (!date || !Number.isFinite(days) || days <= 0) {
+    if (date && profile) {
+      const plantingWindow = elements.planMethodInput.value === "seed"
+        ? profile.seedSowingWindow
+        : profile.seedlingPlantingWindow;
+      elements.planForecastPreview.textContent = `${cropName}の${elements.planMethodInput.value === "seed" ? "種まき" : "定植"}適期は ${formatSeasonWindow(plantingWindow) || "未掲載"}、収穫適期は ${formatSeasonWindow(profile.harvestWindow) || "未掲載"}です。`;
+      elements.planForecastPreview.classList.remove("empty");
+      return;
+    }
     elements.planForecastPreview.textContent = "野菜、予定日、収穫までの日数を入力すると予測を表示します。";
     elements.planForecastPreview.classList.add("empty");
     return;
   }
   const harvestDate = addDays(date, days);
-  const profile = cropProfiles[selectedCropName];
   elements.planForecastPreview.textContent = `${cropName}は ${formatDate(harvestDate)} 頃から収穫開始の目安です。${profile?.note ? ` ${profile.note}` : ""}`;
   elements.planForecastPreview.classList.remove("empty");
 }
@@ -258,6 +294,12 @@ function createCalendarDay(date, weekday) {
   cell.classList.toggle("today", date === currentLocalDate());
   cell.classList.toggle("sunday", weekday === 0);
   cell.classList.toggle("saturday", weekday === 6);
+  const profile = cropProfiles[selectedCropName];
+  const plantingWindow = elements.planMethodInput.value === "seed"
+    ? profile?.seedSowingWindow
+    : profile?.seedlingPlantingWindow;
+  cell.classList.toggle("season-window", isDateInSeasonWindow(date, plantingWindow));
+  cell.classList.toggle("season-harvest-window", isDateInSeasonWindow(date, profile?.harvestWindow));
   cell.dataset.date = date;
   cell.addEventListener("dragenter", (event) => {
     event.preventDefault();
@@ -394,7 +436,9 @@ function resetPlanForm() {
   renderPlanFormMode();
   renderCropPicker();
   renderProfileDataStatus();
+  renderSeasonGuide();
   renderForecastPreview();
+  renderCalendar();
 }
 
 function startPlanEdit(planId) {
@@ -413,6 +457,7 @@ function startPlanEdit(planId) {
   renderPlanFormMode();
   renderCropPicker();
   renderProfileDataStatus();
+  renderSeasonGuide();
   renderForecastPreview();
   renderCalendar();
   document.querySelector(".plan-entry-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -443,12 +488,31 @@ function preparePlanForDate(cropName, date) {
   elements.planDateInput.value = date;
   applyCropProfile();
   renderCropPicker();
+  renderSeasonGuide();
   renderForecastPreview();
+  renderCalendar();
   elements.planHarvestDaysInput.focus();
 }
 
 function methodLabel(method) {
   return method === "seedling" ? "苗を植える" : "種をまく";
+}
+
+function formatSeasonWindow(window) {
+  if (!Array.isArray(window) || window.length !== 2) return "";
+  return `${formatMonthDay(window[0])} - ${formatMonthDay(window[1])}`;
+}
+
+function formatMonthDay(value) {
+  const [month, day] = String(value || "").split("-").map(Number);
+  return Number.isFinite(month) && Number.isFinite(day) ? `${month}/${day}` : "";
+}
+
+function isDateInSeasonWindow(date, window) {
+  if (!Array.isArray(window) || window.length !== 2) return false;
+  const day = String(date).slice(5);
+  const [start, end] = window;
+  return start <= end ? day >= start && day <= end : day >= start || day <= end;
 }
 
 function currentLocalDate() {

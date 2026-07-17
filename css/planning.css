@@ -73,6 +73,7 @@ button { cursor: pointer; }
 .days-input-wrap span { color: var(--muted); font-size: 12px; }
 .plan-forecast-preview { margin: 0; min-height: 42px; border: 1px solid rgba(34, 168, 83, 0.2); border-radius: 7px; background: #effff2; color: #176b3b; padding: 10px; font-size: 12px; font-weight: 800; line-height: 1.45; }
 .plan-forecast-preview.empty { border-color: rgba(237, 123, 57, 0.22); background: #fff8eb; color: #8a5a11; }
+.plan-season-guide { margin: -3px 0 0; border-left: 3px solid #6bba5f; background: #f1fbeb; color: #39723d; padding: 8px 10px; font-size: 11px; font-weight: 900; line-height: 1.45; }
 .plan-form-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .plan-submit-button { min-height: 44px; border: 0; border-radius: 7px; background: linear-gradient(135deg, #0b9b9d, #2eaa55); color: #ffffff; font-size: 13px; font-weight: 900; box-shadow: 0 8px 17px rgba(10, 155, 157, 0.22); }
 .plan-cancel-button { min-height: 44px; border: 1px solid rgba(10, 127, 135, 0.24); border-radius: 7px; background: #ffffff; color: #16747d; padding: 0 11px; font-size: 12px; font-weight: 900; }
@@ -91,6 +92,7 @@ button { cursor: pointer; }
 .legend-item { display: grid; width: 20px; height: 20px; place-items: center; border-radius: 5px; color: #ffffff; font-size: 10px; }
 .legend-item.planting { background: #147bc0; }
 .legend-item.harvest { background: #e77932; }
+.legend-item.season { background: #70b75b; }
 
 .annual-calendar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
 .month-calendar { min-width: 0; border: 1px solid rgba(10, 127, 135, 0.14); border-radius: 8px; background: #ffffff; padding: 8px; }
@@ -99,6 +101,8 @@ button { cursor: pointer; }
 .calendar-weekdays span { color: #729197; font-size: 8px; font-weight: 900; text-align: center; }
 .calendar-day { position: relative; display: grid; min-width: 0; min-height: 34px; align-content: start; justify-items: center; gap: 1px; border-radius: 4px; padding-top: 3px; }
 .calendar-day.drop-target { background: #dff8e9; box-shadow: inset 0 0 0 2px #2eaa55; }
+.calendar-day.season-window { background: #edf9e8; }
+.calendar-day.season-harvest-window { border-bottom: 2px solid #e6a168; }
 .calendar-day.today { background: #e9faf1; box-shadow: inset 0 0 0 1px rgba(46, 170, 85, 0.24); }
 .calendar-day-number { color: #476a71; font-size: 9px; line-height: 1; }
 .calendar-day.sunday .calendar-day-number { color: #d35c4b; }
