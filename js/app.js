@@ -6,6 +6,7 @@ const defaultState = {
   seedlings: [],
   archivedSeedlings: [],
   plantingPlans: [],
+  planPlacement: null,
   harvests: [],
   expenses: [],
   activities: [],
@@ -67,6 +68,7 @@ let editingSeedlingId = "";
 let modalSeedlingId = "";
 let copiedSeedlingTemplate = null;
 let copyPlacementTemplate = null;
+let activePlanPlacementId = "";
 let pendingReceiptImage = "";
 let receiptAmountCandidates = [];
 let activeSide = "L";
@@ -1417,7 +1419,12 @@ function createCopyModeBanner() {
   text.className = "copy-mode-text";
   const cropName = document.createElement("strong");
   cropName.textContent = copyPlacementTemplate.cropName;
-  text.append(cropName, "を複製中。空き区画の「置く」を押すと、そのまま登録します。");
+  text.append(
+    cropName,
+    activePlanPlacementId
+      ? "を作付予定から配置中。空き区画の「置く」を押すと、実施済みとして登録します。"
+      : "を複製中。空き区画の「置く」を押すと、そのまま登録します。"
+  );
 
   const cancelButton = document.createElement("button");
   cancelButton.className = "copy-mode-cancel";
@@ -4856,17 +4863,33 @@ function startCopyPlacement(seedling) {
 
 function cancelCopyPlacement() {
   copyPlacementTemplate = null;
+  activePlanPlacementId = "";
   renderField();
 }
 
 function placeCopiedSeedling(cell) {
   if (!copyPlacementTemplate || state.seedlings.some((seedling) => seedling.cell === cell)) return;
 
-  state.seedlings.push({
+  const seedling = {
     id: createId("seedling"),
     ...copyPlacementTemplate,
+    planId: activePlanPlacementId || "",
     cell
-  });
+  };
+  state.seedlings.push(seedling);
+  if (activePlanPlacementId) {
+    state.plantingPlans = state.plantingPlans.map((plan) => {
+      if (plan.id !== activePlanPlacementId) return plan;
+      const placedSeedlingIds = new Set(Array.isArray(plan.placedSeedlingIds) ? plan.placedSeedlingIds : []);
+      placedSeedlingIds.add(seedling.id);
+      return {
+        ...plan,
+        status: "active",
+        executedDate: plan.executedDate || copyPlacementTemplate.plantedDate || today,
+        placedSeedlingIds: [...placedSeedlingIds]
+      };
+    });
+  }
   saveAndRender();
 }
 
@@ -4878,6 +4901,28 @@ function createSeedlingTemplate(seedling) {
     season: cultivationSeasonValue(seedling),
     memo: seedling.memo || ""
   };
+}
+
+function activatePendingPlanPlacement() {
+  const planId = state.planPlacement?.planId;
+  if (!planId) return;
+  const plan = state.plantingPlans.find((item) => item.id === planId);
+  state.planPlacement = null;
+  if (!plan) {
+    storage.save(state);
+    return;
+  }
+  activePlanPlacementId = plan.id;
+  copyPlacementTemplate = {
+    cropName: plan.cropName,
+    variety: plan.variety || "",
+    plantedDate: plan.plannedDate || today,
+    season: inferCultivationSeason(plan.plannedDate || today),
+    memo: plan.memo || ""
+  };
+  mapFilter = "all";
+  elements.mapFilterSelect.value = "all";
+  storage.save(state);
 }
 
 function renderSummary() {
@@ -5386,6 +5431,7 @@ function normalizeState(value) {
   const seedlings = Array.isArray(value?.seedlings) ? value.seedlings : [];
   const archivedSeedlings = Array.isArray(value?.archivedSeedlings) ? value.archivedSeedlings : [];
   const plantingPlans = Array.isArray(value?.plantingPlans) ? value.plantingPlans : [];
+  const planPlacement = value?.planPlacement && typeof value.planPlacement === "object" ? value.planPlacement : null;
   const harvests = Array.isArray(value?.harvests) ? value.harvests : [];
   const expenses = Array.isArray(value?.expenses) ? value.expenses : [];
   const activities = Array.isArray(value?.activities) ? value.activities : [];
@@ -5412,6 +5458,7 @@ function normalizeState(value) {
     seedlings: repairStaleOverflowCells(seedlings.map(normalizeSeedlingSeason), grid),
     archivedSeedlings: archivedSeedlings.map(normalizeSeedlingSeason),
     plantingPlans,
+    planPlacement,
     harvests: compactQuickHarvests(harvests),
     expenses,
     activities,
@@ -5534,6 +5581,7 @@ function registerServiceWorker() {
 }
 
 registerServiceWorker();
+activatePendingPlanPlacement();
 render();
 applySyncSettingsFromUrl();
 autoPullCloudOnStartup();

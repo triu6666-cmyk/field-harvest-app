@@ -110,7 +110,10 @@ function normalizePlan(plan) {
     plannedDate: plan?.plannedDate || currentLocalDate(),
     daysToHarvest,
     forecastHarvestDate: plan?.forecastHarvestDate || addDays(plan?.plannedDate || currentLocalDate(), daysToHarvest),
-    memo: plan?.memo || ""
+    memo: plan?.memo || "",
+    status: plan?.status === "active" ? "active" : "planned",
+    executedDate: plan?.executedDate || "",
+    placedSeedlingIds: Array.isArray(plan?.placedSeedlingIds) ? plan.placedSeedlingIds : []
   };
 }
 
@@ -387,7 +390,10 @@ function createPlanCard(plan) {
   const method = document.createElement("em");
   method.className = "plan-card-method";
   method.textContent = plan.method === "seed" ? "種" : "苗";
-  heading.append(identity, method);
+  const status = document.createElement("span");
+  status.className = `plan-card-status ${plan.status}`;
+  status.textContent = plan.status === "active" ? `実施中 ${plan.placedSeedlingIds.length}区画` : "予定";
+  heading.append(identity, method, status);
 
   const dates = document.createElement("div");
   dates.className = "plan-card-dates";
@@ -397,6 +403,11 @@ function createPlanCard(plan) {
   memo.textContent = plan.memo || `${plan.daysToHarvest}日後の収穫開始を予測`;
   const actions = document.createElement("div");
   actions.className = "plan-card-actions";
+  const place = document.createElement("button");
+  place.className = "plan-card-place";
+  place.type = "button";
+  place.textContent = plan.status === "active" ? "追加配置" : "畑へ配置";
+  place.addEventListener("click", () => beginPlanPlacement(plan.id));
   const edit = document.createElement("button");
   edit.className = "plan-card-edit";
   edit.type = "button";
@@ -410,9 +421,20 @@ function createPlanCard(plan) {
     state.plantingPlans = state.plantingPlans.filter((item) => item.id !== plan.id);
     saveAndRender();
   });
-  actions.append(edit, remove);
+  actions.append(place, edit, remove);
   card.append(heading, dates, memo, actions);
   return card;
+}
+
+function beginPlanPlacement(planId) {
+  const plan = state.plantingPlans.find((item) => item.id === planId);
+  if (!plan) return;
+  state.planPlacement = { planId, requestedAt: new Date().toISOString() };
+  storage.saveLocal(state);
+  storage.pushCloud(state).catch(() => {
+    // Local storage remains available when cloud syncing is unavailable.
+  });
+  window.location.href = "index.html#field";
 }
 
 function createPlanDate(label, value, variant = "") {
